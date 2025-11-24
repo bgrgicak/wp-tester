@@ -1,0 +1,48 @@
+{
+  "name": "wp-tester",
+  "version": "0.0.1",
+  "description": "",
+  "type": "module",
+  "main": "./dist/cjs/cli.js",
+  "module": "./dist/esm/cli.js",
+  "types": "./dist/esm/cli.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/esm/cli.d.ts",
+        "default": "./dist/esm/cli.js"
+      },
+      "require": {
+        "types": "./dist/cjs/cli.d.ts",
+        "default": "./dist/cjs/cli.js"
+      }
+    }
+  },
+  "bin": {
+    "wp-tester": "./dist/esm/cli.js"
+  },
+  "scripts": {
+    "build": "tsc && tsc -p tsconfig.cjs.json",
+    "dev": "node --no-warnings --experimental-strip-types src/cli.ts",
+    "dist": "node --no-warnings --experimental-strip-types dist/esm/cli.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bgrgicak/wp-tester.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bgrgicak/wp-tester/issues"
+  },
+  "homepage": "https://github.com/bgrgicak/wp-tester#readme",
+  "dependencies": {
+    "yargs": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/yargs": "^17.0.35",
+    "typescript": "^5.9.3"
+  }
+}

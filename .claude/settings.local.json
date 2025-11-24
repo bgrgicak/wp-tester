@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(node:*)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Write(*)",
+      "Edit(*)",
+      "Skill(*)"
+    ],
+    "deny": [],
+    "ask": [],
+    "defaultMode": "dontAsk"
+  }
+}
