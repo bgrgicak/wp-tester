@@ -3,8 +3,8 @@ import {  updateConfigOption, writeConfigFile, isConfigWritable } from '../confi
 import type { WPTesterConfig } from '../config/types.js';
 import * as clack from '../cli/theme.js';
 
-export const command = 'init';
-export const describe = 'Initialize wp-tester configuration';
+export const command = 'setup';
+export const describe = 'Setup wp-tester configuration';
 
 export const run = async (): Promise<void> => {
   if (await isConfigWritable()) {
