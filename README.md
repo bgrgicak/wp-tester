@@ -9,8 +9,8 @@ WordPress Tester leverages WordPress Playground's ability to quickly spin up Wor
 ## Basic usage (NOT IMPLEMENTED YET)
 
 ```bash
-# Initialize configuration
-npx wp-tester init
+# Setup configuration
+npx wp-tester setup
 ```
 
 ```bash
