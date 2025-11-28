@@ -1,0 +1,3392 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ActivatePluginStep": {
+      "description": "activatePlugin",
+      "properties": {
+        "pluginName": {
+          "description": "Optional. Plugin name to display in the progress bar.",
+          "type": "string"
+        },
+        "pluginPath": {
+          "description": "Path to the plugin directory as absolute path\n(/wordpress/wp-content/plugins/plugin-name); or the plugin entry file\nrelative to the plugins directory (plugin-name/plugin-name.php).",
+          "type": "string"
+        },
+        "step": {
+          "const": "activatePlugin",
+          "type": "string"
+        }
+      },
+      "required": [
+        "pluginPath",
+        "step"
+      ],
+      "type": "object"
+    },
+    "ActivateThemeStep": {
+      "description": "activateTheme",
+      "properties": {
+        "step": {
+          "const": "activateTheme",
+          "type": "string"
+        },
+        "themeFolderName": {
+          "description": "The name of the theme folder inside wp-content/themes/",
+          "type": "string"
+        }
+      },
+      "required": [
+        "step",
+        "themeFolderName"
+      ],
+      "type": "object"
+    },
+    "ArrayBuffer": {
+      "properties": {
+        "__@toStringTag@641": {
+          "type": "string"
+        },
+        "byteLength": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "__@toStringTag@641",
+        "byteLength"
+      ],
+      "type": "object"
+    },
+    "ArrayBufferLike": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ArrayBuffer"
+        },
+        {
+          "$ref": "#/definitions/SharedArrayBuffer"
+        }
+      ]
+    },
+    "Blueprint": {
+      "anyOf": [
+        {
+          "description": "The Blueprint declaration, typically stored in a blueprint.json file.",
+          "properties": {
+            "constants": {
+              "$ref": "#/definitions/PHPConstants",
+              "description": "PHP Constants to define on every request"
+            },
+            "description": {
+              "description": "Optional description. It doesn't do anything but is exposed as\na courtesy to developers who may want to document which blueprint\nfile does what.",
+              "type": "string"
+            },
+            "extraLibraries": {
+              "description": "Extra libraries to preload into the Playground instance.",
+              "items": {
+                "const": "wp-cli",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "features": {
+              "properties": {
+                "intl": {
+                  "type": "boolean"
+                },
+                "networking": {
+                  "description": "Should boot with support for network request via wp_safe_remote_get?",
+                  "type": "boolean"
+                }
+              },
+              "type": "object"
+            },
+            "landingPage": {
+              "description": "The URL to navigate to after the blueprint has been run.",
+              "type": "string"
+            },
+            "login": {
+              "anyOf": [
+                {
+                  "properties": {
+                    "password": {
+                      "type": "string"
+                    },
+                    "username": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "password",
+                    "username"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "boolean"
+                }
+              ],
+              "description": "User to log in as.\nIf true, logs the user in as admin/password."
+            },
+            "meta": {
+              "description": "Optional metadata. Used by the Blueprints gallery at https://github.com/WordPress/blueprints",
+              "properties": {
+                "author": {
+                  "description": "A GitHub username of the author of this Blueprint.",
+                  "type": "string"
+                },
+                "categories": {
+                  "description": "Relevant categories to help users find your Blueprint in the future\nBlueprints section on WordPress.org.",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "description": {
+                  "description": "A brief explanation of what your Blueprint offers.",
+                  "type": "string"
+                },
+                "title": {
+                  "description": "A clear and concise name for your Blueprint.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "author",
+                "title"
+              ],
+              "type": "object"
+            },
+            "phpExtensionBundles": {},
+            "plugins": {
+              "description": "WordPress plugins to install and activate",
+              "items": {
+                "anyOf": [
+                  {
+                    "properties": {
+                      "path": {
+                        "description": "The path to the file in the VFS",
+                        "type": "string"
+                      },
+                      "resource": {
+                        "const": "vfs",
+                        "description": "Identifies the file resource as Virtual File System (VFS)",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "path",
+                      "resource"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "properties": {
+                      "contents": {
+                        "anyOf": [
+                          {
+                            "additionalProperties": false,
+                            "patternProperties": {
+                              "^[0-9]+$": {
+                                "type": "number"
+                              }
+                            },
+                            "properties": {
+                              "BYTES_PER_ELEMENT": {
+                                "type": "number"
+                              },
+                              "__@toStringTag@641": {
+                                "const": "Uint8Array",
+                                "type": "string"
+                              },
+                              "buffer": {
+                                "$ref": "#/definitions/ArrayBufferLike"
+                              },
+                              "byteLength": {
+                                "type": "number"
+                              },
+                              "byteOffset": {
+                                "type": "number"
+                              },
+                              "length": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "BYTES_PER_ELEMENT",
+                              "__@toStringTag@641",
+                              "buffer",
+                              "byteLength",
+                              "byteOffset",
+                              "length"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ],
+                        "description": "The contents of the file"
+                      },
+                      "name": {
+                        "description": "The name of the file",
+                        "type": "string"
+                      },
+                      "resource": {
+                        "const": "literal",
+                        "description": "Identifies the file resource as a literal file",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "contents",
+                      "name",
+                      "resource"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "properties": {
+                      "resource": {
+                        "const": "wordpress.org/themes",
+                        "description": "Identifies the file resource as a WordPress Core theme",
+                        "type": "string"
+                      },
+                      "slug": {
+                        "description": "The slug of the WordPress Core theme",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "resource",
+                      "slug"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "properties": {
+                      "resource": {
+                        "const": "wordpress.org/plugins",
+                        "description": "Identifies the file resource as a WordPress Core plugin",
+                        "type": "string"
+                      },
+                      "slug": {
+                        "description": "The slug of the WordPress Core plugin",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "resource",
+                      "slug"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "properties": {
+                      "caption": {
+                        "description": "Optional caption for displaying a progress message",
+                        "type": "string"
+                      },
+                      "resource": {
+                        "const": "url",
+                        "description": "Identifies the file resource as a URL",
+                        "type": "string"
+                      },
+                      "url": {
+                        "description": "The URL of the file",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "resource",
+                      "url"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "properties": {
+                      "path": {
+                        "description": "The path to the file in the Blueprint",
+                        "type": "string"
+                      },
+                      "resource": {
+                        "const": "bundled",
+                        "description": "Identifies the file resource as a Blueprint file",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "path",
+                      "resource"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            "preferredVersions": {
+              "description": "The preferred PHP and WordPress versions to use.",
+              "properties": {
+                "php": {
+                  "description": "The preferred PHP version to use.\nIf not specified, the latest supported version will be used",
+                  "enum": [
+                    "7.2",
+                    "7.3",
+                    "7.4",
+                    "8.0",
+                    "8.1",
+                    "8.2",
+                    "8.3",
+                    "8.4",
+                    "latest"
+                  ],
+                  "type": "string"
+                },
+                "wp": {
+                  "description": "The preferred WordPress version to use.\nIf not specified, the latest supported version will be used",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "php",
+                "wp"
+              ],
+              "type": "object"
+            },
+            "siteOptions": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/Record%3Cstring%2Cstring%3E"
+                },
+                {
+                  "properties": {
+                    "blogname": {
+                      "description": "The site title",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              ],
+              "description": "WordPress site options to define"
+            },
+            "steps": {
+              "description": "The steps to run after every other operation in this Blueprint was\nexecuted.",
+              "items": {
+                "anyOf": [
+                  {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/ActivatePluginStep"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/ActivateThemeStep"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/CpStep"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/DefineWpConfigConstsStep"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/DefineSiteUrlStep"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/EnableMultisiteStep"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/ImportThemeStarterContentStep"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "description": "login",
+                        "properties": {
+                          "password": {
+                            "type": "string"
+                          },
+                          "step": {
+                            "const": "login",
+                            "type": "string"
+                          },
+                          "username": {
+                            "description": "The user to log in as. Defaults to 'admin'.",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "step"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/MkdirStep"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/MvStep"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/ResetDataStep"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/RequestStep"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/RmStep"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/RmdirStep"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/RunPHPStep"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/RunPHPWithOptionsStep"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/RunWpInstallationWizardStep"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "description": "setSiteOptions",
+                        "properties": {
+                          "options": {
+                            "$ref": "#/definitions/Record%3Cstring%2Cunknown%3E",
+                            "description": "The options to set on the site."
+                          },
+                          "step": {
+                            "const": "setSiteOptions",
+                            "description": "The name of the step. Must be \"setSiteOptions\".",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "options",
+                          "step"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/UpdateUserMetaStep"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/WPCLIStep"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/SetSiteLanguageStep"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/ImportWxrStep%3CFileReference%3E"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/ImportWordPressFilesStep%3CFileReference%3E"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/InstallPluginStep%3CFileReference%2CDirectoryReference%3E"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/InstallThemeStep%3CFileReference%2CDirectoryReference%3E"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/RunSqlStep%3CFileReference%3E"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/UnzipStep%3CFileReference%3E"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/WriteFileStep%3CFileReference%3E"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/WriteFilesStep%3CDirectoryReference%3E"
+                      },
+                      {
+                        "properties": {
+                          "progress": {
+                            "properties": {
+                              "caption": {
+                                "type": "string"
+                              },
+                              "weight": {
+                                "type": "number"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "const": false,
+                    "type": "boolean"
+                  },
+                  {
+                    "type": [
+                      "null",
+                      "string"
+                    ]
+                  }
+                ]
+              },
+              "type": "array"
+            }
+          },
+          "type": "object"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "description": "WordPress Playground Blueprint configuration.\nCan be either an inline blueprint object or a file path to a blueprint JSON file."
+    },
+    "CpStep": {
+      "description": "cp",
+      "properties": {
+        "fromPath": {
+          "description": "Source path",
+          "type": "string"
+        },
+        "step": {
+          "const": "cp",
+          "type": "string"
+        },
+        "toPath": {
+          "description": "Target path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fromPath",
+        "step",
+        "toPath"
+      ],
+      "type": "object"
+    },
+    "DefineSiteUrlStep": {
+      "description": "Changes the site URL of the WordPress installation.defineSiteUrl",
+      "properties": {
+        "siteUrl": {
+          "description": "The URL",
+          "type": "string"
+        },
+        "step": {
+          "const": "defineSiteUrl",
+          "type": "string"
+        }
+      },
+      "required": [
+        "siteUrl",
+        "step"
+      ],
+      "type": "object"
+    },
+    "DefineWpConfigConstsStep": {
+      "description": "defineWpConfigConsts",
+      "properties": {
+        "consts": {
+          "$ref": "#/definitions/Record%3Cstring%2Cunknown%3E",
+          "description": "The constants to define"
+        },
+        "method": {
+          "description": "The method of defining the constants in wp-config.php. Possible values are:\n\n- rewrite-wp-config: Default. Rewrites the wp-config.php file to\n                     explicitly call define() with the requested\n                     name and value. This method alters the file\n                     on the disk, but it doesn't conflict with\n                     existing define() calls in wp-config.php.\n\n- define-before-run: Defines the constant before running the requested\n                     script. It doesn't alter any files on the disk, but\n                     constants defined this way may conflict with existing\n                     define() calls in wp-config.php.",
+          "enum": [
+            "define-before-run",
+            "rewrite-wp-config"
+          ],
+          "type": "string"
+        },
+        "step": {
+          "const": "defineWpConfigConsts",
+          "type": "string"
+        },
+        "virtualize": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "consts",
+        "step"
+      ],
+      "type": "object"
+    },
+    "Directory": {
+      "properties": {
+        "files": {
+          "$ref": "#/definitions/FileTree"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "files",
+        "name"
+      ],
+      "type": "object"
+    },
+    "DirectoryLiteralReference": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Directory"
+        },
+        {
+          "properties": {
+            "resource": {
+              "const": "literal:directory",
+              "description": "Identifies the file resource as a git directory",
+              "type": "string"
+            }
+          },
+          "required": [
+            "resource"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "DirectoryReference": {
+      "anyOf": [
+        {
+          "properties": {
+            ".git": {
+              "description": "When true, include a `.git` directory with Git metadata (experimental).",
+              "type": "boolean"
+            },
+            "path": {
+              "description": "The path to the directory in the git repository. Defaults to the repo root.",
+              "type": "string"
+            },
+            "ref": {
+              "description": "The ref (branch, tag, or commit) of the git repository",
+              "type": "string"
+            },
+            "refType": {
+              "description": "Explicit hint about the ref type (branch, tag, commit, refname)",
+              "enum": [
+                "branch",
+                "commit",
+                "refname",
+                "tag"
+              ],
+              "type": "string"
+            },
+            "resource": {
+              "const": "git:directory",
+              "description": "Identifies the file resource as a git directory",
+              "type": "string"
+            },
+            "url": {
+              "description": "The URL of the git repository",
+              "type": "string"
+            }
+          },
+          "required": [
+            "ref",
+            "resource",
+            "url"
+          ],
+          "type": "object"
+        },
+        {
+          "$ref": "#/definitions/DirectoryLiteralReference"
+        }
+      ]
+    },
+    "EnableMultisiteStep": {
+      "description": "enableMultisite",
+      "properties": {
+        "step": {
+          "const": "enableMultisite",
+          "type": "string"
+        },
+        "wpCliPath": {
+          "description": "wp-cli.phar path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "step"
+      ],
+      "type": "object"
+    },
+    "Environment": {
+      "description": "Test environment configuration.\nDefines a WordPress environment with specific versions and setup.",
+      "properties": {
+        "blueprint": {
+          "$ref": "#/definitions/Blueprint",
+          "description": "WordPress Playground Blueprint configuration.\nCan be an inline blueprint object or a file path to a blueprint JSON file."
+        },
+        "mounts": {
+          "default": [],
+          "description": "Filesystem mounts to apply to this environment",
+          "items": {
+            "$ref": "#/definitions/Mount"
+          },
+          "type": "array"
+        },
+        "name": {
+          "description": "Optional descriptive name for this environment",
+          "type": "string"
+        }
+      },
+      "required": [
+        "blueprint"
+      ],
+      "type": "object"
+    },
+    "FileReference": {
+      "anyOf": [
+        {
+          "properties": {
+            "path": {
+              "description": "The path to the file in the VFS",
+              "type": "string"
+            },
+            "resource": {
+              "const": "vfs",
+              "description": "Identifies the file resource as Virtual File System (VFS)",
+              "type": "string"
+            }
+          },
+          "required": [
+            "path",
+            "resource"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "contents": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "patternProperties": {
+                    "^[0-9]+$": {
+                      "type": "number"
+                    }
+                  },
+                  "properties": {
+                    "BYTES_PER_ELEMENT": {
+                      "type": "number"
+                    },
+                    "__@toStringTag@641": {
+                      "const": "Uint8Array",
+                      "type": "string"
+                    },
+                    "buffer": {
+                      "$ref": "#/definitions/ArrayBufferLike"
+                    },
+                    "byteLength": {
+                      "type": "number"
+                    },
+                    "byteOffset": {
+                      "type": "number"
+                    },
+                    "length": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "BYTES_PER_ELEMENT",
+                    "__@toStringTag@641",
+                    "buffer",
+                    "byteLength",
+                    "byteOffset",
+                    "length"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "The contents of the file"
+            },
+            "name": {
+              "description": "The name of the file",
+              "type": "string"
+            },
+            "resource": {
+              "const": "literal",
+              "description": "Identifies the file resource as a literal file",
+              "type": "string"
+            }
+          },
+          "required": [
+            "contents",
+            "name",
+            "resource"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "resource": {
+              "const": "wordpress.org/themes",
+              "description": "Identifies the file resource as a WordPress Core theme",
+              "type": "string"
+            },
+            "slug": {
+              "description": "The slug of the WordPress Core theme",
+              "type": "string"
+            }
+          },
+          "required": [
+            "resource",
+            "slug"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "resource": {
+              "const": "wordpress.org/plugins",
+              "description": "Identifies the file resource as a WordPress Core plugin",
+              "type": "string"
+            },
+            "slug": {
+              "description": "The slug of the WordPress Core plugin",
+              "type": "string"
+            }
+          },
+          "required": [
+            "resource",
+            "slug"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "caption": {
+              "description": "Optional caption for displaying a progress message",
+              "type": "string"
+            },
+            "resource": {
+              "const": "url",
+              "description": "Identifies the file resource as a URL",
+              "type": "string"
+            },
+            "url": {
+              "description": "The URL of the file",
+              "type": "string"
+            }
+          },
+          "required": [
+            "resource",
+            "url"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "path": {
+              "description": "The path to the file in the Blueprint",
+              "type": "string"
+            },
+            "resource": {
+              "const": "bundled",
+              "description": "Identifies the file resource as a Blueprint file",
+              "type": "string"
+            }
+          },
+          "required": [
+            "path",
+            "resource"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "FileTree": {
+      "type": "object"
+    },
+    "ImportThemeStarterContentStep": {
+      "description": "importThemeStarterContent",
+      "properties": {
+        "step": {
+          "const": "importThemeStarterContent",
+          "description": "The step identifier.",
+          "type": "string"
+        },
+        "themeSlug": {
+          "description": "The name of the theme to import content from.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "step"
+      ],
+      "type": "object"
+    },
+    "ImportWordPressFilesStep<FileReference>": {
+      "description": "importWordPressFiles",
+      "properties": {
+        "pathInZip": {
+          "description": "The path inside the zip file where the WordPress files are.",
+          "type": "string"
+        },
+        "step": {
+          "const": "importWordPressFiles",
+          "type": "string"
+        },
+        "wordPressFilesZip": {
+          "$ref": "#/definitions/FileReference",
+          "description": "The zip file containing the top-level WordPress files and\ndirectories."
+        }
+      },
+      "required": [
+        "step",
+        "wordPressFilesZip"
+      ],
+      "type": "object"
+    },
+    "ImportWxrStep<FileReference>": {
+      "description": "importWxr",
+      "properties": {
+        "file": {
+          "$ref": "#/definitions/FileReference",
+          "description": "The file to import"
+        },
+        "importer": {
+          "description": "The importer to use. Possible values:\n\n- `default`: The importer from https://github.com/humanmade/WordPress-Importer\n- `data-liberation`: The experimental Data Liberation WXR importer developed at\n                     https://github.com/WordPress/wordpress-playground/issues/1894\n\nThis option is deprecated. The syntax will not be removed, but once the\nData Liberation importer matures, it will become the only supported\nimporter and the `importer` option will be ignored.",
+          "enum": [
+            "data-liberation",
+            "default"
+          ],
+          "type": "string"
+        },
+        "step": {
+          "const": "importWxr",
+          "type": "string"
+        }
+      },
+      "required": [
+        "file",
+        "step"
+      ],
+      "type": "object"
+    },
+    "InstallPluginOptions": {
+      "properties": {
+        "activate": {
+          "description": "Whether to activate the plugin after installing it.",
+          "type": "boolean"
+        },
+        "targetFolderName": {
+          "description": "The name of the folder to install the plugin to. Defaults to guessing from pluginData",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "InstallPluginStep<FileReference,DirectoryReference>": {
+      "description": "installPlugin",
+      "properties": {
+        "ifAlreadyInstalled": {
+          "description": "What to do if the asset already exists.",
+          "enum": [
+            "error",
+            "overwrite",
+            "skip"
+          ],
+          "type": "string"
+        },
+        "options": {
+          "$ref": "#/definitions/InstallPluginOptions",
+          "description": "Optional installation options."
+        },
+        "pluginData": {
+          "anyOf": [
+            {
+              "properties": {
+                "path": {
+                  "description": "The path to the file in the VFS",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "vfs",
+                  "description": "Identifies the file resource as Virtual File System (VFS)",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "path",
+                "resource"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "contents": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "patternProperties": {
+                        "^[0-9]+$": {
+                          "type": "number"
+                        }
+                      },
+                      "properties": {
+                        "BYTES_PER_ELEMENT": {
+                          "type": "number"
+                        },
+                        "__@toStringTag@641": {
+                          "const": "Uint8Array",
+                          "type": "string"
+                        },
+                        "buffer": {
+                          "$ref": "#/definitions/ArrayBufferLike"
+                        },
+                        "byteLength": {
+                          "type": "number"
+                        },
+                        "byteOffset": {
+                          "type": "number"
+                        },
+                        "length": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "BYTES_PER_ELEMENT",
+                        "__@toStringTag@641",
+                        "buffer",
+                        "byteLength",
+                        "byteOffset",
+                        "length"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "type": "string"
+                    }
+                  ],
+                  "description": "The contents of the file"
+                },
+                "name": {
+                  "description": "The name of the file",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "literal",
+                  "description": "Identifies the file resource as a literal file",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "contents",
+                "name",
+                "resource"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "resource": {
+                  "const": "wordpress.org/themes",
+                  "description": "Identifies the file resource as a WordPress Core theme",
+                  "type": "string"
+                },
+                "slug": {
+                  "description": "The slug of the WordPress Core theme",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "resource",
+                "slug"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "resource": {
+                  "const": "wordpress.org/plugins",
+                  "description": "Identifies the file resource as a WordPress Core plugin",
+                  "type": "string"
+                },
+                "slug": {
+                  "description": "The slug of the WordPress Core plugin",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "resource",
+                "slug"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "caption": {
+                  "description": "Optional caption for displaying a progress message",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "url",
+                  "description": "Identifies the file resource as a URL",
+                  "type": "string"
+                },
+                "url": {
+                  "description": "The URL of the file",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "resource",
+                "url"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "path": {
+                  "description": "The path to the file in the Blueprint",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "bundled",
+                  "description": "Identifies the file resource as a Blueprint file",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "path",
+                "resource"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                ".git": {
+                  "description": "When true, include a `.git` directory with Git metadata (experimental).",
+                  "type": "boolean"
+                },
+                "path": {
+                  "description": "The path to the directory in the git repository. Defaults to the repo root.",
+                  "type": "string"
+                },
+                "ref": {
+                  "description": "The ref (branch, tag, or commit) of the git repository",
+                  "type": "string"
+                },
+                "refType": {
+                  "description": "Explicit hint about the ref type (branch, tag, commit, refname)",
+                  "enum": [
+                    "branch",
+                    "commit",
+                    "refname",
+                    "tag"
+                  ],
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "git:directory",
+                  "description": "Identifies the file resource as a git directory",
+                  "type": "string"
+                },
+                "url": {
+                  "description": "The URL of the git repository",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "ref",
+                "resource",
+                "url"
+              ],
+              "type": "object"
+            },
+            {
+              "$ref": "#/definitions/DirectoryLiteralReference"
+            }
+          ],
+          "description": "The plugin files to install. It can be a plugin zip file, a single PHP\nfile, or a directory containing all the plugin files at its root."
+        },
+        "pluginZipFile": {
+          "anyOf": [
+            {
+              "properties": {
+                "path": {
+                  "description": "The path to the file in the VFS",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "vfs",
+                  "description": "Identifies the file resource as Virtual File System (VFS)",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "path",
+                "resource"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "contents": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "patternProperties": {
+                        "^[0-9]+$": {
+                          "type": "number"
+                        }
+                      },
+                      "properties": {
+                        "BYTES_PER_ELEMENT": {
+                          "type": "number"
+                        },
+                        "__@toStringTag@641": {
+                          "const": "Uint8Array",
+                          "type": "string"
+                        },
+                        "buffer": {
+                          "$ref": "#/definitions/ArrayBufferLike"
+                        },
+                        "byteLength": {
+                          "type": "number"
+                        },
+                        "byteOffset": {
+                          "type": "number"
+                        },
+                        "length": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "BYTES_PER_ELEMENT",
+                        "__@toStringTag@641",
+                        "buffer",
+                        "byteLength",
+                        "byteOffset",
+                        "length"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "type": "string"
+                    }
+                  ],
+                  "description": "The contents of the file"
+                },
+                "name": {
+                  "description": "The name of the file",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "literal",
+                  "description": "Identifies the file resource as a literal file",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "contents",
+                "name",
+                "resource"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "resource": {
+                  "const": "wordpress.org/themes",
+                  "description": "Identifies the file resource as a WordPress Core theme",
+                  "type": "string"
+                },
+                "slug": {
+                  "description": "The slug of the WordPress Core theme",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "resource",
+                "slug"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "resource": {
+                  "const": "wordpress.org/plugins",
+                  "description": "Identifies the file resource as a WordPress Core plugin",
+                  "type": "string"
+                },
+                "slug": {
+                  "description": "The slug of the WordPress Core plugin",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "resource",
+                "slug"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "caption": {
+                  "description": "Optional caption for displaying a progress message",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "url",
+                  "description": "Identifies the file resource as a URL",
+                  "type": "string"
+                },
+                "url": {
+                  "description": "The URL of the file",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "resource",
+                "url"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "path": {
+                  "description": "The path to the file in the Blueprint",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "bundled",
+                  "description": "Identifies the file resource as a Blueprint file",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "path",
+                "resource"
+              ],
+              "type": "object"
+            }
+          ]
+        },
+        "step": {
+          "const": "installPlugin",
+          "description": "The step identifier.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "pluginData",
+        "step"
+      ],
+      "type": "object"
+    },
+    "InstallThemeOptions": {
+      "properties": {
+        "activate": {
+          "description": "Whether to activate the theme after installing it.",
+          "type": "boolean"
+        },
+        "importStarterContent": {
+          "description": "Whether to import the theme's starter content after installing it.",
+          "type": "boolean"
+        },
+        "targetFolderName": {
+          "description": "The name of the folder to install the theme to. Defaults to guessing from themeData",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "InstallThemeStep<FileReference,DirectoryReference>": {
+      "description": "installTheme",
+      "properties": {
+        "ifAlreadyInstalled": {
+          "description": "What to do if the asset already exists.",
+          "enum": [
+            "error",
+            "overwrite",
+            "skip"
+          ],
+          "type": "string"
+        },
+        "options": {
+          "$ref": "#/definitions/InstallThemeOptions",
+          "description": "Optional installation options."
+        },
+        "step": {
+          "const": "installTheme",
+          "description": "The step identifier.",
+          "type": "string"
+        },
+        "themeData": {
+          "anyOf": [
+            {
+              "properties": {
+                "path": {
+                  "description": "The path to the file in the VFS",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "vfs",
+                  "description": "Identifies the file resource as Virtual File System (VFS)",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "path",
+                "resource"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "contents": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "patternProperties": {
+                        "^[0-9]+$": {
+                          "type": "number"
+                        }
+                      },
+                      "properties": {
+                        "BYTES_PER_ELEMENT": {
+                          "type": "number"
+                        },
+                        "__@toStringTag@641": {
+                          "const": "Uint8Array",
+                          "type": "string"
+                        },
+                        "buffer": {
+                          "$ref": "#/definitions/ArrayBufferLike"
+                        },
+                        "byteLength": {
+                          "type": "number"
+                        },
+                        "byteOffset": {
+                          "type": "number"
+                        },
+                        "length": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "BYTES_PER_ELEMENT",
+                        "__@toStringTag@641",
+                        "buffer",
+                        "byteLength",
+                        "byteOffset",
+                        "length"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "type": "string"
+                    }
+                  ],
+                  "description": "The contents of the file"
+                },
+                "name": {
+                  "description": "The name of the file",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "literal",
+                  "description": "Identifies the file resource as a literal file",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "contents",
+                "name",
+                "resource"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "resource": {
+                  "const": "wordpress.org/themes",
+                  "description": "Identifies the file resource as a WordPress Core theme",
+                  "type": "string"
+                },
+                "slug": {
+                  "description": "The slug of the WordPress Core theme",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "resource",
+                "slug"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "resource": {
+                  "const": "wordpress.org/plugins",
+                  "description": "Identifies the file resource as a WordPress Core plugin",
+                  "type": "string"
+                },
+                "slug": {
+                  "description": "The slug of the WordPress Core plugin",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "resource",
+                "slug"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "caption": {
+                  "description": "Optional caption for displaying a progress message",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "url",
+                  "description": "Identifies the file resource as a URL",
+                  "type": "string"
+                },
+                "url": {
+                  "description": "The URL of the file",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "resource",
+                "url"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "path": {
+                  "description": "The path to the file in the Blueprint",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "bundled",
+                  "description": "Identifies the file resource as a Blueprint file",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "path",
+                "resource"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                ".git": {
+                  "description": "When true, include a `.git` directory with Git metadata (experimental).",
+                  "type": "boolean"
+                },
+                "path": {
+                  "description": "The path to the directory in the git repository. Defaults to the repo root.",
+                  "type": "string"
+                },
+                "ref": {
+                  "description": "The ref (branch, tag, or commit) of the git repository",
+                  "type": "string"
+                },
+                "refType": {
+                  "description": "Explicit hint about the ref type (branch, tag, commit, refname)",
+                  "enum": [
+                    "branch",
+                    "commit",
+                    "refname",
+                    "tag"
+                  ],
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "git:directory",
+                  "description": "Identifies the file resource as a git directory",
+                  "type": "string"
+                },
+                "url": {
+                  "description": "The URL of the git repository",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "ref",
+                "resource",
+                "url"
+              ],
+              "type": "object"
+            },
+            {
+              "$ref": "#/definitions/DirectoryLiteralReference"
+            }
+          ],
+          "description": "The theme files to install. It can be either a theme zip file, or a\ndirectory containing all the theme files at its root."
+        },
+        "themeZipFile": {
+          "anyOf": [
+            {
+              "properties": {
+                "path": {
+                  "description": "The path to the file in the VFS",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "vfs",
+                  "description": "Identifies the file resource as Virtual File System (VFS)",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "path",
+                "resource"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "contents": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "patternProperties": {
+                        "^[0-9]+$": {
+                          "type": "number"
+                        }
+                      },
+                      "properties": {
+                        "BYTES_PER_ELEMENT": {
+                          "type": "number"
+                        },
+                        "__@toStringTag@641": {
+                          "const": "Uint8Array",
+                          "type": "string"
+                        },
+                        "buffer": {
+                          "$ref": "#/definitions/ArrayBufferLike"
+                        },
+                        "byteLength": {
+                          "type": "number"
+                        },
+                        "byteOffset": {
+                          "type": "number"
+                        },
+                        "length": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "BYTES_PER_ELEMENT",
+                        "__@toStringTag@641",
+                        "buffer",
+                        "byteLength",
+                        "byteOffset",
+                        "length"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "type": "string"
+                    }
+                  ],
+                  "description": "The contents of the file"
+                },
+                "name": {
+                  "description": "The name of the file",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "literal",
+                  "description": "Identifies the file resource as a literal file",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "contents",
+                "name",
+                "resource"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "resource": {
+                  "const": "wordpress.org/themes",
+                  "description": "Identifies the file resource as a WordPress Core theme",
+                  "type": "string"
+                },
+                "slug": {
+                  "description": "The slug of the WordPress Core theme",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "resource",
+                "slug"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "resource": {
+                  "const": "wordpress.org/plugins",
+                  "description": "Identifies the file resource as a WordPress Core plugin",
+                  "type": "string"
+                },
+                "slug": {
+                  "description": "The slug of the WordPress Core plugin",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "resource",
+                "slug"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "caption": {
+                  "description": "Optional caption for displaying a progress message",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "url",
+                  "description": "Identifies the file resource as a URL",
+                  "type": "string"
+                },
+                "url": {
+                  "description": "The URL of the file",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "resource",
+                "url"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "path": {
+                  "description": "The path to the file in the Blueprint",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "bundled",
+                  "description": "Identifies the file resource as a Blueprint file",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "path",
+                "resource"
+              ],
+              "type": "object"
+            }
+          ]
+        }
+      },
+      "required": [
+        "step",
+        "themeData"
+      ],
+      "type": "object"
+    },
+    "JsonReporterOptions": {
+      "description": "JSON reporter configuration options",
+      "properties": {
+        "outputFile": {
+          "description": "Path where the JSON report file should be written",
+          "type": "string"
+        }
+      },
+      "required": [
+        "outputFile"
+      ],
+      "type": "object"
+    },
+    "MkdirStep": {
+      "description": "mkdir",
+      "properties": {
+        "path": {
+          "description": "The path of the directory you want to create",
+          "type": "string"
+        },
+        "step": {
+          "const": "mkdir",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "step"
+      ],
+      "type": "object"
+    },
+    "Mount": {
+      "description": "Filesystem mount configuration.\nMaps local filesystem paths to WordPress Playground virtual filesystem.\nExtends the base Mount type from",
+      "properties": {
+        "beforeInstall": {
+          "default": false,
+          "description": "Whether to mount before WordPress installation.\nWhen true, the mount happens before WordPress is installed.\nWhen false or omitted, the mount happens after WordPress is fully installed and booted.",
+          "type": "boolean"
+        },
+        "hostPath": {
+          "type": "string"
+        },
+        "vfsPath": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "hostPath",
+        "vfsPath"
+      ],
+      "type": "object"
+    },
+    "MvStep": {
+      "description": "mv",
+      "properties": {
+        "fromPath": {
+          "description": "Source path",
+          "type": "string"
+        },
+        "step": {
+          "const": "mv",
+          "type": "string"
+        },
+        "toPath": {
+          "description": "Target path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fromPath",
+        "step",
+        "toPath"
+      ],
+      "type": "object"
+    },
+    "PHPConstants": {
+      "type": "object"
+    },
+    "PHPRequest": {
+      "properties": {
+        "body": {
+          "anyOf": [
+            {
+              "additionalProperties": false,
+              "patternProperties": {
+                "^[0-9]+$": {
+                  "type": "number"
+                }
+              },
+              "properties": {
+                "BYTES_PER_ELEMENT": {
+                  "type": "number"
+                },
+                "__@toStringTag@641": {
+                  "const": "Uint8Array",
+                  "type": "string"
+                },
+                "buffer": {
+                  "$ref": "#/definitions/ArrayBufferLike"
+                },
+                "byteLength": {
+                  "type": "number"
+                },
+                "byteOffset": {
+                  "type": "number"
+                },
+                "length": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "BYTES_PER_ELEMENT",
+                "__@toStringTag@641",
+                "buffer",
+                "byteLength",
+                "byteOffset",
+                "length"
+              ],
+              "type": "object"
+            },
+            {
+              "$ref": "#/definitions/Record%3Cstring%2Cstring%7CUint8Array%7CFile%3E"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "Request body.\nIf an object is given, the request will be encoded as multipart\nand sent with a `multipart/form-data` header."
+        },
+        "headers": {
+          "$ref": "#/definitions/PHPRequestHeaders",
+          "description": "Request headers."
+        },
+        "method": {
+          "description": "Request method. Default: `GET`.",
+          "enum": [
+            "DELETE",
+            "GET",
+            "HEAD",
+            "OPTIONS",
+            "PATCH",
+            "POST",
+            "PUT"
+          ],
+          "type": "string"
+        },
+        "url": {
+          "description": "Request path or absolute URL.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "type": "object"
+    },
+    "PHPRequestHeaders": {
+      "type": "object"
+    },
+    "PHPRunOptions": {
+      "properties": {
+        "$_SERVER": {
+          "$ref": "#/definitions/Record%3Cstring%2Cstring%3E",
+          "description": "$_SERVER entries to set for this run."
+        },
+        "body": {
+          "anyOf": [
+            {
+              "additionalProperties": false,
+              "patternProperties": {
+                "^[0-9]+$": {
+                  "type": "number"
+                }
+              },
+              "properties": {
+                "BYTES_PER_ELEMENT": {
+                  "type": "number"
+                },
+                "__@toStringTag@641": {
+                  "const": "Uint8Array",
+                  "type": "string"
+                },
+                "buffer": {
+                  "$ref": "#/definitions/ArrayBufferLike"
+                },
+                "byteLength": {
+                  "type": "number"
+                },
+                "byteOffset": {
+                  "type": "number"
+                },
+                "length": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "BYTES_PER_ELEMENT",
+                "__@toStringTag@641",
+                "buffer",
+                "byteLength",
+                "byteOffset",
+                "length"
+              ],
+              "type": "object"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "Request body."
+        },
+        "code": {
+          "description": "The code snippet to eval instead of a php file.",
+          "type": "string"
+        },
+        "env": {
+          "$ref": "#/definitions/Record%3Cstring%2Cstring%3E",
+          "description": "Environment variables to set for this run."
+        },
+        "headers": {
+          "$ref": "#/definitions/PHPRequestHeaders",
+          "description": "Request headers."
+        },
+        "method": {
+          "description": "Request method. Default: `GET`.",
+          "enum": [
+            "DELETE",
+            "GET",
+            "HEAD",
+            "OPTIONS",
+            "PATCH",
+            "POST",
+            "PUT"
+          ],
+          "type": "string"
+        },
+        "protocol": {
+          "description": "Request protocol.",
+          "type": "string"
+        },
+        "relativeUri": {
+          "description": "Request path following the domain:port part –\nafter any URL rewriting rules (e.g. apache .htaccess)\nhave been applied.",
+          "type": "string"
+        },
+        "scriptPath": {
+          "description": "Path of the .php file to execute.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "Record<string,string>": {
+      "type": "object"
+    },
+    "Record<string,string|Uint8Array|File>": {
+      "type": "object"
+    },
+    "Record<string,unknown>": {
+      "type": "object"
+    },
+    "Reporter": {
+      "anyOf": [
+        {
+          "items": [
+            {
+              "const": "json",
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/JsonReporterOptions"
+            }
+          ],
+          "maxItems": 2,
+          "minItems": 2,
+          "type": "array"
+        },
+        {
+          "const": "default",
+          "type": "string"
+        }
+      ],
+      "description": "Reporter configuration.\nCan be a simple string for reporters without options,\nor a tuple of [reporter name, options] for configurable reporters."
+    },
+    "RequestStep": {
+      "description": "request",
+      "properties": {
+        "request": {
+          "$ref": "#/definitions/PHPRequest",
+          "description": "Request details (See\n/wordpress-playground/api/universal/interface/PHPRequest)"
+        },
+        "step": {
+          "const": "request",
+          "type": "string"
+        }
+      },
+      "required": [
+        "request",
+        "step"
+      ],
+      "type": "object"
+    },
+    "ResetDataStep": {
+      "description": "resetData",
+      "properties": {
+        "step": {
+          "const": "resetData",
+          "type": "string"
+        }
+      },
+      "required": [
+        "step"
+      ],
+      "type": "object"
+    },
+    "RmStep": {
+      "description": "rm",
+      "properties": {
+        "path": {
+          "description": "The path to remove",
+          "type": "string"
+        },
+        "step": {
+          "const": "rm",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "step"
+      ],
+      "type": "object"
+    },
+    "RmdirStep": {
+      "description": "rmdir",
+      "properties": {
+        "path": {
+          "description": "The path to remove",
+          "type": "string"
+        },
+        "step": {
+          "const": "rmdir",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "step"
+      ],
+      "type": "object"
+    },
+    "RunPHPStep": {
+      "description": "runPHP",
+      "properties": {
+        "code": {
+          "anyOf": [
+            {
+              "properties": {
+                "content": {
+                  "type": "string"
+                },
+                "filename": {
+                  "description": "This property is ignored during Blueprint v1 execution but exists\nso the same runPHP step structure can be used for Blueprints v1 and v2.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "content",
+                "filename"
+              ],
+              "type": "object"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "The PHP code to run."
+        },
+        "step": {
+          "const": "runPHP",
+          "description": "The step identifier.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "step"
+      ],
+      "type": "object"
+    },
+    "RunPHPWithOptionsStep": {
+      "description": "runPHP",
+      "properties": {
+        "options": {
+          "$ref": "#/definitions/PHPRunOptions",
+          "description": "Run options (See\n/wordpress-playground/api/universal/interface/PHPRunOptions/))"
+        },
+        "step": {
+          "const": "runPHPWithOptions",
+          "type": "string"
+        }
+      },
+      "required": [
+        "options",
+        "step"
+      ],
+      "type": "object"
+    },
+    "RunSqlStep<FileReference>": {
+      "description": "runSql",
+      "properties": {
+        "sql": {
+          "$ref": "#/definitions/FileReference",
+          "description": "The SQL to run. Each non-empty line must contain a valid SQL query."
+        },
+        "step": {
+          "const": "runSql",
+          "description": "The step identifier.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sql",
+        "step"
+      ],
+      "type": "object"
+    },
+    "RunWpInstallationWizardStep": {
+      "properties": {
+        "options": {
+          "$ref": "#/definitions/WordPressInstallationOptions"
+        },
+        "step": {
+          "const": "runWpInstallationWizard",
+          "type": "string"
+        }
+      },
+      "required": [
+        "options",
+        "step"
+      ],
+      "type": "object"
+    },
+    "SetSiteLanguageStep": {
+      "description": "setSiteLanguage",
+      "properties": {
+        "language": {
+          "description": "The language to set, e.g. 'en_US'",
+          "type": "string"
+        },
+        "step": {
+          "const": "setSiteLanguage",
+          "type": "string"
+        }
+      },
+      "required": [
+        "language",
+        "step"
+      ],
+      "type": "object"
+    },
+    "SharedArrayBuffer": {
+      "properties": {
+        "__@species@9189": {
+          "$ref": "#/definitions/SharedArrayBuffer"
+        },
+        "__@toStringTag@641": {
+          "const": "SharedArrayBuffer",
+          "type": "string"
+        },
+        "byteLength": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "__@species@9189",
+        "__@toStringTag@641",
+        "byteLength"
+      ],
+      "type": "object"
+    },
+    "Tests": {
+      "description": "Test configuration specifying which test suites to run.",
+      "properties": {
+        "plugin": {
+          "description": "Plugin slug to test.\nWhen provided, runs plugin-specific tests including activation, deactivation, and load tests.",
+          "type": "string"
+        },
+        "theme": {
+          "description": "Theme slug to test.\nWhen provided, runs theme-specific tests including activation and homepage load tests.",
+          "type": "string"
+        },
+        "wp": {
+          "default": false,
+          "description": "Whether to run WordPress core tests.\nTests WordPress boot, admin dashboard, and REST API.",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "UnzipStep<FileReference>": {
+      "description": "unzip",
+      "properties": {
+        "extractToPath": {
+          "description": "The path to extract the zip file to",
+          "type": "string"
+        },
+        "step": {
+          "const": "unzip",
+          "type": "string"
+        },
+        "zipFile": {
+          "anyOf": [
+            {
+              "properties": {
+                "path": {
+                  "description": "The path to the file in the VFS",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "vfs",
+                  "description": "Identifies the file resource as Virtual File System (VFS)",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "path",
+                "resource"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "contents": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "patternProperties": {
+                        "^[0-9]+$": {
+                          "type": "number"
+                        }
+                      },
+                      "properties": {
+                        "BYTES_PER_ELEMENT": {
+                          "type": "number"
+                        },
+                        "__@toStringTag@641": {
+                          "const": "Uint8Array",
+                          "type": "string"
+                        },
+                        "buffer": {
+                          "$ref": "#/definitions/ArrayBufferLike"
+                        },
+                        "byteLength": {
+                          "type": "number"
+                        },
+                        "byteOffset": {
+                          "type": "number"
+                        },
+                        "length": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "BYTES_PER_ELEMENT",
+                        "__@toStringTag@641",
+                        "buffer",
+                        "byteLength",
+                        "byteOffset",
+                        "length"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "type": "string"
+                    }
+                  ],
+                  "description": "The contents of the file"
+                },
+                "name": {
+                  "description": "The name of the file",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "literal",
+                  "description": "Identifies the file resource as a literal file",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "contents",
+                "name",
+                "resource"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "resource": {
+                  "const": "wordpress.org/themes",
+                  "description": "Identifies the file resource as a WordPress Core theme",
+                  "type": "string"
+                },
+                "slug": {
+                  "description": "The slug of the WordPress Core theme",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "resource",
+                "slug"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "resource": {
+                  "const": "wordpress.org/plugins",
+                  "description": "Identifies the file resource as a WordPress Core plugin",
+                  "type": "string"
+                },
+                "slug": {
+                  "description": "The slug of the WordPress Core plugin",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "resource",
+                "slug"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "caption": {
+                  "description": "Optional caption for displaying a progress message",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "url",
+                  "description": "Identifies the file resource as a URL",
+                  "type": "string"
+                },
+                "url": {
+                  "description": "The URL of the file",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "resource",
+                "url"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "path": {
+                  "description": "The path to the file in the Blueprint",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "bundled",
+                  "description": "Identifies the file resource as a Blueprint file",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "path",
+                "resource"
+              ],
+              "type": "object"
+            }
+          ],
+          "description": "The zip file to extract"
+        },
+        "zipPath": {
+          "description": "The path of the zip file to extract",
+          "type": "string"
+        }
+      },
+      "required": [
+        "extractToPath",
+        "step"
+      ],
+      "type": "object"
+    },
+    "UpdateUserMetaStep": {
+      "description": "updateUserMeta",
+      "properties": {
+        "meta": {
+          "$ref": "#/definitions/Record%3Cstring%2Cunknown%3E",
+          "description": "An object of user meta values to set, e.g. { \"first_name\": \"John\" }"
+        },
+        "step": {
+          "const": "updateUserMeta",
+          "type": "string"
+        },
+        "userId": {
+          "description": "User ID",
+          "type": "number"
+        }
+      },
+      "required": [
+        "meta",
+        "step",
+        "userId"
+      ],
+      "type": "object"
+    },
+    "WPCLIStep": {
+      "description": "wpCLI",
+      "properties": {
+        "command": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "The WP CLI command to run."
+        },
+        "step": {
+          "const": "wp-cli",
+          "description": "The step identifier.",
+          "type": "string"
+        },
+        "wpCliPath": {
+          "description": "wp-cli.phar path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "command",
+        "step"
+      ],
+      "type": "object"
+    },
+    "WordPressInstallationOptions": {
+      "properties": {
+        "adminPassword": {
+          "type": "string"
+        },
+        "adminUsername": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "WriteFileStep<FileReference>": {
+      "description": "writeFile",
+      "properties": {
+        "data": {
+          "anyOf": [
+            {
+              "properties": {
+                "path": {
+                  "description": "The path to the file in the VFS",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "vfs",
+                  "description": "Identifies the file resource as Virtual File System (VFS)",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "path",
+                "resource"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "contents": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "patternProperties": {
+                        "^[0-9]+$": {
+                          "type": "number"
+                        }
+                      },
+                      "properties": {
+                        "BYTES_PER_ELEMENT": {
+                          "type": "number"
+                        },
+                        "__@toStringTag@641": {
+                          "const": "Uint8Array",
+                          "type": "string"
+                        },
+                        "buffer": {
+                          "$ref": "#/definitions/ArrayBufferLike"
+                        },
+                        "byteLength": {
+                          "type": "number"
+                        },
+                        "byteOffset": {
+                          "type": "number"
+                        },
+                        "length": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "BYTES_PER_ELEMENT",
+                        "__@toStringTag@641",
+                        "buffer",
+                        "byteLength",
+                        "byteOffset",
+                        "length"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "type": "string"
+                    }
+                  ],
+                  "description": "The contents of the file"
+                },
+                "name": {
+                  "description": "The name of the file",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "literal",
+                  "description": "Identifies the file resource as a literal file",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "contents",
+                "name",
+                "resource"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "resource": {
+                  "const": "wordpress.org/themes",
+                  "description": "Identifies the file resource as a WordPress Core theme",
+                  "type": "string"
+                },
+                "slug": {
+                  "description": "The slug of the WordPress Core theme",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "resource",
+                "slug"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "resource": {
+                  "const": "wordpress.org/plugins",
+                  "description": "Identifies the file resource as a WordPress Core plugin",
+                  "type": "string"
+                },
+                "slug": {
+                  "description": "The slug of the WordPress Core plugin",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "resource",
+                "slug"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "caption": {
+                  "description": "Optional caption for displaying a progress message",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "url",
+                  "description": "Identifies the file resource as a URL",
+                  "type": "string"
+                },
+                "url": {
+                  "description": "The URL of the file",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "resource",
+                "url"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "path": {
+                  "description": "The path to the file in the Blueprint",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "bundled",
+                  "description": "Identifies the file resource as a Blueprint file",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "path",
+                "resource"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "patternProperties": {
+                "^[0-9]+$": {
+                  "type": "number"
+                }
+              },
+              "properties": {
+                "BYTES_PER_ELEMENT": {
+                  "type": "number"
+                },
+                "__@toStringTag@641": {
+                  "const": "Uint8Array",
+                  "type": "string"
+                },
+                "buffer": {
+                  "$ref": "#/definitions/ArrayBufferLike"
+                },
+                "byteLength": {
+                  "type": "number"
+                },
+                "byteOffset": {
+                  "type": "number"
+                },
+                "length": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "BYTES_PER_ELEMENT",
+                "__@toStringTag@641",
+                "buffer",
+                "byteLength",
+                "byteOffset",
+                "length"
+              ],
+              "type": "object"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "The data to write"
+        },
+        "path": {
+          "description": "The path of the file to write to",
+          "type": "string"
+        },
+        "step": {
+          "const": "writeFile",
+          "type": "string"
+        }
+      },
+      "required": [
+        "data",
+        "path",
+        "step"
+      ],
+      "type": "object"
+    },
+    "WriteFilesStep<DirectoryReference>": {
+      "description": "writeFiles",
+      "properties": {
+        "filesTree": {
+          "$ref": "#/definitions/DirectoryReference",
+          "description": "The 'filesTree' defines the directory structure, supporting 'literal:directory' or\n'git:directory' types. The 'name' represents the root directory, while 'files' is an object\nwhere keys are file paths, and values contain either file content as a string or nested objects\nfor subdirectories."
+        },
+        "step": {
+          "const": "writeFiles",
+          "type": "string"
+        },
+        "writeToPath": {
+          "description": "The path of the file to write to",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filesTree",
+        "step",
+        "writeToPath"
+      ],
+      "type": "object"
+    }
+  },
+  "description": "Complete wp-tester configuration.\nThis is the root configuration object for wp-tester.json files.",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference for IDE validation and autocomplete"
+    },
+    "environments": {
+      "description": "Test environments to run.\nEach environment can have different PHP/WordPress versions and setup.\nTests will run against all defined environments (matrix testing).",
+      "items": {
+        "$ref": "#/definitions/Environment"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "reporters": {
+      "default": [
+        "default"
+      ],
+      "description": "Output reporters for test results",
+      "items": {
+        "$ref": "#/definitions/Reporter"
+      },
+      "type": "array"
+    },
+    "tests": {
+      "$ref": "#/definitions/Tests",
+      "description": "Test suites to execute"
+    }
+  },
+  "required": [
+    "environments",
+    "tests"
+  ],
+  "type": "object",
+  "$id": "https://raw.githubusercontent.com/bgrgicak/wp-tester/trunk/public/schema.json"
+}

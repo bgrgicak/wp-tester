@@ -1,10 +1,28 @@
-import type { ConfigOption, WPTesterConfig } from "./types";
+import type { WPTesterConfig } from "./types";
 import fs from "fs/promises";
 import { constants as fsConstants } from "fs";
 import path from "path";
 
 export function configPath(): string {
   return path.join(process.cwd(), "wp-tester.json");
+}
+
+export function getDefaultConfig(): Partial<WPTesterConfig> {
+  return {
+    environments: [
+      {
+        name: "Latest WordPress and PHP",
+        blueprint: {
+          preferredVersions: {
+            php: "latest",
+            wp: "latest",
+          },
+        },
+      },
+    ],
+    tests: {},
+    reporters: ["default"],
+  };
 }
 
 export async function isConfigWritable(): Promise<boolean> {
@@ -16,41 +34,9 @@ export async function isConfigWritable(): Promise<boolean> {
   }
 }
 
-export function updateConfigOption(
-  config: Partial<WPTesterConfig>,
-  option: ConfigOption,
-  userChoice: boolean | string | string[]
-): Partial<WPTesterConfig> {
-  if (option.apply) {
-    return option.apply(config, userChoice);
-  }
-
-  // Default apply: convert to appropriate type
-  let typedValue: unknown;
-  switch (option.type) {
-    case "confirm":
-      typedValue = Boolean(userChoice);
-      break;
-    case "text":
-    case "select":
-      typedValue = String(userChoice);
-      break;
-    case "multiselect":
-      if (!Array.isArray(userChoice)) {
-        throw new Error(
-          `Expected array for multiselect option "${option.key}"`
-        );
-      }
-      typedValue = userChoice.map(String);
-      break;
-    default:
-      throw new Error(`Unknown option type "${option.type}"`);
-  }
-
-  return {
-    ...config,
-    [option.key]: typedValue,
-  };
+export async function readConfigFile(): Promise<Partial<WPTesterConfig>> {
+  const content = await fs.readFile(configPath(), "utf8");
+  return JSON.parse(content);
 }
 
 export async function writeConfigFile(
