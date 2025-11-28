@@ -1,8 +1,8 @@
 import { readFile } from 'fs/promises';
 import path from 'path';
-import { fileURLToPath } from "url";
 import Ajv from "ajv";
 import pc from "picocolors";
+import { getCurrentDir } from "../utils/paths.js";
 
 export async function validateConfig(configPath: string): Promise<void> {
   try {
@@ -10,8 +10,10 @@ export async function validateConfig(configPath: string): Promise<void> {
     const resolvedConfigPath = path.resolve(process.cwd(), configPath);
 
     const config = JSON.parse(await readFile(resolvedConfigPath, "utf-8"));
+    // @ts-ignore - import.meta is only available in ESM, handled by getCurrentDir
+    const currentDir = getCurrentDir(typeof import.meta !== 'undefined' ? import.meta.url : undefined);
     const schemaPath = path.resolve(
-      path.dirname(fileURLToPath(import.meta.url)),
+      currentDir,
       "../config/schema.json"
     );
     const schema = JSON.parse(await readFile(schemaPath, "utf-8"));
