@@ -50,7 +50,7 @@ export async function runBuiltinTests(
   }
 
   const projectType = await clack.select({
-    message: "What type of WordPress project is this?",
+    message: 'What type of WordPress project is this?',
     options: [
       { value: "plugin", label: "Plugin" },
       { value: "theme", label: "Theme" },
