@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { buildTestsConfig } from '../../../src/config/options/built-in-tests.js';
 
 describe('buildTestsConfig', () => {
-  it('should return empty object for "other" project type', () => {
+  it('should return WordPress core tests only for "other" project type', () => {
     expect(buildTestsConfig('other')).toEqual({wp: true});
     expect(buildTestsConfig('other', 'some-slug')).toEqual({wp: true});
   });
