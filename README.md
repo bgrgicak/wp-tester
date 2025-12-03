@@ -9,14 +9,37 @@ WordPress Tester leverages WordPress Playground's ability to quickly spin up Wor
 ## Basic usage (NOT IMPLEMENTED YET)
 
 ```bash
-# Initialize configuration
-npx wp-tester init
+# Setup configuration
+npx wp-tester setup
 ```
 
 ```bash
 # Run tests
 npx wp-tester test
 ```
+
+## Configuration
+
+### Schema Support
+
+Enable IDE autocomplete and validation by adding the schema reference:
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/bgrgicak/wp-tester/trunk/public/schema.json",
+  "environments": [...]
+}
+```
+
+### Validation
+
+Validate your configuration file:
+
+```bash
+wp-tester config validate
+```
+
+See [docs/configuration.md](docs/configuration.md) for complete configuration reference.
 
 ## Development
 

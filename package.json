@@ -25,7 +25,8 @@
     "build": "tsc && tsc -p tsconfig.cjs.json",
     "dev": "tsx src/cli/cli.ts",
     "dist": "node dist/esm/cli.js",
-    "test": "vitest run"
+    "test": "vitest run",
+    "update-schema": "typescript-json-schema tsconfig.json WPTesterConfig --required --skipLibCheck --out src/config/schema.json && node scripts/fix-schema.js && cp src/config/schema.json ./public/schema.json"
   },
   "repository": {
     "type": "git",
@@ -39,14 +40,18 @@
   "homepage": "https://github.com/bgrgicak/wp-tester#readme",
   "dependencies": {
     "@clack/prompts": "^0.11.0",
+    "ajv": "^8.17.1",
     "picocolors": "^1.1.1",
     "yargs": "^18.0.0"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
     "@types/yargs": "^17.0.35",
+    "@wp-playground/blueprints": "^3.0.22",
+    "@wp-playground/cli": "^3.0.22",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
+    "typescript-json-schema": "^0.66.0",
     "vitest": "^4.0.13"
   }
 }
