@@ -1,0 +1,29 @@
+{
+  "environments": [
+    {
+      "name": "Latest WordPress and PHP",
+      "blueprint": {
+        "preferredVersions": {
+          "php": "latest",
+          "wp": "latest"
+        },
+        "login": true,
+        "steps": [
+          {
+            "step": "runWpInstallationWizard",
+            "options": {
+              "adminUsername": "admin",
+              "adminPassword": "password"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tests": {
+    "wp": true
+  },
+  "reporters": [
+    "default"
+  ]
+}

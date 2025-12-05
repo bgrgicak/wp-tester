@@ -25,7 +25,8 @@ describe('CLI Integration Tests', () => {
   });
 
   it('should validate config successfully', () => {
-    const output = execSync(`node ${cliPath} config validate`, {
+    const fixtureConfig = join(__dirname, '../fixtures/wp-tester.json');
+    const output = execSync(`node ${cliPath} config validate -c ${fixtureConfig}`, {
       encoding: 'utf-8',
       cwd: join(__dirname, '../../../..'),
     });
