@@ -19,7 +19,9 @@
     "build": "node ../../scripts/build-package.js",
     "dev": "tsx src/cli/cli.ts",
     "dist": "node dist/cli/cli.js",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "@clack/prompts": "^0.11.0",

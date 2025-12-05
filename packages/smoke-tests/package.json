@@ -15,7 +15,9 @@
   "scripts": {
     "build": "node ../../scripts/build-package.js",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "@php-wasm/util": "^0.9.37",
