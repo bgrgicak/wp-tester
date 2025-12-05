@@ -1,0 +1,26 @@
+{
+  "name": "@wp-tester/results",
+  "version": "0.0.1",
+  "description": "Test result types and formatting for wp-tester",
+  "type": "module",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "node ../../scripts/build-package.js"
+  },
+  "dependencies": {
+    "ctrf": "^0.0.17"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "tsc-alias": "^1.8.16",
+    "typescript": "^5.9.3"
+  }
+}

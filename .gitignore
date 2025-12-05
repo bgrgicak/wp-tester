@@ -4,5 +4,9 @@ dist/
 .DS_Store
 .claude/
 
+# Nx cache
+.nx/cache
+.nx/workspace-data
+
 # WP Tester config file
 wp-tester.json

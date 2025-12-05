@@ -1,21 +1,46 @@
-# WordPress Tester
-
-A CLI tool to simplify testing for WordPress plugins and themes built with WordPress Playground
+# WP Tester
 
 ## Overview
 
+A CLI tool to simplify testing for WordPress plugin and themes built with WordPress Playground.
+
 WordPress Tester leverages WordPress Playground's ability to quickly spin up WordPress environments with specific Blueprint configurations, making matrix testing across different WordPress, PHP, and site configurations straightforward.
+
+## Packages
+
+This is a monorepo containing the following packages:
+
+- **[@wp-tester/cli](packages/cli/)** - Main CLI tool for running WordPress tests
+- **[@wp-tester/config](packages/config/)** - Configuration management library (types, schema, file operations)
+- **[@wp-tester/runtime](packages/runtime/)** - Test runtime for WordPress Playground environments
+- **[@wp-tester/smoke-tests](packages/smoke-tests/)** - WordPress smoke test suite for environment validation
+
+## Installation
+
+```bash
+# Install the CLI
+npm install @wp-tester/cli
+
+# Or use directly with npx
+npx @wp-tester/cli test
+```
+
+The `@wp-tester/config` package can also be used directly in your projects for configuration management:
+
+```bash
+npm install @wp-tester/config
+```
 
 ## Basic usage (NOT IMPLEMENTED YET)
 
 ```bash
 # Setup configuration
-npx wp-tester setup
+npx @wp-tester/cli setup
 ```
 
 ```bash
 # Run tests
-npx wp-tester test
+npx @wp-tester/cli test
 ```
 
 ## Configuration
@@ -26,7 +51,7 @@ Enable IDE autocomplete and validation by adding the schema reference:
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/bgrgicak/wp-tester/trunk/public/schema.json",
+  "$schema": "https://raw.githubusercontent.com/bgrgicak/wp-tester/trunk/packages/config/src/schema.json",
   "environments": [...]
 }
 ```
@@ -36,7 +61,7 @@ Enable IDE autocomplete and validation by adding the schema reference:
 Validate your configuration file:
 
 ```bash
-wp-tester config validate
+npx @wp-tester/cli config validate
 ```
 
 See [docs/configuration.md](docs/configuration.md) for complete configuration reference.
@@ -44,16 +69,19 @@ See [docs/configuration.md](docs/configuration.md) for complete configuration re
 ## Development
 
 ```bash
-# Build the project
+### Install dependencies
+npm install
+
+### Build all packages
 npm run build
+
+### Run CLI in development mode
+npm run cli -- --help
+
+### Run built CLI (ESM)
+node packages/cli/dist/esm/cli/cli.js --help
 ```
+### Run the CLI (CJS)
 
 ```bash
-# Run in development mode with auto-rebuild
-npm run dev -- --help
-```
-
-```bash
-# Run dist version
-npm run dist -- --help
-```
+node packages/cli/dist/cjs/cli/cli.js --help

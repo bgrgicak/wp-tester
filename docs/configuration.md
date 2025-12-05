@@ -14,7 +14,7 @@ wp-tester provides a JSON schema for configuration validation and IDE autocomple
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/bgrgicak/wp-tester/trunk/public/schema.json",
+  "$schema": "https://raw.githubusercontent.com/bgrgicak/wp-tester/trunk/packages/config/src/schema.json",
   "environments": [
     ...
   ]
@@ -41,7 +41,6 @@ This command validates your `wp-tester.json` file against the JSON schema to ens
 ### Validation Options
 
 - `--config` or `-c`: Specify a custom path to your configuration file (default: `./wp-tester.json`)
-- `--schema` or `-s`: Specify a custom path to the schema file (default: `./public/schema.json`)
 
 **Examples:**
 
@@ -51,12 +50,6 @@ wp-tester config validate
 
 # Validate a configuration file at a custom location
 wp-tester config validate --config ./configs/prod-config.json
-
-# Use a custom schema file
-wp-tester config validate --schema ./custom-schema.json
-
-# Use both custom config and schema
-wp-tester config validate -c ./my-config.json -s ./my-schema.json
 ```
 
 The validation will check for:
@@ -207,7 +200,7 @@ See [WordPress Playground CLI mounting documentation](https://wordpress.github.i
 
 **Type:** `Object`
 **Required:** Yes
-**Description:** Specifies which test categories to run. WordPress Tester organizes built-in tests into three categories: plugin tests, theme tests, and WordPress core tests.
+**Description:** Specifies which test categories to run. WordPress Tester organizes smoke tests into three categories: plugin tests, theme tests, and WordPress core tests.
 
 **Structure:**
 

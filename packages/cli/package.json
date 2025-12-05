@@ -1,0 +1,42 @@
+{
+  "name": "@wp-tester/cli",
+  "version": "0.0.1",
+  "description": "WordPress testing CLI tool",
+  "type": "module",
+  "private": false,
+  "main": "./dist/cli/cli.js",
+  "types": "./dist/cli/cli.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/cli/cli.d.ts",
+      "default": "./dist/cli/cli.js"
+    }
+  },
+  "bin": {
+    "wp-tester": "./dist/cli/cli.js"
+  },
+  "scripts": {
+    "build": "node ../../scripts/build-package.js",
+    "dev": "tsx src/cli/cli.ts",
+    "dist": "node dist/cli/cli.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.11.0",
+    "@wp-tester/config": "*",
+    "@wp-tester/smoke-tests": "*",
+    "ajv": "^8.17.1",
+    "picocolors": "^1.1.1",
+    "yargs": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/yargs": "^17.0.35",
+    "@wp-playground/blueprints": "3.0.15",
+    "@wp-playground/cli": "3.0.15",
+    "tsc-alias": "^1.8.16",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.13"
+  }
+}
