@@ -1,0 +1,32 @@
+{
+  "name": "@wp-tester/config",
+  "version": "0.0.1",
+  "description": "Configuration management for wp-tester",
+  "type": "module",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "node ../../scripts/build-package.js",
+    "test": "vitest run",
+    "update-schema": "typescript-json-schema tsconfig.json WPTesterConfig --required --skipLibCheck --out src/schema.json && node scripts/fix-schema.js"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.11.0",
+    "@wp-playground/blueprints": "3.0.15",
+    "@wp-playground/cli": "3.0.15"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "tsc-alias": "^1.8.16",
+    "typescript": "^5.9.3",
+    "typescript-json-schema": "^0.66.0",
+    "vitest": "^4.0.13"
+  }
+}
