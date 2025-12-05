@@ -72,7 +72,7 @@ export async function isConfigWritable(): Promise<boolean> {
 
 export async function readConfigFile(): Promise<Partial<WPTesterConfig>> {
   const content = await readFile(configPath(), "utf8");
-  return JSON.parse(content);
+  return JSON.parse(content) as Partial<WPTesterConfig>;
 }
 
 export async function writeConfigFile(

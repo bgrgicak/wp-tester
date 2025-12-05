@@ -7,7 +7,7 @@ import { testHandler } from "../commands/test/index";
 import { optionNames } from "@wp-tester/config";
 import { logo } from "./logo";
 
-yargs(hideBin(process.argv))
+void yargs(hideBin(process.argv))
   .scriptName("wp-tester")
   .usage("$0 <command> [options]")
   .command(
@@ -60,4 +60,5 @@ yargs(hideBin(process.argv))
     }
   )
   .help()
-  .version().argv;
+  .version()
+  .parse();

@@ -7,9 +7,7 @@ export default tseslint.config(
   {
     languageOptions: {
       parserOptions: {
-        projectService: {
-          allowDefaultProject: ['*.js', '*.mjs'],
-        },
+        projectService: true,
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -25,10 +23,7 @@ export default tseslint.config(
     ],
   },
   {
-    files: ['**/*.js', '**/*.mjs'],
-    ...tseslint.configs.disableTypeChecked,
-  },
-  {
+    files: ['**/*.ts', '**/*.tsx'],
     rules: {
       '@typescript-eslint/no-unused-vars': [
         'error',
@@ -44,5 +39,9 @@ export default tseslint.config(
       '@typescript-eslint/no-misused-promises': 'error',
       '@typescript-eslint/no-unused-expressions': 'error',
     },
+  },
+  {
+    files: ['**/*.js', '**/*.mjs', '**/*.test.ts', '**/*.spec.ts', '**/vitest.config.ts'],
+    ...tseslint.configs.disableTypeChecked,
   }
 );

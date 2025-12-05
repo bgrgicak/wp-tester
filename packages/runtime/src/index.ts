@@ -4,26 +4,29 @@
  * Provides WordPress Playground environment setup and utilities for testing.
  */
 
-import { runCLI } from '@wp-playground/cli';
-import type { PHPRequest, PHPResponse } from '@php-wasm/universal';
+import { runCLI, type RunCLIServer } from "@wp-playground/cli";
+import type { PHPRequest, PHPResponse, RemoteAPI } from "@php-wasm/universal";
+import type { Environment } from "@wp-tester/config";
+import { PlaygroundCliBlueprintV1Worker } from "@wp-playground/cli/blueprints-v1/worker-thread-v1";
+import { PlaygroundCliBlueprintV2Worker } from "@wp-playground/cli/blueprints-v2/worker-thread-v2";
 
 // Re-export types that test packages will need
-export type { BlueprintV1Declaration as Blueprint } from '@wp-playground/blueprints';
-export type { Mount } from '@wp-playground/cli/mounts';
+export type { BlueprintV1Declaration as Blueprint } from "@wp-playground/blueprints";
+export type { Mount } from "@wp-playground/cli/mounts";
 
-// Environment type definition
-export interface Environment {
-  name?: string;
-  blueprint: any;
-  mounts?: any[];
-}
+export type { RunCLIServer } from "@wp-playground/cli";
 
-export const version = '0.0.1';
+// TODO Remove once @wp-playground/cli exports this type
+type PlaygroundCliWorker =
+  | PlaygroundCliBlueprintV1Worker
+  | PlaygroundCliBlueprintV2Worker;
 
 /**
  * Start a WordPress Playground server from an Environment configuration
  */
-export async function startPlayground(environment: Environment) {
+export async function startPlayground(
+  environment: Environment
+): Promise<RunCLIServer> {
   return await runCLI({
     command: "server",
     blueprint: environment.blueprint,
@@ -38,9 +41,9 @@ export async function startPlayground(environment: Environment) {
  *
  * @param runtime - The runtime object returned by startPlayground()
  */
-export async function stopPlayground(runtime: any): Promise<void> {
+export function stopPlayground(runtime: RunCLIServer): void {
   if (runtime?.server) {
-    await runtime.server.close();
+    runtime.server.close();
   }
 }
 
@@ -54,7 +57,7 @@ export async function stopPlayground(runtime: any): Promise<void> {
  * @returns The PHP response
  */
 export async function request(
-  playground: any,
+  playground: RemoteAPI<PlaygroundCliWorker>,
   phpRequest: PHPRequest,
   redirect: "follow" | "error" | "manual" = "follow",
   maxRedirects: number = 20,

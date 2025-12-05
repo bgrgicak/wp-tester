@@ -83,6 +83,6 @@ export async function smokeTestsOption(
 
   return {
     ...config,
-    tests: buildTestsConfig(projectType as ProjectType, slug as string)
+    tests: buildTestsConfig(projectType as ProjectType, slug)
   };
 }

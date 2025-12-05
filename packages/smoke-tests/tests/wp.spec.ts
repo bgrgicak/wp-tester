@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, inject } from 'vitest';
 import type { WPTesterConfig } from '@wp-tester/config';
-import { startPlayground, stopPlayground, request, type Environment } from '@wp-tester/runtime';
+import { startPlayground, stopPlayground, request, type RunCLIServer } from '@wp-tester/runtime';
 import { phpVar } from '@php-wasm/util';
 import { login } from '@wp-playground/blueprints';
 
@@ -10,8 +10,8 @@ const environments = config.environments;
 
 // Test each environment
 describe.each(environments)('WordPress Tests - $name', (environment) => {
-  let runtime: any;
-  let playground: any;
+  let runtime: RunCLIServer | null = null;
+  let playground: RunCLIServer['playground'] | null = null;
   let documentRoot: string;
   let bootError: Error | undefined;
 
@@ -25,8 +25,8 @@ describe.each(environments)('WordPress Tests - $name', (environment) => {
     }
   });
 
-  afterAll(async () => {
-    await stopPlayground(runtime);
+  afterAll(() => {
+    stopPlayground(runtime);
   });
 
   describe('boot', () => {

@@ -57,7 +57,12 @@ export function vitestToCTRF(vitest: Vitest, toolName: string = 'vitest'): Repor
 
       if (task.result?.state === 'fail' && task.result.errors) {
         testResult.message = task.result.errors
-          .map((e: any) => e.message || e.toString())
+          .map((e: unknown) => {
+            if (e instanceof Error) {
+              return e.message;
+            }
+            return String(e);
+          })
           .join('\n');
       }
 

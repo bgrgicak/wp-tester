@@ -9,10 +9,10 @@ export async function validateConfig(configPath: string): Promise<void> {
     // Resolve config path relative to cwd
     const resolvedConfigPath = path.resolve(process.cwd(), configPath);
 
-    const config = JSON.parse(await readFile(resolvedConfigPath, "utf-8"));
+    const config = JSON.parse(await readFile(resolvedConfigPath, "utf-8")) as unknown;
     // Get schema path from config package
     const schemaPath = getSchemaPath();
-    const schema = JSON.parse(await readFile(schemaPath, "utf-8"));
+    const schema = JSON.parse(await readFile(schemaPath, "utf-8")) as object;
 
     // Validate using Ajv
     const ajv = new Ajv({ allErrors: true, strict: false });
