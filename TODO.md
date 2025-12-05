@@ -2,7 +2,7 @@
 
 ## High Priority
 
-- [ ] Implement built-in tests
+- [ ] Implement smoke tests
 
 ## Low Priority
 - [ ] Add Bundle support for configuration environments
