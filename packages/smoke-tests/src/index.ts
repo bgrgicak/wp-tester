@@ -50,7 +50,7 @@ export async function runSmokeTests(config: WPTesterConfig): Promise<Report> {
   // Select test files based on config
   const testFiles = selectTestFiles(config.tests);
 
-  const reporters = ["json"];
+  const reporters = [];
   if (config.reporters?.includes("default")) {
     reporters.push("default");
   }
@@ -74,5 +74,13 @@ export async function runSmokeTests(config: WPTesterConfig): Promise<Report> {
   // Wait for tests to complete
   await vitest.close();
 
-  return vitestToCTRF(vitest, "wp-tester");
+  // Keep the filter active to suppress any lingering output
+  // Don't restore stdout here
+
+  const result = vitestToCTRF(vitest, "wp-tester");
+
+  // Restore stdout after generating the report
+  process.stdout.write = originalWrite;
+
+  return result;
 }
