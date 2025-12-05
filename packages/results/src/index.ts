@@ -13,3 +13,5 @@ export type {
   TestStatus,
   Tool,
 } from 'ctrf';
+
+export { vitestToCTRF } from './parsers/vitest.js';

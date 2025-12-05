@@ -1,10 +1,12 @@
 import { describe, it, expect, beforeAll, afterAll, inject } from 'vitest';
+import type { WPTesterConfig } from '@wp-tester/config';
 import { startPlayground, stopPlayground, request, type Environment } from '@wp-tester/runtime';
 import { phpVar } from '@php-wasm/util';
 import { login } from '@wp-playground/blueprints';
 
 // Get config from Vitest's provide/inject
-const environments = inject('environments') as Environment[];
+const config = inject('config') as WPTesterConfig;
+const environments = config.environments;
 
 // Test each environment
 describe.each(environments)('WordPress Tests - $name', (environment) => {

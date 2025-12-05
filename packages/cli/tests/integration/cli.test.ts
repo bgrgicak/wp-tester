@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { execSync } from 'child_process';
 import { join } from 'path';
 
-const cliPath = join(__dirname, '../../dist/esm/cli/cli.js');
+const cliPath = join(__dirname, '../../dist/cli/cli.js');
 
 describe('CLI Integration Tests', () => {
   it('should show help', () => {

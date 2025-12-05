@@ -1,6 +1,6 @@
 import { defineConfig, mergeConfig } from 'vitest/config';
 import baseConfig from '../../vitest.config';
-import type { Environment, Tests } from '@wp-tester/config';
+import type { WPTesterConfig } from '@wp-tester/config';
 
 export default mergeConfig(
   baseConfig,
@@ -8,8 +8,10 @@ export default mergeConfig(
     test: {
       passWithNoTests: true,
       provide: {
-        environments: [] as Environment[],
-        tests: {} as Tests,
+        config: {
+          environments: [],
+          tests: {},
+        } as WPTesterConfig,
       },
     },
   })

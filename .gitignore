@@ -3,6 +3,7 @@ dist/
 *.log
 .DS_Store
 .claude/
+.worktrees/
 
 # Nx cache
 .nx/cache
