@@ -79,8 +79,5 @@ export async function runSmokeTests(config: WPTesterConfig): Promise<Report> {
 
   const result = vitestToCTRF(vitest, "wp-tester");
 
-  // Restore stdout after generating the report
-  process.stdout.write = originalWrite;
-
   return result;
 }
