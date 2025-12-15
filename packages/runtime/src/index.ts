@@ -41,7 +41,7 @@ export async function startPlayground(
  *
  * @param runtime - The runtime object returned by startPlayground()
  */
-export function stopPlayground(runtime: RunCLIServer): void {
+export function stopPlayground(runtime: RunCLIServer | null): void {
   if (runtime?.server) {
     runtime.server.close();
   }
