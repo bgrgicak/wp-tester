@@ -6,4 +6,19 @@
  * Author: WP Tester
  */
 
-// Plugin is intentionally empty - just needs valid headers
+/**
+ * Sanitize text by removing extra whitespace.
+ *
+ * @param string $text Text to sanitize.
+ * @return string Sanitized text.
+ */
+function wp_tester_sanitize_text( $text ) {
+	return trim( preg_replace( '/\s+/', ' ', $text ) );
+}
+
+/**
+ * Add custom content filter.
+ */
+add_filter( 'wp_tester_custom_content', function( $content ) {
+	return strtoupper( $content );
+} );

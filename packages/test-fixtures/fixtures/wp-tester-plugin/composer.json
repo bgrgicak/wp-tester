@@ -1,0 +1,11 @@
+{
+  "name": "wp-tester/test-plugin",
+  "description": "Minimal test plugin for wp-tester",
+  "type": "wordpress-plugin",
+  "require-dev": {
+    "phpunit/phpunit": "^9.6"
+  },
+  "scripts": {
+    "test": "phpunit"
+  }
+}
