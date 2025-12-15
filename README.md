@@ -78,10 +78,6 @@ npm run build
 ### Run CLI in development mode
 npm run cli -- --help
 
-### Run built CLI (ESM)
-node packages/cli/dist/esm/cli/cli.js --help
+### Run built CLI
+node packages/cli/dist/cli/cli.js --help
 ```
-### Run the CLI (CJS)
-
-```bash
-node packages/cli/dist/cjs/cli/cli.js --help

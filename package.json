@@ -9,7 +9,7 @@
   "scripts": {
     "build": "nx run-many --target=build --all",
     "test": "nx run-many --target=test --all",
-    "cli": "tsx packages/cli/src/cli/cli.ts",
+    "cli": "tsx --tsconfig tsconfig.dev.json packages/cli/src/cli/cli.ts",
     "update-schema": "nx run @wp-tester/config:update-schema",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"

@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@wp-tester/config": ["./packages/config/src/index.ts"],
+      "@wp-tester/config/*": ["./packages/config/src/*"],
+      "@wp-tester/runtime": ["./packages/runtime/src/index.ts"],
+      "@wp-tester/runtime/*": ["./packages/runtime/src/*"],
+      "@wp-tester/results": ["./packages/results/src/index.ts"],
+      "@wp-tester/results/*": ["./packages/results/src/*"],
+      "@wp-tester/smoke-tests": ["./packages/smoke-tests/src/index.ts"],
+      "@wp-tester/smoke-tests/*": ["./packages/smoke-tests/src/*"],
+      "@wp-playground/cli/mounts": ["./node_modules/@wp-playground/cli/mounts.d.ts"]
+    }
+  }
+}
