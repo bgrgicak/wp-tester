@@ -1,7 +1,34 @@
-import { access, constants } from 'fs/promises';
+import { access, constants, stat } from 'fs/promises';
 import path from 'path';
 import * as clack from '../../cli/theme';
 import { runSmokeTests } from "@wp-tester/smoke-tests";
+
+async function resolveConfigPath(configPath: string): Promise<string> {
+  const resolvedPath = path.resolve(process.cwd(), configPath);
+
+  try {
+    const stats = await stat(resolvedPath);
+
+    if (stats.isDirectory()) {
+      const configFile = path.join(resolvedPath, 'wp-tester.json');
+
+      try {
+        await access(configFile, constants.F_OK);
+        return configFile;
+      } catch {
+        clack.log.error(`Config file not found in directory: ${resolvedPath}`);
+        clack.log.error('Please provide a path to a valid WP Tester config file.');
+        process.exit(1);
+      }
+    }
+  } catch {
+    clack.log.error(`Path not found: ${resolvedPath}`);
+    clack.log.error('Please provide a path to a valid WP Tester config file.');
+    process.exit(1);
+  }
+
+  return resolvedPath;
+}
 
 async function checkConfigExists(configPath: string): Promise<boolean> {
   try {
@@ -14,7 +41,7 @@ async function checkConfigExists(configPath: string): Promise<boolean> {
 }
 
 export const runTests = async (configPath: string): Promise<void> => {
-  let finalConfigPath = configPath;
+  let finalConfigPath = await resolveConfigPath(configPath);
 
   // Check if config file exists
   while (!(await checkConfigExists(finalConfigPath))) {
