@@ -10,4 +10,4 @@ dist/
 .nx/workspace-data
 
 # WP Tester config file
-wp-tester.json
+/wp-tester.json

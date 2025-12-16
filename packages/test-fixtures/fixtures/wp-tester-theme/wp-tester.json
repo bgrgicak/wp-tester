@@ -1,0 +1,25 @@
+{
+  "environments": [
+    {
+      "name": "Latest WordPress and PHP",
+      "blueprint": {
+        "preferredVersions": {
+          "php": "latest",
+          "wp": "latest"
+        }
+      },
+      "mounts": [
+        {
+          "hostPath": ".",
+          "vfsPath": "/wordpress/wp-content/themes/wp-tester-theme/"
+        }
+      ]
+    }
+  ],
+  "tests": {
+    "theme": "wp-tester-theme"
+  },
+  "reporters": [
+    "default"
+  ]
+}

@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { runSmokeTests } from '../../src/index.js';
 import type { WPTesterConfig } from '@wp-tester/config';
-import { TEST_PLUGIN_CONFIG } from "@wp-tester/test-fixtures";
+import { TEST_PLUGIN_CONFIG_PATH } from "@wp-tester/test-fixtures";
+import { EMPTY_REPORT } from "@wp-tester/results";
 
-describe('runSmokeTests integration', () => {
+describe("runSmokeTests integration", () => {
   it("should run wp tests and return CTRF report", async () => {
     const config: WPTesterConfig = {
       environments: [
@@ -27,8 +28,8 @@ describe('runSmokeTests integration', () => {
     expect(report.results.summary.tests).toBeGreaterThan(0);
   }, 60000); // 60s timeout for WordPress boot
 
-  it.skip("should run plugin tests and return CTRF report", async () => {
-    const report = await runSmokeTests(TEST_PLUGIN_CONFIG);
+  it("should run plugin tests and return CTRF report", async () => {
+    const report = await runSmokeTests(TEST_PLUGIN_CONFIG_PATH);
 
     expect(report).toBeDefined();
     expect(report.results).toBeDefined();
@@ -44,7 +45,7 @@ describe('runSmokeTests integration', () => {
     expect(hasPluginTests).toBe(true);
   }, 60000); // 60s timeout for WordPress boot
 
-  it("should throw error when no tests are configured", async () => {
+  it("should return a EMPTY_REPORT when no tests are configured", async () => {
     const config: WPTesterConfig = {
       environments: [
         {
@@ -55,8 +56,6 @@ describe('runSmokeTests integration', () => {
       tests: {},
     };
 
-    await expect(runSmokeTests(config)).rejects.toThrow(
-      "No test files selected"
-    );
+    await expect(await runSmokeTests(config)).toBe(EMPTY_REPORT);
   });
 });
