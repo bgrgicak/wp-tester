@@ -11,7 +11,7 @@ interface ConfigArgs {
 export const configHandler = async (argv: ConfigArgs): Promise<void> => {
   const { action, config } = argv;
 
-  if (action === 'validate') {
+  if (action === "validate") {
     await validateConfig(config);
   } else if (action && optionNames.includes(action as OptionName)) {
     await updateConfigOption(action as OptionName);

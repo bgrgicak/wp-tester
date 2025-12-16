@@ -1,7 +1,7 @@
 import type { WPTesterConfig } from '../types';
 import { smokeTestsOption } from './smoke-tests';
 
-export type ConfigOption = (config: Partial<WPTesterConfig>) => Promise<Partial<WPTesterConfig>>;
+export type ConfigOption = (config: WPTesterConfig) => Promise<WPTesterConfig>;
 
 export const setupOptions: ConfigOption[] = [
   smokeTestsOption

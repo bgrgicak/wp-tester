@@ -10,11 +10,34 @@ import type { Environment } from "@wp-tester/config";
 import { PlaygroundCliBlueprintV1Worker } from "@wp-playground/cli/blueprints-v1/worker-thread-v1";
 import { PlaygroundCliBlueprintV2Worker } from "@wp-playground/cli/blueprints-v2/worker-thread-v2";
 
+import { readFileSync } from "fs";
+import type { BlueprintV1Declaration } from "@wp-playground/blueprints";
+
+export const defaultWpCliPath = "/tmp/wp-cli.phar";
+
 // Re-export types that test packages will need
 export type { BlueprintV1Declaration as Blueprint } from "@wp-playground/blueprints";
 export type { Mount } from "@wp-playground/cli/mounts";
 
 export type { RunCLIServer } from "@wp-playground/cli";
+
+/**
+ * Resolve a blueprint configuration to a BlueprintV1Declaration object.
+ * If the blueprint is a string (file path), reads and parses the JSON file.
+ * If it's already an object, returns it as-is.
+ *
+ * @param blueprint - Blueprint object or file path
+ * @returns Resolved BlueprintV1Declaration object
+ */
+function resolveBlueprint(
+  blueprint: BlueprintV1Declaration | string
+): BlueprintV1Declaration {
+  if (typeof blueprint === "string") {
+    const blueprintContent = readFileSync(blueprint, "utf-8");
+    return JSON.parse(blueprintContent) as BlueprintV1Declaration;
+  }
+  return blueprint;
+}
 
 // TODO Remove once @wp-playground/cli exports this type
 type PlaygroundCliWorker =
@@ -27,10 +50,42 @@ type PlaygroundCliWorker =
 export async function startPlayground(
   environment: Environment
 ): Promise<RunCLIServer> {
+  // Configure mounts from environment
+  const mountsBeforeInstall = [];
+  const mountAfterInstall = [];
+
+  // Separate mounts into beforeInstall and afterInstall
+  if (environment.mounts) {
+    mountsBeforeInstall.push(
+      ...environment.mounts
+        .filter((m) => m.beforeInstall === true)
+        .map((m) => ({ hostPath: m.hostPath, vfsPath: m.vfsPath }))
+    );
+    mountAfterInstall.push(
+      ...environment.mounts
+        .filter((m) => m.beforeInstall !== true)
+        .map((m) => ({ hostPath: m.hostPath, vfsPath: m.vfsPath }))
+    );
+  }
+
+  // Resolve bluep
+  // rint from file path if needed and ensure WP-CLI support
+  const blueprint = resolveBlueprint(environment.blueprint);
+
+  // Create a mutable copy to avoid modifying the original
+  const blueprintWithCli = { ...blueprint };
+  if (!blueprintWithCli.extraLibraries) {
+    blueprintWithCli.extraLibraries = [];
+  }
+  if (!blueprintWithCli.extraLibraries.includes("wp-cli")) {
+    blueprintWithCli.extraLibraries.push("wp-cli");
+  }
+
   return await runCLI({
     command: "server",
-    blueprint: environment.blueprint,
-    mount: environment.mounts || [],
+    blueprint: blueprintWithCli,
+    mount: mountAfterInstall,
+    "mount-before-install": mountsBeforeInstall,
     quiet: true,
     internalCookieStore: true,
   });
@@ -45,6 +100,41 @@ export function stopPlayground(runtime: RunCLIServer | null): void {
   if (runtime?.server) {
     runtime.server.close();
   }
+}
+
+/**
+ * Run WP CLI command in WordPress Playground
+ * and return the result.
+ *
+ * If --format=json is passed, the result is parsed as JSON,
+ * otherwise the raw stdout text is returned.
+ *
+ * @param playground - The playground instance
+ * @param args - The WP CLI arguments
+ * @returns The CLI command result
+ */
+export async function wpCli(
+  playground: RemoteAPI<PlaygroundCliWorker>,
+  args: string[]
+): Promise<object | string> {
+  const result = await playground.cli([
+    "php",
+    defaultWpCliPath,
+    `--path=${await playground.documentRoot}`,
+    ...args,
+  ]);
+
+  if (args.includes("--format=json")) {
+    try {
+      return JSON.parse(await result.stdoutText) as object;
+    } catch (e) {
+      throw new Error(
+        `Failed to parse WP CLI output: ${(e as Error).message}
+        Output was: ${await result.stdoutText}`
+      );
+    }
+  }
+  return await result.stdoutText;
 }
 
 /**

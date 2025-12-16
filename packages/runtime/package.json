@@ -20,12 +20,9 @@
   "dependencies": {
     "@wp-playground/blueprints": "3.0.15",
     "@wp-playground/cli": "3.0.15",
-    "@wp-tester/config": "*",
-    "adm-zip": "^0.5.16",
-    "env-paths": "^3.0.0"
+    "@wp-tester/config": "*"
   },
   "devDependencies": {
-    "@types/adm-zip": "^0.5.7",
     "@types/node": "^24.10.1",
     "tsc-alias": "^1.8.16",
     "typescript": "^5.9.3"

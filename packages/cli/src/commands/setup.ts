@@ -13,7 +13,7 @@ export const setupHandler = async (): Promise<void> => {
     }
   }
 
-  let config: Partial<WPTesterConfig> = getDefaultConfig();
+  let config: WPTesterConfig = getDefaultConfig();
 
   for (const option of setupOptions) {
     config = await option(config);

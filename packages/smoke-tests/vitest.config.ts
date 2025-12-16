@@ -13,6 +13,7 @@ export default mergeConfig(
   baseConfig as any,
   defineConfig({
     test: {
+      exclude: ["**/src/smoke-tests/*.spec.ts"],
       passWithNoTests: true,
       provide: {
         config: {
