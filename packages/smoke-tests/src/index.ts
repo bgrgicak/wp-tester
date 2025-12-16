@@ -37,8 +37,9 @@ export function selectTestFiles(tests: Tests): string[] {
     files.push("src/smoke-tests/plugin.spec.ts");
   }
 
-  // Future: add theme test selection
-  // if (tests.theme) files.push('src/smoke-tests/theme.spec.ts');
+  if (tests.theme) {
+    files.push("src/smoke-tests/theme.spec.ts");
+  }
 
   if (files.length === 0) {
     throw new Error("No test files selected. Check your tests configuration.");
