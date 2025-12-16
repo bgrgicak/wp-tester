@@ -3,9 +3,13 @@
   "description": "Minimal test plugin for wp-tester",
   "type": "wordpress-plugin",
   "require-dev": {
-    "phpunit/phpunit": "^9.6"
+    "phpunit/phpunit": "^9.6",
+    "yoast/phpunit-polyfills": "^2.0"
   },
   "scripts": {
-    "test": "phpunit"
+    "env:start": "wp-env start",
+    "env:stop": "wp-env stop",
+    "test": "wp-env run tests-cli --env-cwd=wp-content/plugins/wp-tester-test-plugin vendor/bin/phpunit",
+    "test:unit": "phpunit"
   }
 }

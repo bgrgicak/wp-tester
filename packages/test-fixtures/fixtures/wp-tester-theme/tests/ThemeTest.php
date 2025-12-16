@@ -1,11 +1,12 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
+use Yoast\PHPUnitPolyfills\TestCases\TestCase as PolyfillTestCase;
 
 /**
  * Tests for WP Tester Test Theme.
  */
-class ThemeTest extends TestCase {
+class ThemeTest extends PolyfillTestCase {
 
 	/**
 	 * Test that the date formatting function works correctly.
