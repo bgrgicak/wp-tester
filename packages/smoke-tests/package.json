@@ -20,8 +20,8 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "@php-wasm/util": "^0.9.37",
-    "@wp-playground/blueprints": "^0.9.37",
+    "@php-wasm/util": "3.0.15",
+    "@wp-playground/blueprints": "3.0.15",
     "@wp-tester/results": "*",
     "@wp-tester/runtime": "*"
   },

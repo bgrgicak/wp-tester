@@ -6,7 +6,7 @@ describe('selectTestFiles', () => {
   it('should select wp.spec.ts when tests.wp is true', () => {
     const tests: Tests = { wp: true };
     const files = selectTestFiles(tests);
-    expect(files).toEqual(['tests/wp.spec.ts']);
+    expect(files).toEqual(['src/smoke-tests/wp.spec.ts']);
   });
 
   it('should throw error when no tests are configured', () => {

@@ -8,8 +8,17 @@ import { startVitest } from "vitest/node";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { WPTesterConfig, Tests } from "@wp-tester/config";
-import { vitestToCTRF } from "@wp-tester/results";
+import { resolveConfig } from "@wp-tester/config";
+import { vitestToCTRF, EMPTY_REPORT } from "@wp-tester/results";
 import type { Report } from "@wp-tester/results";
+
+export function shouldRunSmokeTests(config: WPTesterConfig): boolean {
+  return (
+    config.tests.wp === true ||
+    config.tests.plugin !== undefined ||
+    config.tests.theme !== undefined
+  );
+}
 
 /**
  * Select test files based on test configuration
@@ -21,12 +30,16 @@ export function selectTestFiles(tests: Tests): string[] {
   const files: string[] = [];
 
   if (tests.wp === true) {
-    files.push("tests/wp.spec.ts");
+    files.push("src/smoke-tests/wp.spec.ts");
   }
 
-  // Future: add plugin and theme test selection
-  // if (tests.plugin) files.push('tests/plugin.spec.ts');
-  // if (tests.theme) files.push('tests/theme.spec.ts');
+  if (tests.plugin) {
+    files.push("src/smoke-tests/plugin.spec.ts");
+  }
+
+  if (tests.theme) {
+    files.push("src/smoke-tests/theme.spec.ts");
+  }
 
   if (files.length === 0) {
     throw new Error("No test files selected. Check your tests configuration.");
@@ -38,32 +51,41 @@ export function selectTestFiles(tests: Tests): string[] {
 /**
  * Run WordPress smoke tests
  *
- * @param config - Test configuration
+ * @param config - Test configuration or path to config file
  * @returns CTRF report with test results
  */
-export async function runSmokeTests(config: WPTesterConfig): Promise<Report> {
+export async function runSmokeTests(
+  config: WPTesterConfig | string
+): Promise<Report> {
+  // Resolve config (loads from path if string, resolves paths)
+  const resolvedConfig = await resolveConfig(config);
+
+  // Check if any tests are configured
+  if (!shouldRunSmokeTests(resolvedConfig)) {
+    return Promise.resolve(EMPTY_REPORT) as Promise<Report>;
+  }
   // Get package root directory
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = dirname(__filename);
   const packageRoot = join(__dirname, "..");
 
   // Select test files based on config
-  const testFiles = selectTestFiles(config.tests);
+  const testFiles = selectTestFiles(resolvedConfig.tests);
 
   const reporters = [];
-  if (config.reporters?.includes("default")) {
+  if (resolvedConfig.reporters?.includes("default")) {
     reporters.push("default");
   }
 
   // Start Vitest programmatically
   const vitest = await startVitest("test", [], {
-    config: join(packageRoot, "vitest.config.ts"),
+    config: join(packageRoot, "src/smoke-tests/vitest.config.ts"),
     root: packageRoot,
     include: testFiles,
     run: true,
     reporters,
     provide: {
-      config: config,
+      config: resolvedConfig,
     },
   });
 

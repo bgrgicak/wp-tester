@@ -61,7 +61,11 @@ export function vitestToCTRF(vitest: Vitest, toolName: string = 'vitest'): Repor
             if (e instanceof Error) {
               return e.message;
             }
-            return String(e);
+            try {
+              return String(e);
+            } catch {
+              return 'Unknown error';
+            }
           })
           .join('\n');
       }

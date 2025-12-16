@@ -17,6 +17,7 @@ export {
   getSchemaPath,
   getDefaultConfig,
   isConfigWritable,
+  resolveConfig,
 } from './config';
 
 // Options

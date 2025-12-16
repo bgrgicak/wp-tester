@@ -10,8 +10,8 @@ const environments = config.environments;
 
 // Test each environment
 describe.each(environments)('WordPress Tests - $name', (environment) => {
-  let runtime: RunCLIServer | null = null;
-  let playground: RunCLIServer['playground'] | null = null;
+  let runtime: RunCLIServer;
+  let playground: RunCLIServer['playground'];
   let documentRoot: string;
   let bootError: Error | undefined;
 
