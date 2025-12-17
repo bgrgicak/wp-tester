@@ -21,14 +21,7 @@ describe.skipIf(!pluginSlug)('Plugin Tests', () => {
         playground = runtime.playground;
 
         // activate plugin
-        await wpCli(
-          playground,
-          [
-            'plugin',
-            'activate',
-            pluginSlug!,
-          ]
-        );
+        await wpCli(playground, ["plugin", "activate", pluginSlug!]);
       } catch (error) {
         bootError = error as Error;
       }
@@ -38,10 +31,10 @@ describe.skipIf(!pluginSlug)('Plugin Tests', () => {
       stopPlayground(runtime);
     });
 
-    describe('boot', () => {
-      it('should boot without errors', ({ task }) => {
+    describe("boot", () => {
+      it("should boot without errors", ({ task }) => {
         if (bootError) {
-          task.meta['error'] = {
+          task.meta["error"] = {
             message: bootError?.message,
             stack: bootError?.stack,
           };
@@ -50,18 +43,15 @@ describe.skipIf(!pluginSlug)('Plugin Tests', () => {
       });
     });
 
-    describe.skipIf(bootError)('plugin', () => {
-      it('should be active', async () => {
-        const activePlugins = await wpCli(
-          playground,
-          [
-            'plugin',
-            'list',
-            '--status=active',
-            '--field=name',
-            '--format=json',
-          ]
-        );
+    describe.skipIf(bootError)("plugin", () => {
+      it("should be active", async () => {
+        const activePlugins = await wpCli(playground, [
+          "plugin",
+          "list",
+          "--status=active",
+          "--field=name",
+          "--format=json",
+        ]);
         expect(activePlugins).toContain(pluginSlug);
       });
     });

@@ -1,0 +1,32 @@
+{
+  "name": "@wp-tester/phpunit",
+  "version": "0.0.1",
+  "description": "PHPUnit test runner for WordPress projects",
+  "type": "module",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "node ../../scripts/build-package.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "dependencies": {
+    "@wp-tester/config": "*",
+    "@wp-tester/results": "*",
+    "@wp-tester/runtime": "*"
+  },
+  "devDependencies": {
+    "tsc-alias": "^1.8.16",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.13"
+  }
+}

@@ -17,7 +17,9 @@
     }
   ],
   "tests": {
-    "plugin": "wp-tester-plugin"
+    "wp": true,
+    "plugin": "wp-tester-plugin",
+    "phpunit": true
   },
   "reporters": [
     "default"
