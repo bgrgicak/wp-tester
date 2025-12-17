@@ -68,22 +68,19 @@ export async function startPlayground(
     );
   }
 
-  // Resolve bluep
-  // rint from file path if needed and ensure WP-CLI support
   const blueprint = resolveBlueprint(environment.blueprint);
 
   // Create a mutable copy to avoid modifying the original
-  const blueprintWithCli = { ...blueprint };
-  if (!blueprintWithCli.extraLibraries) {
-    blueprintWithCli.extraLibraries = [];
+  if (!blueprint.extraLibraries) {
+    blueprint.extraLibraries = [];
   }
-  if (!blueprintWithCli.extraLibraries.includes("wp-cli")) {
-    blueprintWithCli.extraLibraries.push("wp-cli");
+  if (!blueprint.extraLibraries.includes("wp-cli")) {
+    blueprint.extraLibraries.push("wp-cli");
   }
 
   return await runCLI({
     command: "server",
-    blueprint: blueprintWithCli,
+    blueprint,
     mount: mountAfterInstall,
     "mount-before-install": mountsBeforeInstall,
     quiet: true,
