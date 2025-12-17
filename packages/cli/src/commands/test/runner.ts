@@ -3,7 +3,7 @@ import path from 'path';
 import * as clack from '../../cli/theme';
 import { runSmokeTests, shouldRunSmokeTests } from "@wp-tester/smoke-tests";
 import { runPhpUnitTests } from "@wp-tester/phpunit";
-import type { Report } from "@wp-tester/results";
+import { mergeReports, type Report } from "@wp-tester/results";
 import type { TestType } from "@wp-tester/config";
 
 async function resolveConfigPath(configPath: string): Promise<string> {
@@ -104,17 +104,7 @@ export const runTests = async (
   }
 
   // Merge results from all test suites
-  const mergedReport = reports[0];
-  for (let i = 1; i < reports.length; i++) {
-    const current = reports[i];
-    mergedReport.results.summary.tests += current.results.summary.tests;
-    mergedReport.results.summary.passed += current.results.summary.passed;
-    mergedReport.results.summary.failed += current.results.summary.failed;
-    mergedReport.results.summary.skipped += current.results.summary.skipped;
-    mergedReport.results.summary.pending += current.results.summary.pending;
-    mergedReport.results.summary.other += current.results.summary.other;
-    mergedReport.results.tests.push(...current.results.tests);
-  }
+  const mergedReport = mergeReports(reports);
 
   // Display results using CTRF format
   const { summary } = mergedReport.results;

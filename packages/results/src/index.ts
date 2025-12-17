@@ -17,6 +17,7 @@ export type {
 } from 'ctrf';
 
 export { vitestToCTRF } from './parsers/vitest.js';
+export { mergeReports } from './merge.js';
 
 export const EMPTY_REPORT: Report = {
   results: {
