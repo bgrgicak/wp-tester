@@ -50,6 +50,13 @@ export interface Tests {
    * @default false
    */
   wp?: boolean;
+
+  /**
+   * Run PHPUnit tests located in the project directory.
+   * Assumes a standard PHPUnit setup with a phpunit.xml configuration file.
+   * @default false
+   */
+  phpunit?: boolean;
 }
 
 /**
@@ -108,6 +115,16 @@ export interface WPTesterConfig {
    * JSON Schema reference for IDE validation and autocomplete
    */
   $schema?: string;
+
+  /**
+   * Project root directory.
+   * All relative paths in the config are resolved from this directory.
+   * If a relative path is provided, it is relative to the config file location.
+   *
+   * @default process.cwd()
+   * @example "./my-project"
+   */
+  rootDir?: string;
 
   /**
    * Test environments to run.
