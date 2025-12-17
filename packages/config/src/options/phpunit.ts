@@ -1,6 +1,7 @@
 import { detectPhpUnit } from "./phpunit-detect";
 import type { WPTesterConfig } from "../types";
 import * as clack from "@clack/prompts";
+import { getProjectDir } from "../config";
 
 /**
  * PHPUnit config option
@@ -9,8 +10,11 @@ import * as clack from "@clack/prompts";
 export async function phpunitOption(
   config: WPTesterConfig
 ): Promise<WPTesterConfig> {
+  // Get the project root directory using the config helper
+  const projectRoot = getProjectDir(config);
+
   // Run detection from phpunit package
-  const isDetected = await detectPhpUnit();
+  const isDetected = await detectPhpUnit(projectRoot);
 
   // If not detected, return config unchanged
   if (!isDetected) {

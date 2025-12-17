@@ -3,6 +3,7 @@ export type {
   WPTesterConfig,
   Environment,
   Tests,
+  TestType,
   Reporter,
   Mount,
   Blueprint,
@@ -18,6 +19,9 @@ export {
   getDefaultConfig,
   isConfigWritable,
   resolveConfig,
+  getProjectDir,
+  getConfigDir,
+  getConfigPath,
 } from './config';
 
 // Options

@@ -43,7 +43,7 @@
     },
     "ArrayBuffer": {
       "properties": {
-        "__@toStringTag@451": {
+        "__@toStringTag@458": {
           "type": "string"
         },
         "byteLength": {
@@ -51,7 +51,7 @@
         }
       },
       "required": [
-        "__@toStringTag@451",
+        "__@toStringTag@458",
         "byteLength"
       ],
       "type": "object"
@@ -193,7 +193,7 @@
                               "BYTES_PER_ELEMENT": {
                                 "type": "number"
                               },
-                              "__@toStringTag@451": {
+                              "__@toStringTag@458": {
                                 "const": "Uint8Array",
                                 "type": "string"
                               },
@@ -212,7 +212,7 @@
                             },
                             "required": [
                               "BYTES_PER_ELEMENT",
-                              "__@toStringTag@451",
+                              "__@toStringTag@458",
                               "buffer",
                               "byteLength",
                               "byteOffset",
@@ -1081,7 +1081,10 @@
                     "type": "boolean"
                   },
                   {
-                    "type": "string"
+                    "type": [
+                      "null",
+                      "string"
+                    ]
                   }
                 ]
               },
@@ -1218,8 +1221,14 @@
               "type": "string"
             },
             "refType": {
-              "$ref": "#/definitions/GitDirectoryRefType",
-              "description": "Explicit hint about the ref type (branch, tag, commit, refname)"
+              "description": "Explicit hint about the ref type (branch, tag, commit, refname)",
+              "enum": [
+                "branch",
+                "commit",
+                "refname",
+                "tag"
+              ],
+              "type": "string"
             },
             "resource": {
               "const": "git:directory",
@@ -1320,7 +1329,7 @@
                     "BYTES_PER_ELEMENT": {
                       "type": "number"
                     },
-                    "__@toStringTag@451": {
+                    "__@toStringTag@458": {
                       "const": "Uint8Array",
                       "type": "string"
                     },
@@ -1339,7 +1348,7 @@
                   },
                   "required": [
                     "BYTES_PER_ELEMENT",
-                    "__@toStringTag@451",
+                    "__@toStringTag@458",
                     "buffer",
                     "byteLength",
                     "byteOffset",
@@ -1450,27 +1459,6 @@
     },
     "FileTree": {
       "type": "object"
-    },
-    "GitDirectoryRefType": {
-      "enum": [
-        "branch",
-        "commit",
-        "refname",
-        "tag"
-      ],
-      "type": "string"
-    },
-    "HTTPMethod": {
-      "enum": [
-        "DELETE",
-        "GET",
-        "HEAD",
-        "OPTIONS",
-        "PATCH",
-        "POST",
-        "PUT"
-      ],
-      "type": "string"
     },
     "ImportThemeStarterContentStep": {
       "description": "importThemeStarterContent",
@@ -1602,7 +1590,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@451": {
+                        "__@toStringTag@458": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -1621,7 +1609,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@451",
+                        "__@toStringTag@458",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -1743,8 +1731,14 @@
                   "type": "string"
                 },
                 "refType": {
-                  "$ref": "#/definitions/GitDirectoryRefType",
-                  "description": "Explicit hint about the ref type (branch, tag, commit, refname)"
+                  "description": "Explicit hint about the ref type (branch, tag, commit, refname)",
+                  "enum": [
+                    "branch",
+                    "commit",
+                    "refname",
+                    "tag"
+                  ],
+                  "type": "string"
                 },
                 "resource": {
                   "const": "git:directory",
@@ -1770,7 +1764,167 @@
           "description": "The plugin files to install. It can be a plugin zip file, a single PHP\nfile, or a directory containing all the plugin files at its root."
         },
         "pluginZipFile": {
-          "$ref": "#/definitions/FileReference"
+          "anyOf": [
+            {
+              "properties": {
+                "path": {
+                  "description": "The path to the file in the VFS",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "vfs",
+                  "description": "Identifies the file resource as Virtual File System (VFS)",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "path",
+                "resource"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "contents": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "patternProperties": {
+                        "^[0-9]+$": {
+                          "type": "number"
+                        }
+                      },
+                      "properties": {
+                        "BYTES_PER_ELEMENT": {
+                          "type": "number"
+                        },
+                        "__@toStringTag@458": {
+                          "const": "Uint8Array",
+                          "type": "string"
+                        },
+                        "buffer": {
+                          "$ref": "#/definitions/ArrayBufferLike"
+                        },
+                        "byteLength": {
+                          "type": "number"
+                        },
+                        "byteOffset": {
+                          "type": "number"
+                        },
+                        "length": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "BYTES_PER_ELEMENT",
+                        "__@toStringTag@458",
+                        "buffer",
+                        "byteLength",
+                        "byteOffset",
+                        "length"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "type": "string"
+                    }
+                  ],
+                  "description": "The contents of the file"
+                },
+                "name": {
+                  "description": "The name of the file",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "literal",
+                  "description": "Identifies the file resource as a literal file",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "contents",
+                "name",
+                "resource"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "resource": {
+                  "const": "wordpress.org/themes",
+                  "description": "Identifies the file resource as a WordPress Core theme",
+                  "type": "string"
+                },
+                "slug": {
+                  "description": "The slug of the WordPress Core theme",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "resource",
+                "slug"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "resource": {
+                  "const": "wordpress.org/plugins",
+                  "description": "Identifies the file resource as a WordPress Core plugin",
+                  "type": "string"
+                },
+                "slug": {
+                  "description": "The slug of the WordPress Core plugin",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "resource",
+                "slug"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "caption": {
+                  "description": "Optional caption for displaying a progress message",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "url",
+                  "description": "Identifies the file resource as a URL",
+                  "type": "string"
+                },
+                "url": {
+                  "description": "The URL of the file",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "resource",
+                "url"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "path": {
+                  "description": "The path to the file in the Blueprint",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "bundled",
+                  "description": "Identifies the file resource as a Blueprint file",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "path",
+                "resource"
+              ],
+              "type": "object"
+            }
+          ]
         },
         "step": {
           "const": "installPlugin",
@@ -1857,7 +2011,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@451": {
+                        "__@toStringTag@458": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -1876,7 +2030,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@451",
+                        "__@toStringTag@458",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -1998,8 +2152,14 @@
                   "type": "string"
                 },
                 "refType": {
-                  "$ref": "#/definitions/GitDirectoryRefType",
-                  "description": "Explicit hint about the ref type (branch, tag, commit, refname)"
+                  "description": "Explicit hint about the ref type (branch, tag, commit, refname)",
+                  "enum": [
+                    "branch",
+                    "commit",
+                    "refname",
+                    "tag"
+                  ],
+                  "type": "string"
                 },
                 "resource": {
                   "const": "git:directory",
@@ -2025,7 +2185,167 @@
           "description": "The theme files to install. It can be either a theme zip file, or a\ndirectory containing all the theme files at its root."
         },
         "themeZipFile": {
-          "$ref": "#/definitions/FileReference"
+          "anyOf": [
+            {
+              "properties": {
+                "path": {
+                  "description": "The path to the file in the VFS",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "vfs",
+                  "description": "Identifies the file resource as Virtual File System (VFS)",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "path",
+                "resource"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "contents": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "patternProperties": {
+                        "^[0-9]+$": {
+                          "type": "number"
+                        }
+                      },
+                      "properties": {
+                        "BYTES_PER_ELEMENT": {
+                          "type": "number"
+                        },
+                        "__@toStringTag@458": {
+                          "const": "Uint8Array",
+                          "type": "string"
+                        },
+                        "buffer": {
+                          "$ref": "#/definitions/ArrayBufferLike"
+                        },
+                        "byteLength": {
+                          "type": "number"
+                        },
+                        "byteOffset": {
+                          "type": "number"
+                        },
+                        "length": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "BYTES_PER_ELEMENT",
+                        "__@toStringTag@458",
+                        "buffer",
+                        "byteLength",
+                        "byteOffset",
+                        "length"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "type": "string"
+                    }
+                  ],
+                  "description": "The contents of the file"
+                },
+                "name": {
+                  "description": "The name of the file",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "literal",
+                  "description": "Identifies the file resource as a literal file",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "contents",
+                "name",
+                "resource"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "resource": {
+                  "const": "wordpress.org/themes",
+                  "description": "Identifies the file resource as a WordPress Core theme",
+                  "type": "string"
+                },
+                "slug": {
+                  "description": "The slug of the WordPress Core theme",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "resource",
+                "slug"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "resource": {
+                  "const": "wordpress.org/plugins",
+                  "description": "Identifies the file resource as a WordPress Core plugin",
+                  "type": "string"
+                },
+                "slug": {
+                  "description": "The slug of the WordPress Core plugin",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "resource",
+                "slug"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "caption": {
+                  "description": "Optional caption for displaying a progress message",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "url",
+                  "description": "Identifies the file resource as a URL",
+                  "type": "string"
+                },
+                "url": {
+                  "description": "The URL of the file",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "resource",
+                "url"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "path": {
+                  "description": "The path to the file in the Blueprint",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "bundled",
+                  "description": "Identifies the file resource as a Blueprint file",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "path",
+                "resource"
+              ],
+              "type": "object"
+            }
+          ]
         }
       },
       "required": [
@@ -2127,7 +2447,7 @@
                 "BYTES_PER_ELEMENT": {
                   "type": "number"
                 },
-                "__@toStringTag@451": {
+                "__@toStringTag@458": {
                   "const": "Uint8Array",
                   "type": "string"
                 },
@@ -2146,7 +2466,7 @@
               },
               "required": [
                 "BYTES_PER_ELEMENT",
-                "__@toStringTag@451",
+                "__@toStringTag@458",
                 "buffer",
                 "byteLength",
                 "byteOffset",
@@ -2168,8 +2488,17 @@
           "description": "Request headers."
         },
         "method": {
-          "$ref": "#/definitions/HTTPMethod",
-          "description": "Request method. Default: `GET`."
+          "description": "Request method. Default: `GET`.",
+          "enum": [
+            "DELETE",
+            "GET",
+            "HEAD",
+            "OPTIONS",
+            "PATCH",
+            "POST",
+            "PUT"
+          ],
+          "type": "string"
         },
         "url": {
           "description": "Request path or absolute URL.",
@@ -2203,7 +2532,7 @@
                 "BYTES_PER_ELEMENT": {
                   "type": "number"
                 },
-                "__@toStringTag@451": {
+                "__@toStringTag@458": {
                   "const": "Uint8Array",
                   "type": "string"
                 },
@@ -2222,7 +2551,7 @@
               },
               "required": [
                 "BYTES_PER_ELEMENT",
-                "__@toStringTag@451",
+                "__@toStringTag@458",
                 "buffer",
                 "byteLength",
                 "byteOffset",
@@ -2249,8 +2578,17 @@
           "description": "Request headers."
         },
         "method": {
-          "$ref": "#/definitions/HTTPMethod",
-          "description": "Request method. Default: `GET`."
+          "description": "Request method. Default: `GET`.",
+          "enum": [
+            "DELETE",
+            "GET",
+            "HEAD",
+            "OPTIONS",
+            "PATCH",
+            "POST",
+            "PUT"
+          ],
+          "type": "string"
         },
         "protocol": {
           "description": "Request protocol.",
@@ -2478,10 +2816,10 @@
     },
     "SharedArrayBuffer": {
       "properties": {
-        "__@species@4719": {
+        "__@species@712": {
           "$ref": "#/definitions/SharedArrayBuffer"
         },
-        "__@toStringTag@451": {
+        "__@toStringTag@458": {
           "const": "SharedArrayBuffer",
           "type": "string"
         },
@@ -2490,8 +2828,8 @@
         }
       },
       "required": [
-        "__@species@4719",
-        "__@toStringTag@451",
+        "__@species@712",
+        "__@toStringTag@458",
         "byteLength"
       ],
       "type": "object"
@@ -2499,6 +2837,11 @@
     "Tests": {
       "description": "Test configuration specifying which test suites to run.",
       "properties": {
+        "phpunit": {
+          "default": false,
+          "description": "Run PHPUnit tests located in the project directory.\nAssumes a standard PHPUnit setup with a phpunit.xml configuration file.",
+          "type": "boolean"
+        },
         "plugin": {
           "description": "Plugin slug to test.\nWhen provided, runs plugin-specific tests including activation, deactivation, and load tests.",
           "type": "string"
@@ -2527,7 +2870,167 @@
           "type": "string"
         },
         "zipFile": {
-          "$ref": "#/definitions/FileReference",
+          "anyOf": [
+            {
+              "properties": {
+                "path": {
+                  "description": "The path to the file in the VFS",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "vfs",
+                  "description": "Identifies the file resource as Virtual File System (VFS)",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "path",
+                "resource"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "contents": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "patternProperties": {
+                        "^[0-9]+$": {
+                          "type": "number"
+                        }
+                      },
+                      "properties": {
+                        "BYTES_PER_ELEMENT": {
+                          "type": "number"
+                        },
+                        "__@toStringTag@458": {
+                          "const": "Uint8Array",
+                          "type": "string"
+                        },
+                        "buffer": {
+                          "$ref": "#/definitions/ArrayBufferLike"
+                        },
+                        "byteLength": {
+                          "type": "number"
+                        },
+                        "byteOffset": {
+                          "type": "number"
+                        },
+                        "length": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "BYTES_PER_ELEMENT",
+                        "__@toStringTag@458",
+                        "buffer",
+                        "byteLength",
+                        "byteOffset",
+                        "length"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "type": "string"
+                    }
+                  ],
+                  "description": "The contents of the file"
+                },
+                "name": {
+                  "description": "The name of the file",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "literal",
+                  "description": "Identifies the file resource as a literal file",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "contents",
+                "name",
+                "resource"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "resource": {
+                  "const": "wordpress.org/themes",
+                  "description": "Identifies the file resource as a WordPress Core theme",
+                  "type": "string"
+                },
+                "slug": {
+                  "description": "The slug of the WordPress Core theme",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "resource",
+                "slug"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "resource": {
+                  "const": "wordpress.org/plugins",
+                  "description": "Identifies the file resource as a WordPress Core plugin",
+                  "type": "string"
+                },
+                "slug": {
+                  "description": "The slug of the WordPress Core plugin",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "resource",
+                "slug"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "caption": {
+                  "description": "Optional caption for displaying a progress message",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "url",
+                  "description": "Identifies the file resource as a URL",
+                  "type": "string"
+                },
+                "url": {
+                  "description": "The URL of the file",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "resource",
+                "url"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "path": {
+                  "description": "The path to the file in the Blueprint",
+                  "type": "string"
+                },
+                "resource": {
+                  "const": "bundled",
+                  "description": "Identifies the file resource as a Blueprint file",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "path",
+                "resource"
+              ],
+              "type": "object"
+            }
+          ],
           "description": "The zip file to extract"
         },
         "zipPath": {
@@ -2624,7 +3127,7 @@
                 "BYTES_PER_ELEMENT": {
                   "type": "number"
                 },
-                "__@toStringTag@451": {
+                "__@toStringTag@458": {
                   "const": "Uint8Array",
                   "type": "string"
                 },
@@ -2643,7 +3146,7 @@
               },
               "required": [
                 "BYTES_PER_ELEMENT",
-                "__@toStringTag@451",
+                "__@toStringTag@458",
                 "buffer",
                 "byteLength",
                 "byteOffset",
@@ -2684,7 +3187,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@451": {
+                        "__@toStringTag@458": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -2703,7 +3206,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@451",
+                        "__@toStringTag@458",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -2879,6 +3382,11 @@
         "$ref": "#/definitions/Reporter"
       },
       "type": "array"
+    },
+    "rootDir": {
+      "default": "process.cwd()",
+      "description": "Project root directory.\nAll relative paths in the config are resolved from this directory.\nIf a relative path is provided, it is relative to the config file location.",
+      "type": "string"
     },
     "tests": {
       "$ref": "#/definitions/Tests",

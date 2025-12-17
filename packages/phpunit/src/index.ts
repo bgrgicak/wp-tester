@@ -6,3 +6,4 @@
 
 export { runPhpUnitTests, shouldRunPhpUnitTests } from "./runner";
 export { parsePhpUnitOutput } from "./parser";
+export { findPhpUnitConfig, parseBootstrapPath } from "./detect";
