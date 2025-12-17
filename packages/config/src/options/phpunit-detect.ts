@@ -41,4 +41,3 @@ export async function parseBootstrapPath(configPath: string): Promise<string | n
 
   return null;
 }
-

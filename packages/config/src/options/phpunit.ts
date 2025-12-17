@@ -1,7 +1,7 @@
 import type { WPTesterConfig } from "../types";
 import * as clack from "@clack/prompts";
 import { getProjectDir } from "../config";
-import { findPhpUnitConfig } from "@wp-tester/phpunit";
+import { findPhpUnitConfig } from "./phpunit-detect";
 
 /**
  * PHPUnit config option

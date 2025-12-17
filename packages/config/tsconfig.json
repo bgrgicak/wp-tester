@@ -8,9 +8,6 @@
       "@wp-playground/cli/mounts": ["../../node_modules/@wp-playground/cli/mounts.d.ts"]
     }
   },
-  "references": [
-    { "path": "../phpunit" }
-  ],
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }
