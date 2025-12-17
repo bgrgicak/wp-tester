@@ -36,5 +36,5 @@ export const EMPTY_REPORT: Report = {
     tests: [],
   },
   reportFormat: "CTRF",
-  specVersion: "1.0.0",
+  specVersion: "0.0.4",
 };
