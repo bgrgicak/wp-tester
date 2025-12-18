@@ -1,5 +1,22 @@
 import { describe, it, expect } from 'vitest';
-import { buildTestsConfig } from '../../src/options/smoke-tests';
+import type { Tests } from '../../src/types';
+
+function buildTestsConfig(
+  projectType: 'plugin' | 'theme' | 'other',
+  slug?: string
+): Tests {
+  const tests: Tests = { wp: true };
+
+  if (projectType === 'plugin' && slug) {
+    tests.plugin = slug;
+  }
+
+  if (projectType === 'theme' && slug) {
+    tests.theme = slug;
+  }
+
+  return tests;
+}
 
 describe('buildTestsConfig', () => {
   it('should return WordPress core tests only for "other" project type', () => {
