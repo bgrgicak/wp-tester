@@ -18,11 +18,10 @@ export async function projectTypeOption(
 
   // Display detected type (show "other" instead of "unknown" to users)
   const displayType = detectedType === 'unknown' ? 'other' : detectedType;
-  clack.log.info(`Detected project type: ${displayType}`);
 
-  // Ask for confirmation
+  // Ask for confirmation with the detected type in the question
   const isCorrect = await clack.confirm({
-    message: "Is this correct?",
+    message: `Is this project a ${displayType}?`,
     initialValue: true,
   });
 
@@ -41,8 +40,6 @@ export async function projectTypeOption(
       options: [
         { value: 'plugin', label: 'plugin' },
         { value: 'theme', label: 'theme' },
-        { value: 'wp-content', label: 'wp-content' },
-        { value: 'wordpress-install', label: 'wordpress-install' },
         { value: 'unknown', label: 'other' },
       ],
     });
