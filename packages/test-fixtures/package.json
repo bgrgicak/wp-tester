@@ -11,7 +11,7 @@
     }
   },
   "scripts": {
-    "build": "node ./scripts/build.js"
+    "postinstall": "cd fixtures/wp-tester-plugin && composer install && cd ../wp-tester-theme && composer install"
   },
   "description": "Minimal WordPress theme and plugin fixtures for testing",
   "keywords": ["wordpress", "testing", "fixtures"],
