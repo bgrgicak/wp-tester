@@ -18,7 +18,12 @@
     }
   ],
   "tests": {
-    "theme": "wp-tester-theme"
+    "theme": "wp-tester-theme",
+    "phpunit": {
+      "phpunitPath": "vendor/bin/phpunit",
+      "configPath": "phpunit.xml.dist",
+      "bootstrapPath": "tests/bootstrap.php"
+    }
   },
   "reporters": [
     "default"

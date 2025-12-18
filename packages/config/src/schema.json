@@ -2838,9 +2838,23 @@
       "description": "Test configuration specifying which test suites to run.",
       "properties": {
         "phpunit": {
-          "default": false,
-          "description": "Run PHPUnit tests located in the project directory.\nAssumes a standard PHPUnit setup with a phpunit.xml configuration file.",
-          "type": "boolean"
+          "description": "PHPUnit test configuration.\nSpecifies paths to PHPUnit executable, config file, and bootstrap file.",
+          "type": "object",
+          "properties": {
+            "phpunitPath": {
+              "type": "string",
+              "description": "Path to the PHPUnit executable"
+            },
+            "configPath": {
+              "type": "string",
+              "description": "Path to the PHPUnit configuration file"
+            },
+            "bootstrapPath": {
+              "type": "string",
+              "description": "Path to the PHPUnit bootstrap file"
+            }
+          },
+          "required": ["phpunitPath", "configPath", "bootstrapPath"]
         },
         "plugin": {
           "description": "Plugin slug to test.\nWhen provided, runs plugin-specific tests including activation, deactivation, and load tests.",

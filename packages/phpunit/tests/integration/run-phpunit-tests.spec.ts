@@ -52,7 +52,11 @@ describe("runPhpUnitTests integration", () => {
 		async () => {
 			// Load config, enable PHPUnit, set rootDir
 			const config = await resolveConfig(TEST_THEME_CONFIG_PATH);
-			config.tests.phpunit = true;
+			config.tests.phpunit = {
+				phpunitPath: "vendor/bin/phpunit",
+				configPath: "phpunit.xml.dist",
+				bootstrapPath: "tests/bootstrap.php",
+			};
 			// Set rootDir to theme fixture path so runner can find phpunit.xml.dist
 			config.rootDir = TEST_THEME_CONFIG_PATH.replace("/wp-tester.json", "");
 
@@ -112,7 +116,11 @@ describe("shouldRunPhpUnitTests", () => {
 
 	it("should return true for theme config with phpunit enabled", async () => {
 		const config = await resolveConfig(TEST_THEME_CONFIG_PATH);
-		config.tests.phpunit = true;
+		config.tests.phpunit = {
+			phpunitPath: "vendor/bin/phpunit",
+			configPath: "phpunit.xml.dist",
+			bootstrapPath: "tests/bootstrap.php",
+		};
 
 		const result = shouldRunPhpUnitTests(config);
 
@@ -121,7 +129,7 @@ describe("shouldRunPhpUnitTests", () => {
 
 	it("should return false when phpunit is disabled", async () => {
 		const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
-		config.tests.phpunit = false;
+		config.tests.phpunit = undefined;
 
 		const result = shouldRunPhpUnitTests(config);
 

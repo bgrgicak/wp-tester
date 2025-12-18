@@ -40,7 +40,7 @@ describe("PHPUnit error handling", () => {
 
 	it("should return empty report when no tests are configured", async () => {
 		const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
-		config.tests.phpunit = false;
+		config.tests.phpunit = undefined;
 
 		// When phpunit is disabled, the runner should skip execution
 		// This test validates the shouldRunPhpUnitTests check
