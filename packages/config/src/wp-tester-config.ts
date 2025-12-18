@@ -27,6 +27,30 @@ export interface Mount extends PlaygroundMount {
 }
 
 /**
+ * PHPUnit configuration for running PHP unit tests.
+ */
+export interface PHPUnitConfig {
+  /**
+   * Path to PHPUnit executable (relative to project root)
+   * @example "vendor/bin/phpunit"
+   */
+  phpunitPath: string;
+
+  /**
+   * Path to PHPUnit configuration file (relative to project root)
+   * @example "phpunit.xml"
+   * @example "phpunit.xml.dist"
+   */
+  configPath: string;
+
+  /**
+   * Path to PHPUnit bootstrap file (relative to project root)
+   * @example "tests/bootstrap.php"
+   */
+  bootstrapPath: string;
+}
+
+/**
  * Test configuration specifying which test suites to run.
  */
 export interface Tests {
@@ -52,11 +76,11 @@ export interface Tests {
   wp?: boolean;
 
   /**
-   * Run PHPUnit tests located in the project directory.
-   * Assumes a standard PHPUnit setup with a phpunit.xml configuration file.
-   * @default false
+   * PHPUnit test configuration.
+   * When provided, runs PHPUnit tests with the specified paths.
+   * When undefined, PHPUnit tests are disabled.
    */
-  phpunit?: boolean;
+  phpunit?: PHPUnitConfig;
 }
 
 /**

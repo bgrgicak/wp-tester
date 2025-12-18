@@ -3,6 +3,7 @@ export type {
   WPTesterConfig,
   Environment,
   Tests,
+  PHPUnitConfig,
   TestType,
   Reporter,
   Mount,
