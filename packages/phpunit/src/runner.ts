@@ -7,7 +7,7 @@ import { parseJUnitXml } from "./junit-parser";
 
 
 export function shouldRunPhpUnitTests(config: WPTesterConfig): boolean {
-  return config.tests.phpunit === true;
+  return config.tests?.phpunit === true;
 }
 
 /**

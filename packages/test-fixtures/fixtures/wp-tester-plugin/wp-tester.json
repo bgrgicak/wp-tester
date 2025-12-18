@@ -1,4 +1,5 @@
 {
+  "projectType": "plugin",
   "environments": [
     {
       "name": "Latest WordPress and PHP",
