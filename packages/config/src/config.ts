@@ -3,6 +3,7 @@ import { readFile, writeFile, access, constants as fsConstants } from "fs/promis
 import { existsSync } from "fs";
 import { join, dirname, resolve, isAbsolute } from "path";
 import { fileURLToPath } from "url";
+import { getProjectRootMount } from "./auto-mount";
 
 export type { WPTesterConfig } from "./wp-tester-config";
 
@@ -155,8 +156,19 @@ export async function resolveConfig(
   // Get the project root directory (respects rootDir config option)
   const projectDir = getProjectDir(resolvedConfig, configPath);
 
-  // Resolve relative mount paths to absolute paths
+  // Auto-detect and add mounts if needed
   for (const env of resolvedConfig.environments) {
+    // If no mounts are specified and rootDir is set, create mount based on project type
+    if (!env.mounts || env.mounts.length === 0) {
+      if (resolvedConfig.rootDir && resolvedConfig.projectType) {
+        const mount = getProjectRootMount(projectDir, resolvedConfig.projectType);
+        if (mount) {
+          env.mounts = [mount];
+        }
+      }
+    }
+
+    // Resolve relative mount paths to absolute paths
     if (env.mounts) {
       for (const mount of env.mounts) {
         if (!isAbsolute(mount.hostPath)) {

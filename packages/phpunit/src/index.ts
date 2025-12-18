@@ -5,4 +5,3 @@
  */
 
 export { runPhpUnitTests, shouldRunPhpUnitTests } from "./runner";
-export { parsePhpUnitOutput } from "./parser";

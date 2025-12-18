@@ -24,6 +24,9 @@ export {
   getConfigPath,
 } from './config';
 
+export { getProjectRootMount } from './auto-mount';
+export type { ProjectType } from './options/project-type-detect';
+
 // Options
 export { optionNames, optionMap, setupOptions, type OptionName, type ConfigOption } from './options/index';
 export { smokeTestsOption } from './options/smoke-tests';

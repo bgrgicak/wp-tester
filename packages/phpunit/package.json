@@ -22,9 +22,11 @@
   "dependencies": {
     "@wp-tester/config": "*",
     "@wp-tester/results": "*",
-    "@wp-tester/runtime": "*"
+    "@wp-tester/runtime": "*",
+    "xml2js": "^0.6.2"
   },
   "devDependencies": {
+    "@types/xml2js": "^0.4.14",
     "tsc-alias": "^1.8.16",
     "typescript": "^5.9.3",
     "vitest": "^4.0.13"

@@ -127,6 +127,12 @@ export interface WPTesterConfig {
   rootDir?: string;
 
   /**
+   * Detected WordPress project type.
+   * Automatically detected during setup based on project structure.
+   */
+  projectType?: 'plugin' | 'theme' | 'wp-content' | 'wordpress-install' | 'unknown';
+
+  /**
    * Test environments to run.
    * Each environment can have different PHP/WordPress versions and setup.
    * Tests will run against all defined environments (matrix testing).

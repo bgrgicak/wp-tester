@@ -3388,6 +3388,11 @@
       "description": "Project root directory.\nAll relative paths in the config are resolved from this directory.\nIf a relative path is provided, it is relative to the config file location.",
       "type": "string"
     },
+    "projectType": {
+      "type": "string",
+      "enum": ["plugin", "theme", "wp-content", "wordpress-install", "unknown"],
+      "description": "Detected WordPress project type"
+    },
     "tests": {
       "$ref": "#/definitions/Tests",
       "description": "Test suites to execute"
