@@ -1,9 +1,12 @@
 import type { WPTesterConfig } from "./wp-tester-config";
+import type { ResolvedWPTesterConfig, ResolvedEnvironment } from "./resolved-types";
+import type { BlueprintV1Declaration } from "@wp-playground/blueprints";
 import { readFile, writeFile, access, constants as fsConstants } from "fs/promises";
 import { existsSync } from "fs";
 import { join, dirname, resolve, isAbsolute } from "path";
 import { fileURLToPath } from "url";
 import { getProjectRootMount } from "./auto-mount";
+import { detectProjectType } from "./options/project-type-detect";
 
 export type { WPTesterConfig } from "./wp-tester-config";
 
@@ -135,11 +138,11 @@ export function getProjectDir(config: WPTesterConfig, configPath?: string): stri
 /**
  * Resolve config from path or object and adjust relative paths to absolute paths
  * @param config - Config file path or config object
- * @returns Config with all paths resolved to absolute paths
+ * @returns Config with all paths resolved to absolute paths, blueprints loaded, and all required fields set
  */
 export async function resolveConfig(
   config: WPTesterConfig | string
-): Promise<WPTesterConfig> {
+): Promise<ResolvedWPTesterConfig> {
   let resolvedConfig: WPTesterConfig;
   let configPath: string | undefined;
 
@@ -156,36 +159,58 @@ export async function resolveConfig(
   // Get the project root directory (respects projectRoot config option)
   const projectDir = getProjectDir(resolvedConfig, configPath);
 
-  // Auto-detect and add mounts if needed
-  for (const env of resolvedConfig.environments) {
-    // If no mounts are specified and projectRoot is set, create mount based on project type
-    if (!env.mounts || env.mounts.length === 0) {
-      if (resolvedConfig.projectRoot && resolvedConfig.projectType) {
-        const mount = getProjectRootMount(projectDir, resolvedConfig.projectType);
+  // Ensure projectType is set (detect if not provided)
+  const projectType = resolvedConfig.projectType || detectProjectType(projectDir);
+
+  // Ensure reporters is set
+  const reporters = resolvedConfig.reporters || ["default"];
+
+  // Resolve environments: convert Environment[] to ResolvedEnvironment[]
+  const resolvedEnvironments: ResolvedEnvironment[] = await Promise.all(
+    resolvedConfig.environments.map(async (env) => {
+      // Resolve blueprint from string to BlueprintV1Declaration if needed
+      let blueprint: BlueprintV1Declaration;
+      if (typeof env.blueprint === "string") {
+        const blueprintPath = isAbsolute(env.blueprint)
+          ? env.blueprint
+          : resolve(projectDir, env.blueprint);
+        const blueprintContent = await readFile(blueprintPath, "utf-8");
+        blueprint = JSON.parse(blueprintContent) as BlueprintV1Declaration;
+      } else {
+        blueprint = env.blueprint;
+      }
+
+      // Auto-detect and add mounts if needed
+      let mounts = env.mounts || [];
+      if (mounts.length === 0 && resolvedConfig.projectRoot) {
+        const mount = getProjectRootMount(projectDir, projectType);
         if (mount) {
-          env.mounts = [mount];
+          mounts = [mount];
         }
       }
-    }
 
-    // Resolve relative mount paths to absolute paths
-    if (env.mounts) {
-      for (const mount of env.mounts) {
-        if (!isAbsolute(mount.hostPath)) {
-          mount.hostPath = resolve(projectDir, mount.hostPath);
-        }
-      }
-    }
-  }
-  // Resolve Blueprints from relative paths to absolute paths if needed
-  for (const env of resolvedConfig.environments) {
-    if (typeof env.blueprint === "string") {
-      const blueprintPath = isAbsolute(env.blueprint)
-        ? env.blueprint
-        : resolve(projectDir, env.blueprint);
-      env.blueprint = blueprintPath;
-    }
-  }
+      // Resolve relative mount paths to absolute paths
+      const resolvedMounts = mounts.map((mount) => ({
+        ...mount,
+        hostPath: isAbsolute(mount.hostPath)
+          ? mount.hostPath
+          : resolve(projectDir, mount.hostPath),
+      }));
 
-  return resolvedConfig;
+      return {
+        name: env.name,
+        blueprint,
+        mounts: resolvedMounts,
+      };
+    })
+  );
+
+  // Return fully resolved config with all required fields
+  return {
+    ...resolvedConfig,
+    projectRoot: projectDir,
+    projectType,
+    reporters,
+    environments: resolvedEnvironments,
+  };
 }

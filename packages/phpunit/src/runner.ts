@@ -1,4 +1,4 @@
-import type { Environment, WPTesterConfig } from "@wp-tester/config";
+import type { WPTesterConfig, ResolvedWPTesterConfig, ResolvedEnvironment } from "@wp-tester/config";
 import { resolveConfig, getProjectDir, findPhpUnitConfig, parseBootstrapPath, getProjectRootMount } from "@wp-tester/config";
 import type { Report } from "@wp-tester/results";
 import { EMPTY_REPORT, mergeReports } from "@wp-tester/results";
@@ -20,8 +20,8 @@ export function shouldRunPhpUnitTests(config: WPTesterConfig): boolean {
  * @returns CTRF report with test results
  */
 async function runPhpUnitTestsForEnvironment(
-  config: WPTesterConfig,
-  environment: Environment,
+  config: ResolvedWPTesterConfig,
+  environment: ResolvedEnvironment,
   projectRoot: string,
   hostPhpunitConfigPath: string
 ): Promise<Report> {

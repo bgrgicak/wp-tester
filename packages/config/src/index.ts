@@ -11,6 +11,12 @@ export type {
   JsonReporterOptions,
 } from './types';
 
+// Resolved types (after resolveConfig())
+export type {
+  ResolvedEnvironment,
+  ResolvedWPTesterConfig,
+} from './resolved-types';
+
 // Functions
 export {
   readConfigFile,
@@ -31,4 +37,5 @@ export type { ProjectType } from './options/project-type-detect';
 // Options
 export { optionNames, optionMap, setupOptions, type OptionName, type ConfigOption } from './options/index';
 export { smokeTestsOption } from './options/smoke-tests';
+export { phpunitOption } from './options/phpunit';
 export { findPhpUnitConfig, parseBootstrapPath, detectPhpUnitConfig, type DetectedPHPUnitConfig } from './options/phpunit-detect';
