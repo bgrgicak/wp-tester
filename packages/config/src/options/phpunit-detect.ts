@@ -17,8 +17,9 @@ export interface DetectedPHPUnitConfig {
 
   /**
    * Path to PHPUnit bootstrap file (relative to project root)
+   * Optional - if not provided, only the custom wp-tester bootstrap will be used
    */
-  bootstrapPath: string;
+  bootstrapPath?: string;
 }
 
 /**
@@ -112,13 +113,17 @@ export async function detectPhpUnitConfig(
 ): Promise<DetectedPHPUnitConfig | null> {
   const configPath = await findPhpUnitConfig(basePath);
   const phpunitPath = await findPhpUnitExecutable(basePath);
-  const bootstrapPath = await findPhpUnitBootstrap(basePath);
-  if (!configPath || !phpunitPath || !bootstrapPath) {
+
+  // Bootstrap path is optional
+  if (!configPath || !phpunitPath) {
     return null;
   }
+
+  const bootstrapPath = await findPhpUnitBootstrap(basePath);
+
   return {
     phpunitPath: relative(basePath, phpunitPath),
     configPath: relative(basePath, configPath),
-    bootstrapPath: relative(basePath, bootstrapPath),
+    ...(bootstrapPath && { bootstrapPath: relative(basePath, bootstrapPath) }),
   };
 }

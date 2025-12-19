@@ -25,9 +25,9 @@ describe('phpunitOption', () => {
     expect(result).toBeInstanceOf(Promise);
   });
 
-  it('should handle config with existing rootDir', () => {
+  it('should handle config with existing projectRoot', () => {
     const config: WPTesterConfig = {
-      rootDir: PLUGIN_FIXTURE,
+      projectRoot: PLUGIN_FIXTURE,
       environments: [],
       tests: {},
     };
@@ -38,7 +38,7 @@ describe('phpunitOption', () => {
 
   it('should handle config with existing tests object', () => {
     const config: WPTesterConfig = {
-      rootDir: PLUGIN_FIXTURE,
+      projectRoot: PLUGIN_FIXTURE,
       environments: [],
       tests: {
         wp: true,
@@ -58,7 +58,7 @@ describe('phpunitOption', () => {
     };
 
     const config: WPTesterConfig = {
-      rootDir: PLUGIN_FIXTURE,
+      projectRoot: PLUGIN_FIXTURE,
       environments: [],
       tests: {
         phpunit: existingPhpunitConfig,
@@ -73,7 +73,7 @@ describe('phpunitOption', () => {
 describe('phpunitOption integration with detectPhpUnitConfig', () => {
   it('should integrate with detection system for plugin fixture', () => {
     const config: WPTesterConfig = {
-      rootDir: PLUGIN_FIXTURE,
+      projectRoot: PLUGIN_FIXTURE,
       environments: [],
       tests: {},
     };
@@ -85,7 +85,7 @@ describe('phpunitOption integration with detectPhpUnitConfig', () => {
 
   it('should integrate with detection system for theme fixture', () => {
     const config: WPTesterConfig = {
-      rootDir: THEME_FIXTURE,
+      projectRoot: THEME_FIXTURE,
       environments: [],
       tests: {},
     };
@@ -95,13 +95,13 @@ describe('phpunitOption integration with detectPhpUnitConfig', () => {
     expect(result).toBeInstanceOf(Promise);
   });
 
-  it('should handle config without rootDir (uses process.cwd())', () => {
+  it('should handle config without projectRoot (uses process.cwd())', () => {
     const config: WPTesterConfig = {
       environments: [],
       tests: {},
     };
 
-    // Should not throw when rootDir is not provided
+    // Should not throw when projectRoot is not provided
     const result = phpunitOption(config);
     expect(result).toBeInstanceOf(Promise);
   });
@@ -111,7 +111,7 @@ describe('phpunitOption return type validation', () => {
   it('should return Promise<WPTesterConfig> type', () => {
     // Type-level validation - ensures function signature is correct
     const config: WPTesterConfig = {
-      rootDir: '/tmp',
+      projectRoot: '/tmp',
       environments: [],
       tests: {},
     };
@@ -123,7 +123,7 @@ describe('phpunitOption return type validation', () => {
   it('should accept config with existing environments', () => {
     // Validates function accepts configs with environments
     const config: WPTesterConfig = {
-      rootDir: '/tmp',
+      projectRoot: '/tmp',
       environments: [
         {
           name: 'Test Environment',
@@ -140,7 +140,7 @@ describe('phpunitOption return type validation', () => {
   it('should accept config with existing test configuration', () => {
     // Validates function accepts configs with existing tests
     const config: WPTesterConfig = {
-      rootDir: '/tmp',
+      projectRoot: '/tmp',
       environments: [],
       tests: {
         wp: true,
@@ -228,7 +228,7 @@ describe('phpunitOption workflow scenarios', () => {
   it('should validate workflow structure for non-detected PHPUnit', () => {
     // Test scenario: No PHPUnit detected, validates type structure
     const config: WPTesterConfig = {
-      rootDir: '/tmp', // Directory without PHPUnit
+      projectRoot: '/tmp', // Directory without PHPUnit
       environments: [],
       tests: {
         wp: true,
@@ -242,7 +242,7 @@ describe('phpunitOption workflow scenarios', () => {
 
   it('should preserve other test types when PHPUnit is added', () => {
     const config: WPTesterConfig = {
-      rootDir: PLUGIN_FIXTURE,
+      projectRoot: PLUGIN_FIXTURE,
       environments: [],
       tests: {
         wp: true,
@@ -283,7 +283,7 @@ describe('phpunitOption edge cases', () => {
 
   it('should handle config with multiple environments', () => {
     const config: WPTesterConfig = {
-      rootDir: PLUGIN_FIXTURE,
+      projectRoot: PLUGIN_FIXTURE,
       environments: [
         { blueprint: { steps: [] } },
         { blueprint: { steps: [] } },
@@ -298,7 +298,7 @@ describe('phpunitOption edge cases', () => {
 
   it('should handle config with all test types enabled', () => {
     const config: WPTesterConfig = {
-      rootDir: PLUGIN_FIXTURE,
+      projectRoot: PLUGIN_FIXTURE,
       environments: [],
       tests: {
         wp: true,
@@ -316,10 +316,10 @@ describe('phpunitOption edge cases', () => {
     expect(result).toBeInstanceOf(Promise);
   });
 
-  it('should handle absolute paths in rootDir', () => {
+  it('should handle absolute paths in projectRoot', () => {
     const absolutePath = path.resolve(PLUGIN_FIXTURE);
     const config: WPTesterConfig = {
-      rootDir: absolutePath,
+      projectRoot: absolutePath,
       environments: [],
       tests: {},
     };
@@ -328,9 +328,9 @@ describe('phpunitOption edge cases', () => {
     expect(result).toBeInstanceOf(Promise);
   });
 
-  it('should handle relative paths in rootDir', () => {
+  it('should handle relative paths in projectRoot', () => {
     const config: WPTesterConfig = {
-      rootDir: './test-fixtures/fixtures/wp-tester-plugin',
+      projectRoot: './test-fixtures/fixtures/wp-tester-plugin',
       environments: [],
       tests: {},
     };
@@ -341,9 +341,9 @@ describe('phpunitOption edge cases', () => {
 });
 
 describe('phpunitOption integration with getProjectDir', () => {
-  it('should work with config that has rootDir set', () => {
+  it('should work with config that has projectRoot set', () => {
     const config: WPTesterConfig = {
-      rootDir: PLUGIN_FIXTURE,
+      projectRoot: PLUGIN_FIXTURE,
       environments: [],
       tests: {},
     };
@@ -353,7 +353,7 @@ describe('phpunitOption integration with getProjectDir', () => {
     expect(result).toBeInstanceOf(Promise);
   });
 
-  it('should work with config that has no rootDir (defaults to cwd)', () => {
+  it('should work with config that has no projectRoot (defaults to cwd)', () => {
     const config: WPTesterConfig = {
       environments: [],
       tests: {},
@@ -366,7 +366,7 @@ describe('phpunitOption integration with getProjectDir', () => {
 
   it('should work with config that has projectType set', () => {
     const config: WPTesterConfig = {
-      rootDir: PLUGIN_FIXTURE,
+      projectRoot: PLUGIN_FIXTURE,
       projectType: 'plugin',
       environments: [],
       tests: {},

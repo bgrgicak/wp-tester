@@ -2854,7 +2854,7 @@
               "description": "Path to the PHPUnit bootstrap file"
             }
           },
-          "required": ["phpunitPath", "configPath", "bootstrapPath"]
+          "required": ["phpunitPath", "configPath"]
         },
         "plugin": {
           "description": "Plugin slug to test.\nWhen provided, runs plugin-specific tests including activation, deactivation, and load tests.",
@@ -3397,7 +3397,7 @@
       },
       "type": "array"
     },
-    "rootDir": {
+    "projectRoot": {
       "default": "process.cwd()",
       "description": "Project root directory.\nAll relative paths in the config are resolved from this directory.\nIf a relative path is provided, it is relative to the config file location.",
       "type": "string"

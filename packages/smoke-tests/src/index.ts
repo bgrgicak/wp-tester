@@ -27,7 +27,13 @@ export function shouldRunSmokeTests(config: WPTesterConfig): boolean {
  * @returns Array of test file paths relative to package root
  * @throws Error if no test files match configuration
  */
-export function selectTestFiles(tests: Tests, test?: TestType): string[] {
+export function selectTestFiles(
+  tests: Tests,
+  test?: TestType | false
+): string[] {
+  if (test === false) {
+    return [];
+  }
   const testConfigs: Array<{ type: keyof Tests; path: string }> = [
     { type: "wp", path: "src/smoke-tests/wp.spec.ts" },
     { type: "plugin", path: "src/smoke-tests/plugin.spec.ts" },
@@ -55,7 +61,7 @@ export function selectTestFiles(tests: Tests, test?: TestType): string[] {
  */
 export async function runSmokeTests(
   config: WPTesterConfig | string,
-  test?: TestType
+  test?: TestType | false
 ): Promise<Report> {
   // Resolve config (loads from path if string, resolves paths)
   const resolvedConfig = await resolveConfig(config);
@@ -71,6 +77,10 @@ export async function runSmokeTests(
 
   // Select test files based on config and filter
   const testFiles = selectTestFiles(resolvedConfig.tests, test);
+
+  if (testFiles.length === 0) {
+    return Promise.resolve(EMPTY_REPORT);
+  }
 
   const reporters = [];
   if (resolvedConfig.reporters?.includes("default")) {

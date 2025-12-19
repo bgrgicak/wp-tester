@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { validatePath } from '../../src/options/root-dir';
+import { validatePath } from '../../src/options/project-root';
 import * as path from 'path';
 
 describe('validatePath', () => {
-  it('should return error for empty string', () => {
-    expect(validatePath('')).toBe('Path cannot be empty');
+  it('should allow empty string (will use cwd)', () => {
+    expect(validatePath('')).toBeUndefined();
   });
 
-  it('should return error for whitespace-only string', () => {
-    expect(validatePath('   ')).toBe('Path cannot be empty');
+  it('should allow whitespace-only string (will use cwd)', () => {
+    expect(validatePath('   ')).toBeUndefined();
   });
 
   it('should return error for non-existent directory', () => {

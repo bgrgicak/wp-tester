@@ -45,9 +45,10 @@ export interface PHPUnitConfig {
 
   /**
    * Path to PHPUnit bootstrap file (relative to project root)
+   * If not provided, only the custom wp-tester bootstrap will be used
    * @example "tests/bootstrap.php"
    */
-  bootstrapPath: string;
+  bootstrapPath?: string;
 }
 
 /**
@@ -148,7 +149,7 @@ export interface WPTesterConfig {
    * @default process.cwd()
    * @example "./my-project"
    */
-  rootDir?: string;
+  projectRoot?: string;
 
   /**
    * Detected WordPress project type.

@@ -1,7 +1,7 @@
 import { access, constants, stat } from 'fs/promises';
 import path from 'path';
 import * as clack from '../../cli/theme';
-import { runSmokeTests, shouldRunSmokeTests } from "@wp-tester/smoke-tests";
+import { runSmokeTests } from "@wp-tester/smoke-tests";
 import { runPhpUnitTests } from "@wp-tester/phpunit";
 import { mergeReports, type Report } from "@wp-tester/results";
 import type { TestType } from "@wp-tester/config";
@@ -81,10 +81,16 @@ export const runTests = async (
   const shouldRunPhpUnit = !testType || testType === "phpunit";
 
   // Run smoke tests (wp, plugin, theme) - smoke tests package handles whether to run
-  const smokeTestFilter = testType && ["wp", "plugin", "theme"].includes(testType)
-    ? testType
-    : undefined;
-  const smokeTestReport = await runSmokeTests(absoluteConfigPath, smokeTestFilter);
+  let smokeTestFilter: TestType | undefined | false = undefined;
+  if (testType) {
+    smokeTestFilter = ["wp", "plugin", "theme"].includes(testType)
+      ? testType
+      : false;
+  }
+  const smokeTestReport = await runSmokeTests(
+    absoluteConfigPath,
+    smokeTestFilter
+  );
   if (smokeTestReport.results.summary.tests > 0) {
     reports.push(smokeTestReport);
   }

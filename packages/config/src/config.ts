@@ -112,23 +112,23 @@ export function getConfigDir(configPath: string): string {
 /**
  * Get the project root directory path.
  *
- * Returns config.rootDir if specified (resolved relative to config file or as absolute),
+ * Returns config.projectRoot if specified (resolved relative to config file or as absolute),
  * otherwise returns the config file's directory.
  *
  * @param config - Config object
- * @param configPath - Optional path to config file (needed to resolve relative rootDir)
+ * @param configPath - Optional path to config file (needed to resolve relative projectRoot)
  * @returns Absolute path to the project root directory
  */
 export function getProjectDir(config: WPTesterConfig, configPath?: string): string {
   // Get base directory: config file location or cwd
   const baseDir = configPath ? getConfigDir(configPath) : process.cwd();
 
-  // If rootDir is specified, resolve it relative to base directory
-  if (config.rootDir) {
-    return isAbsolute(config.rootDir) ? config.rootDir : resolve(baseDir, config.rootDir);
+  // If projectRoot is specified, resolve it relative to base directory
+  if (config.projectRoot) {
+    return isAbsolute(config.projectRoot) ? config.projectRoot : resolve(baseDir, config.projectRoot);
   }
 
-  // No rootDir specified, return base directory
+  // No projectRoot specified, return base directory
   return baseDir;
 }
 
@@ -153,14 +153,14 @@ export async function resolveConfig(
     configPath = undefined;
   }
 
-  // Get the project root directory (respects rootDir config option)
+  // Get the project root directory (respects projectRoot config option)
   const projectDir = getProjectDir(resolvedConfig, configPath);
 
   // Auto-detect and add mounts if needed
   for (const env of resolvedConfig.environments) {
-    // If no mounts are specified and rootDir is set, create mount based on project type
+    // If no mounts are specified and projectRoot is set, create mount based on project type
     if (!env.mounts || env.mounts.length === 0) {
-      if (resolvedConfig.rootDir && resolvedConfig.projectType) {
+      if (resolvedConfig.projectRoot && resolvedConfig.projectType) {
         const mount = getProjectRootMount(projectDir, resolvedConfig.projectType);
         if (mount) {
           env.mounts = [mount];

@@ -38,24 +38,26 @@ async function collectManualPHPUnitConfig(
   }
 
   const bootstrapPath = await clack.text({
-    message: "Path to PHPUnit bootstrap file (relative to project root):",
-    initialValue: config.tests?.phpunit?.bootstrapPath,
-    validate: (value) => {
-      if (!value || value.trim() === "") {
-        return "Bootstrap path is required";
-      }
-    },
+    message: "Path to PHPUnit bootstrap file (optional, relative to project root):",
+    initialValue: config.tests?.phpunit?.bootstrapPath || "",
+    placeholder: "tests/bootstrap.php (leave empty to skip)",
   });
 
   if (clack.isCancel(bootstrapPath)) {
     return null;
   }
 
-  return {
-    phpunitPath: phpunitPath as string,
-    configPath: configPath as string,
-    bootstrapPath: bootstrapPath as string,
+  const result: PHPUnitConfig = {
+    phpunitPath: phpunitPath,
+    configPath: configPath,
   };
+
+  // Only add bootstrapPath if provided
+  if (bootstrapPath && typeof bootstrapPath === 'string' && bootstrapPath.trim() !== '') {
+    result.bootstrapPath = bootstrapPath.trim();
+  }
+
+  return result;
 }
 
 /**
@@ -103,12 +105,12 @@ export async function phpunitOption(
   }
 
   // Display detected configuration
-  clack.note(
+  const configNote =
     `PHPUnit executable: ${detectedConfig.phpunitPath}\n` +
-      `Config file: ${detectedConfig.configPath}\n` +
-      `Bootstrap file: ${detectedConfig.bootstrapPath}`,
-    "Detected PHPUnit Configuration"
-  );
+    `Config file: ${detectedConfig.configPath}` +
+    (detectedConfig.bootstrapPath ? `\nBootstrap file: ${detectedConfig.bootstrapPath}` : '\nBootstrap file: (none - will use custom bootstrap only)');
+
+  clack.note(configNote, "Detected PHPUnit Configuration");
 
   // Ask user to confirm or customize
   const action = await clack.select({
