@@ -16,12 +16,13 @@ export async function projectTypeOption(
   // Detect project type
   const detectedType = detectProjectType(projectRoot);
 
-  // Display detected type (show "other" instead of "unknown" to users)
-  const displayType = detectedType === 'unknown' ? 'other' : detectedType;
-
   // Ask for confirmation with the detected type in the question
+  const message = detectedType === 'unknown'
+    ? "We couldn't detect your project type. Continue with setup anyway?"
+    : `Is this project a ${detectedType}?`;
+
   const isCorrect = await clack.confirm({
-    message: `Is this project a ${displayType}?`,
+    message,
     initialValue: true,
   });
 
