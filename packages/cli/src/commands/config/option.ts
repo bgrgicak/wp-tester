@@ -1,12 +1,16 @@
-import { readConfigFile, writeConfigFile, optionMap, type OptionName } from '@wp-tester/config';
+import { readConfigFile, writeConfigFile, optionMap, type OptionName, configPath } from '@wp-tester/config';
 import * as clack from '../../cli/theme';
 
 export async function updateConfigOption(optionName: OptionName): Promise<void> {
   try {
-    const config = await readConfigFile();
+    const configFilePath = configPath();
+    const config = await readConfigFile(configFilePath);
+
     const option = optionMap[optionName];
-    const updatedConfig = await option(config);
-    await writeConfigFile(updatedConfig);
+    const context = option.getContext?.(configFilePath);
+    const updatedConfig = await option.handler(config, context);
+
+    await writeConfigFile(updatedConfig, configFilePath);
     clack.outro(`✓ Configuration updated successfully!`);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';

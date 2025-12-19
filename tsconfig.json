@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.dev.json",
+  "files": [],
+  "references": [
+    { "path": "./packages/config" },
+    { "path": "./packages/runtime" },
+    { "path": "./packages/results" },
+    { "path": "./packages/smoke-tests" },
+    { "path": "./packages/phpunit" },
+    { "path": "./packages/cli" }
+  ]
+}

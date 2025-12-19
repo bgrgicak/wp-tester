@@ -8,11 +8,6 @@ const PLUGIN_FIXTURE = path.join(FIXTURES_DIR, 'wp-tester-plugin');
 const THEME_FIXTURE = path.join(FIXTURES_DIR, 'wp-tester-theme');
 
 describe('phpunitOption', () => {
-  it('should be a function that accepts WPTesterConfig and returns Promise<WPTesterConfig>', () => {
-    expect(typeof phpunitOption).toBe('function');
-    expect(phpunitOption.length).toBe(1);
-  });
-
   it('should preserve the function signature', () => {
     // Type-level test - verifies the function accepts and returns the correct types
     const config: WPTesterConfig = {

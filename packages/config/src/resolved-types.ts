@@ -20,11 +20,11 @@ export interface ResolvedEnvironment {
   blueprint: BlueprintV1Declaration;
 
   /**
-   * Filesystem mounts to apply to this environment
+   * Filesystem mounts to apply to this environment.
    * All paths are absolute after resolution.
-   * @default []
+   * Always defined (may be empty array if no mounts).
    */
-  mounts?: Mount[];
+  mounts: Mount[];
 }
 
 /**

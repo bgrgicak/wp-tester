@@ -9,6 +9,7 @@ import type { PHPRequest, PHPResponse, RemoteAPI } from "@php-wasm/universal";
 import type { ResolvedEnvironment } from "@wp-tester/config";
 import { PlaygroundCliBlueprintV1Worker } from "@wp-playground/cli/blueprints-v1/worker-thread-v1";
 import { PlaygroundCliBlueprintV2Worker } from "@wp-playground/cli/blueprints-v2/worker-thread-v2";
+import type { BlueprintV1Declaration } from "@wp-playground/blueprints";
 
 export const defaultWpCliPath = "/tmp/wp-cli.phar";
 
@@ -35,28 +36,31 @@ export async function startPlayground(
   const mountAfterInstall = [];
 
   // Separate mounts into beforeInstall and afterInstall
-  if (environment.mounts) {
-    mountsBeforeInstall.push(
-      ...environment.mounts
-        .filter((m) => m.beforeInstall === true)
-        .map((m) => ({ hostPath: m.hostPath, vfsPath: m.vfsPath }))
-    );
-    mountAfterInstall.push(
-      ...environment.mounts
-        .filter((m) => m.beforeInstall !== true)
-        .map((m) => ({ hostPath: m.hostPath, vfsPath: m.vfsPath }))
-    );
-  }
+  mountsBeforeInstall.push(
+    ...environment.mounts
+      .filter((m) => m.beforeInstall === true)
+      .map((m) => ({ hostPath: m.hostPath, vfsPath: m.vfsPath }))
+  );
+  mountAfterInstall.push(
+    ...environment.mounts
+      .filter((m) => m.beforeInstall !== true)
+      .map((m) => ({ hostPath: m.hostPath, vfsPath: m.vfsPath }))
+  );
 
   // Blueprint should already be resolved by resolveConfig
   // Create a mutable copy to avoid modifying the original
-  const blueprint = { ...environment.blueprint };
-  if (!blueprint.extraLibraries) {
-    blueprint.extraLibraries = [];
+  const extraLibraries = environment.blueprint.extraLibraries
+    ? [...environment.blueprint.extraLibraries]
+    : [];
+
+  if (!extraLibraries.includes("wp-cli")) {
+    extraLibraries.push("wp-cli");
   }
-  if (!blueprint.extraLibraries.includes("wp-cli")) {
-    blueprint.extraLibraries.push("wp-cli");
-  }
+
+  const blueprint: BlueprintV1Declaration = {
+    ...environment.blueprint,
+    extraLibraries,
+  };
 
   return await runCLI({
     command: "server",

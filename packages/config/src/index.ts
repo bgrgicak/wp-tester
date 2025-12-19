@@ -35,7 +35,7 @@ export { getProjectRootMount } from './auto-mount';
 export type { ProjectType } from './options/project-type-detect';
 
 // Options
-export { optionNames, optionMap, setupOptions, type OptionName, type ConfigOption } from './options/index';
+export { optionNames, optionMap, setupOptions, type OptionName, type ConfigOption, type ConfigOptionContext } from './options/index';
 export { smokeTestsOption } from './options/smoke-tests';
 export { phpunitOption } from './options/phpunit';
-export { findPhpUnitConfig, parseBootstrapPath, detectPhpUnitConfig, type DetectedPHPUnitConfig } from './options/phpunit-detect';
+export { findPhpUnitConfig, findPhpUnitExecutable, findPhpUnitBootstrap, parseBootstrapPath, detectPhpUnitConfig, type DetectedPHPUnitConfig } from './options/phpunit-detect';
