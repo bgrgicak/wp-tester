@@ -7,7 +7,7 @@
 import { startVitest } from "vitest/node";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { WPTesterConfig, Tests } from "@wp-tester/config";
+import type { WPTesterConfig, Tests, TestType } from "@wp-tester/config";
 import { resolveConfig } from "@wp-tester/config";
 import { vitestToCTRF, EMPTY_REPORT } from "@wp-tester/results";
 import type { Report } from "@wp-tester/results";
@@ -23,23 +23,27 @@ export function shouldRunSmokeTests(config: WPTesterConfig): boolean {
 /**
  * Select test files based on test configuration
  * @param tests - Test configuration
+ * @param test - Optional filter to run only specific test type (wp, plugin, or theme)
  * @returns Array of test file paths relative to package root
  * @throws Error if no test files match configuration
  */
-export function selectTestFiles(tests: Tests): string[] {
-  const files: string[] = [];
-
-  if (tests.wp === true) {
-    files.push("src/smoke-tests/wp.spec.ts");
+export function selectTestFiles(
+  tests: Tests,
+  test?: TestType | false
+): string[] {
+  if (test === false) {
+    return [];
   }
+  const testConfigs: Array<{ type: keyof Tests; path: string }> = [
+    { type: "wp", path: "src/smoke-tests/wp.spec.ts" },
+    { type: "plugin", path: "src/smoke-tests/plugin.spec.ts" },
+    { type: "theme", path: "src/smoke-tests/theme.spec.ts" },
+  ];
 
-  if (tests.plugin) {
-    files.push("src/smoke-tests/plugin.spec.ts");
-  }
-
-  if (tests.theme) {
-    files.push("src/smoke-tests/theme.spec.ts");
-  }
+  const files = testConfigs
+    .filter(({ type }) => !test || type === test)
+    .filter(({ type }) => tests[type])
+    .map(({ path }) => path);
 
   if (files.length === 0) {
     throw new Error("No test files selected. Check your tests configuration.");
@@ -52,25 +56,31 @@ export function selectTestFiles(tests: Tests): string[] {
  * Run WordPress smoke tests
  *
  * @param config - Test configuration or path to config file
+ * @param test - Optional filter to run only specific test type (wp, plugin, or theme)
  * @returns CTRF report with test results
  */
 export async function runSmokeTests(
-  config: WPTesterConfig | string
+  config: WPTesterConfig | string,
+  test?: TestType | false
 ): Promise<Report> {
   // Resolve config (loads from path if string, resolves paths)
   const resolvedConfig = await resolveConfig(config);
 
   // Check if any tests are configured
   if (!shouldRunSmokeTests(resolvedConfig)) {
-    return Promise.resolve(EMPTY_REPORT) as Promise<Report>;
+    return Promise.resolve(EMPTY_REPORT);
   }
   // Get package root directory
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = dirname(__filename);
   const packageRoot = join(__dirname, "..");
 
-  // Select test files based on config
-  const testFiles = selectTestFiles(resolvedConfig.tests);
+  // Select test files based on config and filter
+  const testFiles = selectTestFiles(resolvedConfig.tests, test);
+
+  if (testFiles.length === 0) {
+    return Promise.resolve(EMPTY_REPORT);
+  }
 
   const reporters = [];
   if (resolvedConfig.reporters?.includes("default")) {

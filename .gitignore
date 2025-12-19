@@ -11,3 +11,5 @@ dist/
 
 # WP Tester config file
 /wp-tester.json
+
+./docs/plans/

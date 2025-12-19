@@ -26,6 +26,8 @@
   "dependencies": {
     "@clack/prompts": "^0.11.0",
     "@wp-tester/config": "*",
+    "@wp-tester/phpunit": "*",
+    "@wp-tester/results": "*",
     "@wp-tester/smoke-tests": "*",
     "ajv": "^8.17.1",
     "picocolors": "^1.1.1",

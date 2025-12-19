@@ -1,7 +1,6 @@
 import type { WPTesterConfig, Tests } from '../types';
 import * as clack from '@clack/prompts';
-
-export type ProjectType = 'plugin' | 'theme' | 'other';
+import { getProjectDir } from '../config';
 
 export function validateSlug(value: string): string | undefined {
   if (!value || value.trim().length === 0) {
@@ -13,79 +12,88 @@ export function validateSlug(value: string): string | undefined {
   return undefined;
 }
 
-export function buildTestsConfig(
-  projectType: ProjectType,
-  slug?: string
-): Tests {
-  if (projectType === 'other') {
-    return {
-      wp: true,
-    };
-  }
-
-  return {
-    wp: true,
-    [projectType]: slug as string
-  };
-}
-
 export async function smokeTestsOption(
   config: WPTesterConfig
 ): Promise<WPTesterConfig> {
-  const runTests = await clack.confirm({
-    message: "Do you want to run smoke tests?",
+  const tests: Tests = {};
+
+  // Get default slug from project directory name
+  const projectRoot = getProjectDir(config);
+  const defaultSlug = projectRoot.split('/').pop() || '';
+
+  // Ask about WordPress smoke tests
+  const runWpTests = await clack.confirm({
+    message: "Do you want to run WordPress smoke tests?",
     initialValue: true,
   });
 
-  if (clack.isCancel(runTests)) {
+  if (clack.isCancel(runWpTests)) {
     clack.cancel("Setup cancelled.");
     process.exit(0);
   }
 
-  if (!runTests) {
-    return {
-      ...config,
-      tests: {},
-    };
+  if (runWpTests) {
+    tests.wp = true;
   }
 
-  const projectType = await clack.select({
-    message: "What type of WordPress project is this?",
-    options: [
-      { value: "plugin", label: "Plugin" },
-      { value: "theme", label: "Theme" },
-      { value: "other", label: "Other" },
-    ],
-  });
+  // Ask about plugin tests if project type is plugin
+  if (config.projectType === 'plugin') {
+    const runPluginTests = await clack.confirm({
+      message: "Do you want to run Plugin smoke tests?",
+      initialValue: true,
+    });
 
-  if (clack.isCancel(projectType)) {
-    clack.cancel("Setup cancelled.");
-    process.exit(0);
+    if (clack.isCancel(runPluginTests)) {
+      clack.cancel("Setup cancelled.");
+      process.exit(0);
+    }
+
+    if (runPluginTests) {
+      const pluginSlug = await clack.text({
+        message: "Enter the plugin slug:",
+        initialValue: defaultSlug,
+        validate: validateSlug,
+      });
+
+      if (clack.isCancel(pluginSlug)) {
+        clack.cancel("Setup cancelled.");
+        process.exit(0);
+      }
+
+      tests.plugin = pluginSlug;
+    }
   }
 
-  if (projectType === "other") {
-    return {
-      ...config,
-      tests: buildTestsConfig("other"),
-    };
-  }
+  // Ask about theme tests if project type is theme
+  if (config.projectType === 'theme') {
+    const runThemeTests = await clack.confirm({
+      message: "Do you want to run Theme smoke tests?",
+      initialValue: true,
+    });
 
-  const slugPrompt =
-    projectType === "plugin"
-      ? "Enter the plugin slug:"
-      : "Enter the theme slug:";
-  const slug = await clack.text({
-    message: slugPrompt,
-    validate: validateSlug,
-  });
+    if (clack.isCancel(runThemeTests)) {
+      clack.cancel("Setup cancelled.");
+      process.exit(0);
+    }
 
-  if (clack.isCancel(slug)) {
-    clack.cancel("Setup cancelled.");
-    process.exit(0);
+    if (runThemeTests) {
+      const themeSlug = await clack.text({
+        message: "Enter the theme slug:",
+        initialValue: defaultSlug,
+        validate: validateSlug,
+      });
+
+      if (clack.isCancel(themeSlug)) {
+        clack.cancel("Setup cancelled.");
+        process.exit(0);
+      }
+
+      tests.theme = themeSlug;
+    }
   }
 
   return {
     ...config,
-    tests: buildTestsConfig(projectType as ProjectType, slug),
+    tests,
   };
 }

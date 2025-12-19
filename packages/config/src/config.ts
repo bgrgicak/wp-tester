@@ -1,10 +1,11 @@
-import type { WPTesterConfig } from "./types";
+import type { WPTesterConfig } from "./wp-tester-config";
 import { readFile, writeFile, access, constants as fsConstants } from "fs/promises";
 import { existsSync } from "fs";
 import { join, dirname, resolve, isAbsolute } from "path";
 import { fileURLToPath } from "url";
+import { getProjectRootMount } from "./auto-mount";
 
-export type { WPTesterConfig } from "./types";
+export type { WPTesterConfig } from "./wp-tester-config";
 
 export function configPath(): string {
   return join(process.cwd(), "wp-tester.json");
@@ -89,35 +90,89 @@ export async function writeConfigFile(
 }
 
 /**
+ * Get the absolute config file path.
+ *
+ * @param config - Path to config file (relative or absolute)
+ * @returns Absolute path to the config file
+ */
+export function getConfigPath(config: string): string {
+  return isAbsolute(config) ? config : resolve(process.cwd(), config);
+}
+
+/**
+ * Get the config file directory path.
+ *
+ * @param configPath - Path to config file
+ * @returns Directory path where the config file is located
+ */
+export function getConfigDir(configPath: string): string {
+  return dirname(getConfigPath(configPath));
+}
+
+/**
+ * Get the project root directory path.
+ *
+ * Returns config.projectRoot if specified (resolved relative to config file or as absolute),
+ * otherwise returns the config file's directory.
+ *
+ * @param config - Config object
+ * @param configPath - Optional path to config file (needed to resolve relative projectRoot)
+ * @returns Absolute path to the project root directory
+ */
+export function getProjectDir(config: WPTesterConfig, configPath?: string): string {
+  // Get base directory: config file location or cwd
+  const baseDir = configPath ? getConfigDir(configPath) : process.cwd();
+
+  // If projectRoot is specified, resolve it relative to base directory
+  if (config.projectRoot) {
+    return isAbsolute(config.projectRoot) ? config.projectRoot : resolve(baseDir, config.projectRoot);
+  }
+
+  // No projectRoot specified, return base directory
+  return baseDir;
+}
+
+/**
  * Resolve config from path or object and adjust relative paths to absolute paths
  * @param config - Config file path or config object
- * @param baseDir - Base directory for resolving relative paths when config is an object (defaults to cwd)
  * @returns Config with all paths resolved to absolute paths
  */
 export async function resolveConfig(
   config: WPTesterConfig | string
 ): Promise<WPTesterConfig> {
   let resolvedConfig: WPTesterConfig;
-  let configDir: string;
+  let configPath: string | undefined;
 
   if (typeof config === "string") {
-    const configPath = isAbsolute(config)
-      ? config
-      : resolve(process.cwd(), config);
-    configDir = dirname(configPath);
+    configPath = getConfigPath(config);
     const content = await readFile(configPath, "utf8");
     resolvedConfig = JSON.parse(content) as WPTesterConfig;
   } else {
     // Config object provided
     resolvedConfig = config;
-    configDir = process.cwd();
+    configPath = undefined;
   }
-  // Resolve relative mount paths to absolute paths
+
+  // Get the project root directory (respects projectRoot config option)
+  const projectDir = getProjectDir(resolvedConfig, configPath);
+
+  // Auto-detect and add mounts if needed
   for (const env of resolvedConfig.environments) {
+    // If no mounts are specified and projectRoot is set, create mount based on project type
+    if (!env.mounts || env.mounts.length === 0) {
+      if (resolvedConfig.projectRoot && resolvedConfig.projectType) {
+        const mount = getProjectRootMount(projectDir, resolvedConfig.projectType);
+        if (mount) {
+          env.mounts = [mount];
+        }
+      }
+    }
+
+    // Resolve relative mount paths to absolute paths
     if (env.mounts) {
       for (const mount of env.mounts) {
         if (!isAbsolute(mount.hostPath)) {
-          mount.hostPath = resolve(configDir, mount.hostPath);
+          mount.hostPath = resolve(projectDir, mount.hostPath);
         }
       }
     }
@@ -127,7 +182,7 @@ export async function resolveConfig(
     if (typeof env.blueprint === "string") {
       const blueprintPath = isAbsolute(env.blueprint)
         ? env.blueprint
-        : resolve(configDir, env.blueprint);
+        : resolve(projectDir, env.blueprint);
       env.blueprint = blueprintPath;
     }
   }

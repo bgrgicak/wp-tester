@@ -1,4 +1,5 @@
 {
+  "projectType": "plugin",
   "environments": [
     {
       "name": "Latest WordPress and PHP",
@@ -17,7 +18,13 @@
     }
   ],
   "tests": {
-    "plugin": "wp-tester-plugin"
+    "wp": true,
+    "plugin": "wp-tester-plugin",
+    "phpunit": {
+      "phpunitPath": "vendor/bin/phpunit",
+      "configPath": "phpunit.xml.dist",
+      "bootstrapPath": "tests/bootstrap.php"
+    }
   },
   "reporters": [
     "default"

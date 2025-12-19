@@ -52,6 +52,12 @@ void yargs(hideBin(process.argv))
           describe: "Path to wp-tester.json config file",
           type: "string" as const,
           default: "./wp-tester.json",
+        })
+        .option("test", {
+          alias: "t",
+          describe: "Type of test to run (wp, plugin, theme, or phpunit)",
+          type: "string" as const,
+          choices: ["wp", "plugin", "theme", "phpunit"] as const,
         });
     },
     async (argv) => {
@@ -59,6 +65,7 @@ void yargs(hideBin(process.argv))
       await testHandler(argv);
     }
   )
+  .demandCommand(1, "You must provide a command. Use --help to see available commands.")
   .help()
   .version()
   .parse();

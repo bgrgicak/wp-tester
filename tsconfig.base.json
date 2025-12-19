@@ -2,7 +2,9 @@
   "compileOnSave": false,
   "compilerOptions": {
     "sourceMap": true,
-    "declaration": false,
+    "declaration": true,
+    "declarationMap": true,
+    "composite": true,
     "moduleResolution": "node",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,

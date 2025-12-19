@@ -15,6 +15,10 @@ export default mergeConfig(
     test: {
       exclude: ["**/src/smoke-tests/*.spec.ts"],
       passWithNoTests: true,
+      // Retry flaky tests in CI to handle transient WordPress Playground boot failures
+      retry: process.env.CI ? 2 : 0,
+      // Limit parallelism to reduce resource contention in CI
+      maxConcurrency: process.env.CI ? 1 : 5,
       provide: {
         config: {
           environments: [],
@@ -22,5 +26,5 @@ export default mergeConfig(
         } as WPTesterConfig,
       },
     },
-  })
+  }) as any
 );

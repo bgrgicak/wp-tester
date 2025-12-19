@@ -200,7 +200,7 @@ See [WordPress Playground CLI mounting documentation](https://wordpress.github.i
 
 **Type:** `Object`
 **Required:** Yes
-**Description:** Specifies which test categories to run. WordPress Tester organizes smoke tests into three categories: plugin tests, theme tests, and WordPress core tests.
+**Description:** Specifies which test categories to run. WordPress Tester supports multiple test types: plugin tests, theme tests, WordPress core tests, and PHPUnit tests.
 
 **Structure:**
 
@@ -209,7 +209,12 @@ See [WordPress Playground CLI mounting documentation](https://wordpress.github.i
   "tests": {
     "plugin": "plugin-slug",
     "theme": "theme-slug",
-    "wp": true
+    "wp": true,
+    "phpunit": {
+      "phpunitPath": "vendor/bin/phpunit",
+      "configPath": "phpunit.xml.dist",
+      "bootstrapPath": "tests/bootstrap.php"
+    }
   }
 }
 ```
@@ -266,6 +271,54 @@ See [WordPress Playground CLI mounting documentation](https://wordpress.github.i
   }
 }
 ```
+
+#### `tests.phpunit`
+
+**Type:** `PHPUnitConfig` (object)
+**Required:** No
+**Description:** Configuration for running PHPUnit tests in WordPress Playground environments. When provided, wp-tester will execute your PHPUnit test suite within the WordPress environment.
+
+**Auto-detection:** During setup (`wp-tester setup`), the CLI will automatically detect PHPUnit configuration if a `phpunit.xml` or `phpunit.xml.dist` file exists in your project. It will:
+1. Find the PHPUnit config file (`phpunit.xml` or `phpunit.xml.dist`)
+2. Parse the bootstrap path from the config file
+3. Set default paths for the PHPUnit executable
+4. Prompt you to use the detected configuration, customize it, or skip
+
+**Properties:**
+
+- `phpunitPath` (string, required): Path to the PHPUnit executable relative to the project root. Typically `vendor/bin/phpunit` when installed via Composer.
+- `configPath` (string, required): Path to the PHPUnit configuration file relative to the project root (e.g., `phpunit.xml` or `phpunit.xml.dist`).
+- `bootstrapPath` (string, required): Path to the PHPUnit bootstrap file relative to the project root (e.g., `tests/bootstrap.php`).
+
+**Example:**
+```json
+{
+  "tests": {
+    "phpunit": {
+      "phpunitPath": "vendor/bin/phpunit",
+      "configPath": "phpunit.xml.dist",
+      "bootstrapPath": "tests/bootstrap.php"
+    }
+  }
+}
+```
+
+**Example with multiple test types:**
+```json
+{
+  "tests": {
+    "plugin": "my-plugin",
+    "wp": true,
+    "phpunit": {
+      "phpunitPath": "vendor/bin/phpunit",
+      "configPath": "phpunit.xml.dist",
+      "bootstrapPath": "tests/bootstrap.php"
+    }
+  }
+}
+```
+
+**Note:** The PHPUnit tests will run inside the WordPress Playground environment, allowing you to test against the exact PHP and WordPress versions specified in your environment configuration.
 
 ### `reporters`
 
@@ -418,3 +471,63 @@ Test a theme with custom environment setup:
   "reporters": ["default"]
 }
 ```
+
+### Plugin with PHPUnit Tests
+
+Test a plugin across multiple PHP versions with PHPUnit integration:
+
+```json
+{
+  "environments": [
+    {
+      "name": "PHP 8.1 + WP 6.7",
+      "blueprint": {
+        "preferredVersions": {
+          "php": "8.1",
+          "wp": "6.7"
+        }
+      },
+      "mounts": [
+        {
+          "hostPath": ".",
+          "vfsPath": "/wordpress/wp-content/plugins/my-plugin"
+        }
+      ]
+    },
+    {
+      "name": "PHP 8.2 + WP 6.7",
+      "blueprint": {
+        "preferredVersions": {
+          "php": "8.2",
+          "wp": "6.7"
+        }
+      },
+      "mounts": [
+        {
+          "hostPath": ".",
+          "vfsPath": "/wordpress/wp-content/plugins/my-plugin"
+        }
+      ]
+    }
+  ],
+  "tests": {
+    "plugin": "my-plugin",
+    "wp": true,
+    "phpunit": {
+      "phpunitPath": "vendor/bin/phpunit",
+      "configPath": "phpunit.xml.dist",
+      "bootstrapPath": "tests/bootstrap.php"
+    }
+  },
+  "reporters": [
+    "default",
+    ["json", { "outputFile": "test-results.json" }]
+  ]
+}
+```
+
+This configuration will:
+- Run your plugin's activation/deactivation tests
+- Run WordPress boot tests
+- Execute your PHPUnit test suite in both PHP 8.1 and PHP 8.2 environments
+- Output results to console and JSON file

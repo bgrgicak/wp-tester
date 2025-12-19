@@ -11,6 +11,8 @@
       "@wp-tester/results/*": ["./packages/results/src/*"],
       "@wp-tester/smoke-tests": ["./packages/smoke-tests/src/index.ts"],
       "@wp-tester/smoke-tests/*": ["./packages/smoke-tests/src/*"],
+      "@wp-tester/phpunit": ["./packages/phpunit/src/index.ts"],
+      "@wp-tester/phpunit/*": ["./packages/phpunit/src/*"],
       "@wp-playground/cli/mounts": ["./node_modules/@wp-playground/cli/mounts.d.ts"]
     }
   }

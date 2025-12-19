@@ -1,16 +1,13 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "declaration": true,
-    "declarationMap": true,
-    "composite": true,
-    "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
+    "outDir": "dist",
+    "rootDir": "src",
+    "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo",
     "paths": {
       "@wp-playground/cli/mounts": ["../../node_modules/@wp-playground/cli/mounts.d.ts"]
     }
   },
   "include": ["src/**/*"],
-  "exclude": ["**/*.test.ts"]
+  "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }
