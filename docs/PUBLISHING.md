@@ -24,9 +24,9 @@
    "@wp-tester/config": "0.0.1"
    ```
 
-   Or better, use workspace protocol (if using pnpm):
+   Or, to allow non-breaking updates, you can use a caret range:
    ```json
-   "@wp-tester/config": "workspace:*"
+   "@wp-tester/config": "^0.0.1"
    ```
 
 ## Publishing Workflow
