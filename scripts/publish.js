@@ -12,12 +12,14 @@ const PACKAGES_TO_PUBLISH = [
   'cli',          // Depends on all above
 ];
 
+const PACKAGE_SCOPE = '@wp-tester/';
+
 function exec(cmd, opts = {}) {
   return execSync(cmd, { stdio: 'inherit', ...opts });
 }
 
 function getPackageVersion(packageName) {
-  const pkgPath = join(process.cwd(), 'packages', packageName, 'package.json');
+  const pkgPath = getPackagePath(packageName);
   const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
   return pkg.version;
 }
@@ -38,18 +40,19 @@ function writePackageJson(packageName, packageJson) {
 
 function transformWildcardDependencies(packageName) {
   const pkg = readPackageJson(packageName);
-  const originalPkg = JSON.stringify(pkg);
+  let hasChanges = false;
   
   // Transform "*" dependencies to actual versions
   ['dependencies', 'devDependencies', 'peerDependencies'].forEach(depType => {
     if (pkg[depType]) {
       Object.keys(pkg[depType]).forEach(depName => {
-        if (pkg[depType][depName] === '*' && depName.startsWith('@wp-tester/')) {
+        if (pkg[depType][depName] === '*' && depName.startsWith(PACKAGE_SCOPE)) {
           // Extract package name from scoped package
-          const internalPkgName = depName.replace('@wp-tester/', '');
+          const internalPkgName = depName.replace(PACKAGE_SCOPE, '');
           if (PACKAGES_TO_PUBLISH.includes(internalPkgName)) {
             const version = getPackageVersion(internalPkgName);
             pkg[depType][depName] = `^${version}`;
+            hasChanges = true;
           }
         }
       });
@@ -57,7 +60,7 @@ function transformWildcardDependencies(packageName) {
   });
   
   // Only write if changes were made
-  if (JSON.stringify(pkg) !== originalPkg) {
+  if (hasChanges) {
     writePackageJson(packageName, pkg);
     return true;
   }
