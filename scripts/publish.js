@@ -47,8 +47,14 @@ function main() {
   // Build packages
   if (!skipBuild) {
     console.log('🔨 Building all packages...\n');
-    exec('npm run build');
-    console.log('\n✓ Build complete\n');
+    try {
+      exec('npm run build');
+      console.log('\n✓ Build complete\n');
+    } catch (error) {
+      console.error('\n❌ Build failed.');
+      console.error('Error:', error.message);
+      process.exit(1);
+    }
   } else {
     console.log('⏭️  Skipping build (--skip-build)\n');
   }
