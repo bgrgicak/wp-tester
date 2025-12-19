@@ -23,12 +23,11 @@ class ThemeTest extends PolyfillTestCase {
 	 * Test that navigation menu is registered.
 	 */
 	public function test_navigation_menu_is_registered() {
-		global $_wp_nav_menus;
-
-		// Trigger the after_setup_theme action
 		do_action( 'after_setup_theme' );
 
-		$this->assertIsArray( $_wp_nav_menus );
-		$this->assertArrayHasKey( 'primary', $_wp_nav_menus );
+		$nav_menus = get_registered_nav_menus();
+
+		$this->assertNotEmpty( $nav_menus, 'No navigation menus registered' );
+		$this->assertArrayHasKey( 'primary', $nav_menus, 'Primary menu not registered' );
 	}
 }
