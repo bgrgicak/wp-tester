@@ -90,7 +90,7 @@ function main() {
     // Check if version already exists on npm
     if (!isDryRun && checkVersionExists(pkg, version)) {
       console.error(`\n❌ Version ${version} of @wp-tester/${pkg} already exists on npm`);
-      console.error('Please bump the version in packages/${pkg}/package.json and try again.');
+      console.error(`Please bump the version in packages/${pkg}/package.json and try again.`);
       console.error('You can use: npm version patch|minor|major');
       process.exit(1);
     }
