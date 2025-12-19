@@ -11,7 +11,7 @@ describe("PHPUnit error handling", () => {
 			const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
 
 			// Point to a non-existent phpunit.xml.dist
-			config.projectRoot = "/non/existent/path";
+			config.projectHostPath = "/non/existent/path";
 
 			const result = await runPhpUnitTests(config);
 
@@ -28,7 +28,7 @@ describe("PHPUnit error handling", () => {
 
 			// Create a config that points to a directory without PHPUnit installed
 			const tempDir = path.join(process.cwd(), "tests", "fixtures");
-			config.projectRoot = tempDir;
+			config.projectHostPath = tempDir;
 
 			const result = await runPhpUnitTests(config);
 

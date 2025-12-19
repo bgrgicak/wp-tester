@@ -49,15 +49,16 @@ describe("runPhpUnitTests integration", () => {
 	it(
 		"should run theme PHPUnit tests and return CTRF report",
 		async () => {
-			// Load config, enable PHPUnit, set projectRoot
+			// Load config, enable PHPUnit, set projectHostPath
 			const config = await resolveConfig(TEST_THEME_CONFIG_PATH);
 			config.tests.phpunit = {
 				phpunitPath: "vendor/bin/phpunit",
 				configPath: "phpunit.xml.dist",
 				bootstrapPath: "tests/bootstrap.php",
+				testMode: "integration",
 			};
-			// Set projectRoot to theme fixture path so runner can find phpunit.xml.dist
-			config.projectRoot = TEST_THEME_CONFIG_PATH.replace("/wp-tester.json", "");
+			// Set projectHostPath to theme fixture path so runner can find phpunit.xml.dist
+			config.projectHostPath = TEST_THEME_CONFIG_PATH.replace("/wp-tester.json", "");
 
 			const report = await runPhpUnitTests(config);
 
@@ -118,6 +119,7 @@ describe("shouldRunPhpUnitTests", () => {
 			phpunitPath: "vendor/bin/phpunit",
 			configPath: "phpunit.xml.dist",
 			bootstrapPath: "tests/bootstrap.php",
+			testMode: "integration",
 		};
 
 		const result = shouldRunPhpUnitTests(config);

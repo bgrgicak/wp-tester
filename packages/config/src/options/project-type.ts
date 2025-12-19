@@ -11,10 +11,10 @@ export async function projectTypeOption(
   config: WPTesterConfig
 ): Promise<WPTesterConfig> {
   // Get the project root directory using the config helper
-  const projectRoot = getProjectDir(config);
+  const projectHostPath = getProjectDir(config);
 
   // Detect project type
-  const detectedType = detectProjectType(projectRoot);
+  const detectedType = detectProjectType(projectHostPath);
 
   // Ask for confirmation with the detected type in the question
   const message = detectedType === 'unknown'

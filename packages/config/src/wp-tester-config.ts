@@ -49,6 +49,19 @@ export interface PHPUnitConfig {
    * @example "tests/bootstrap.php"
    */
   bootstrapPath?: string;
+
+  /**
+   * Test mode - determines whether WordPress is loaded during tests
+   *
+   * - "unit": WordPress is NOT loaded. Use for testing isolated PHP logic,
+   *   pure functions, classes that don't depend on WordPress. (DEFAULT)
+   *
+   * - "integration": WordPress is loaded before tests run. Use for testing
+   *   WordPress APIs, hooks, database interactions, etc.
+   *
+   * @default "unit"
+   */
+  testMode?: "unit" | "integration";
 }
 
 /**
@@ -142,14 +155,14 @@ export interface WPTesterConfig {
   $schema?: string;
 
   /**
-   * Project root directory.
+   * Project root directory (host filesystem path).
    * All relative paths in the config are resolved from this directory.
    * If a relative path is provided, it is relative to the config file location.
    *
    * @default process.cwd()
    * @example "./my-project"
    */
-  projectRoot?: string;
+  projectHostPath?: string;
 
   /**
    * Detected WordPress project type.

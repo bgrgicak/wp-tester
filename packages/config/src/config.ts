@@ -10,6 +10,19 @@ import { detectProjectType } from "./options/project-type-detect";
 
 export type { WPTesterConfig } from "./wp-tester-config";
 
+/**
+ * Resolve a path to an absolute path.
+ * If the path is already absolute, return it as-is.
+ * Otherwise, resolve it relative to the base directory.
+ *
+ * @param path - Path to resolve (relative or absolute)
+ * @param baseDir - Base directory to resolve relative paths from
+ * @returns Absolute path
+ */
+function resolveAbsolute(path: string, baseDir: string): string {
+  return isAbsolute(path) ? path : resolve(baseDir, path);
+}
+
 export function configPath(): string {
   return join(process.cwd(), "wp-tester.json");
 }
@@ -115,23 +128,23 @@ export function getConfigDir(configPath: string): string {
 /**
  * Get the project root directory path.
  *
- * Returns config.projectRoot if specified (resolved relative to config file or as absolute),
+ * Returns config.projectHostPath if specified (resolved relative to config file or as absolute),
  * otherwise returns the config file's directory.
  *
  * @param config - Config object
- * @param configPath - Optional path to config file (needed to resolve relative projectRoot)
+ * @param configPath - Optional path to config file (needed to resolve relative projectHostPath)
  * @returns Absolute path to the project root directory
  */
 export function getProjectDir(config: WPTesterConfig, configPath?: string): string {
   // Get base directory: config file location or cwd
   const baseDir = configPath ? getConfigDir(configPath) : process.cwd();
 
-  // If projectRoot is specified, resolve it relative to base directory
-  if (config.projectRoot) {
-    return isAbsolute(config.projectRoot) ? config.projectRoot : resolve(baseDir, config.projectRoot);
+  // If projectHostPath is specified, resolve it relative to base directory
+  if (config.projectHostPath) {
+    return resolveAbsolute(config.projectHostPath, baseDir);
   }
 
-  // No projectRoot specified, return base directory
+  // No projectHostPath specified, return base directory
   return baseDir;
 }
 
@@ -156,7 +169,7 @@ export async function resolveConfig(
     configPath = undefined;
   }
 
-  // Get the project root directory (respects projectRoot config option)
+  // Get the project root directory (respects projectHostPath config option)
   const projectDir = getProjectDir(resolvedConfig, configPath);
 
   // Ensure projectType is set (detect if not provided)
@@ -171,9 +184,7 @@ export async function resolveConfig(
       // Resolve blueprint from string to BlueprintV1Declaration if needed
       let blueprint: BlueprintV1Declaration;
       if (typeof env.blueprint === "string") {
-        const blueprintPath = isAbsolute(env.blueprint)
-          ? env.blueprint
-          : resolve(projectDir, env.blueprint);
+        const blueprintPath = resolveAbsolute(env.blueprint, projectDir);
         const blueprintContent = await readFile(blueprintPath, "utf-8");
         blueprint = JSON.parse(blueprintContent) as BlueprintV1Declaration;
       } else {
@@ -182,7 +193,7 @@ export async function resolveConfig(
 
       // Auto-detect and add mounts if needed
       let mounts = env.mounts || [];
-      if (mounts.length === 0 && resolvedConfig.projectRoot) {
+      if (mounts.length === 0 && resolvedConfig.projectHostPath) {
         const mount = getProjectRootMount(projectDir, projectType);
         if (mount) {
           mounts = [mount];
@@ -192,9 +203,7 @@ export async function resolveConfig(
       // Resolve relative mount paths to absolute paths
       const resolvedMounts = mounts.map((mount) => ({
         ...mount,
-        hostPath: isAbsolute(mount.hostPath)
-          ? mount.hostPath
-          : resolve(projectDir, mount.hostPath),
+        hostPath: resolveAbsolute(mount.hostPath, projectDir),
       }));
 
       return {
@@ -205,12 +214,36 @@ export async function resolveConfig(
     })
   );
 
+  // Resolve PHPUnit paths to absolute paths
+  let resolvedTests = resolvedConfig.tests;
+  if (resolvedTests.phpunit) {
+    resolvedTests = {
+      ...resolvedTests,
+      phpunit: {
+        phpunitPath: resolveAbsolute(resolvedTests.phpunit.phpunitPath, projectDir),
+        configPath: resolveAbsolute(resolvedTests.phpunit.configPath, projectDir),
+        ...(resolvedTests.phpunit.bootstrapPath && {
+          bootstrapPath: resolveAbsolute(resolvedTests.phpunit.bootstrapPath, projectDir),
+        }),
+        ...(resolvedTests.phpunit.testMode && {
+          testMode: resolvedTests.phpunit.testMode,
+        }),
+      },
+    };
+  }
+
+  // Get project VFS path from the mount
+  const mount = getProjectRootMount(projectDir, projectType);
+  const projectVFSPath = mount?.vfsPath || projectDir;
+
   // Return fully resolved config with all required fields
   return {
     ...resolvedConfig,
-    projectRoot: projectDir,
+    projectHostPath: projectDir,
+    projectVFSPath,
     projectType,
     reporters,
     environments: resolvedEnvironments,
+    tests: resolvedTests,
   };
 }

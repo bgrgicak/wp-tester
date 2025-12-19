@@ -18,8 +18,8 @@ export async function smokeTestsOption(
   const tests: Tests = {};
 
   // Get default slug from project directory name
-  const projectRoot = getProjectDir(config);
-  const defaultSlug = projectRoot.split('/').pop() || '';
+  const projectHostPath = getProjectDir(config);
+  const defaultSlug = projectHostPath.split('/').pop() || '';
 
   // Ask about WordPress smoke tests
   const runWpTests = await clack.confirm({

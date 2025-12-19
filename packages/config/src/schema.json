@@ -43,7 +43,7 @@
     },
     "ArrayBuffer": {
       "properties": {
-        "__@toStringTag@458": {
+        "__@toStringTag@599": {
           "type": "string"
         },
         "byteLength": {
@@ -51,7 +51,7 @@
         }
       },
       "required": [
-        "__@toStringTag@458",
+        "__@toStringTag@599",
         "byteLength"
       ],
       "type": "object"
@@ -193,7 +193,7 @@
                               "BYTES_PER_ELEMENT": {
                                 "type": "number"
                               },
-                              "__@toStringTag@458": {
+                              "__@toStringTag@599": {
                                 "const": "Uint8Array",
                                 "type": "string"
                               },
@@ -212,7 +212,7 @@
                             },
                             "required": [
                               "BYTES_PER_ELEMENT",
-                              "__@toStringTag@458",
+                              "__@toStringTag@599",
                               "buffer",
                               "byteLength",
                               "byteOffset",
@@ -1329,7 +1329,7 @@
                     "BYTES_PER_ELEMENT": {
                       "type": "number"
                     },
-                    "__@toStringTag@458": {
+                    "__@toStringTag@599": {
                       "const": "Uint8Array",
                       "type": "string"
                     },
@@ -1348,7 +1348,7 @@
                   },
                   "required": [
                     "BYTES_PER_ELEMENT",
-                    "__@toStringTag@458",
+                    "__@toStringTag@599",
                     "buffer",
                     "byteLength",
                     "byteOffset",
@@ -1590,7 +1590,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@458": {
+                        "__@toStringTag@599": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -1609,7 +1609,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@458",
+                        "__@toStringTag@599",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -1798,7 +1798,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@458": {
+                        "__@toStringTag@599": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -1817,7 +1817,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@458",
+                        "__@toStringTag@599",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -2011,7 +2011,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@458": {
+                        "__@toStringTag@599": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -2030,7 +2030,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@458",
+                        "__@toStringTag@599",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -2219,7 +2219,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@458": {
+                        "__@toStringTag@599": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -2238,7 +2238,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@458",
+                        "__@toStringTag@599",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -2447,7 +2447,7 @@
                 "BYTES_PER_ELEMENT": {
                   "type": "number"
                 },
-                "__@toStringTag@458": {
+                "__@toStringTag@599": {
                   "const": "Uint8Array",
                   "type": "string"
                 },
@@ -2466,7 +2466,7 @@
               },
               "required": [
                 "BYTES_PER_ELEMENT",
-                "__@toStringTag@458",
+                "__@toStringTag@599",
                 "buffer",
                 "byteLength",
                 "byteOffset",
@@ -2532,7 +2532,7 @@
                 "BYTES_PER_ELEMENT": {
                   "type": "number"
                 },
-                "__@toStringTag@458": {
+                "__@toStringTag@599": {
                   "const": "Uint8Array",
                   "type": "string"
                 },
@@ -2551,7 +2551,7 @@
               },
               "required": [
                 "BYTES_PER_ELEMENT",
-                "__@toStringTag@458",
+                "__@toStringTag@599",
                 "buffer",
                 "byteLength",
                 "byteOffset",
@@ -2603,6 +2603,37 @@
           "type": "string"
         }
       },
+      "type": "object"
+    },
+    "PHPUnitConfig": {
+      "description": "PHPUnit configuration for running PHP unit tests.",
+      "properties": {
+        "bootstrapPath": {
+          "description": "Path to PHPUnit bootstrap file (relative to project root)\nIf not provided, only the custom wp-tester bootstrap will be used",
+          "type": "string"
+        },
+        "configPath": {
+          "description": "Path to PHPUnit configuration file (relative to project root)",
+          "type": "string"
+        },
+        "phpunitPath": {
+          "description": "Path to PHPUnit executable (relative to project root)",
+          "type": "string"
+        },
+        "testMode": {
+          "default": "unit",
+          "description": "Test mode - determines whether WordPress is loaded during tests\n\n- \"unit\": WordPress is NOT loaded. Use for testing isolated PHP logic,\n  pure functions, classes that don't depend on WordPress. (DEFAULT)\n\n- \"integration\": WordPress is loaded before tests run. Use for testing\n  WordPress APIs, hooks, database interactions, etc.",
+          "enum": [
+            "integration",
+            "unit"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "configPath",
+        "phpunitPath"
+      ],
       "type": "object"
     },
     "Record<string,string>": {
@@ -2816,10 +2847,10 @@
     },
     "SharedArrayBuffer": {
       "properties": {
-        "__@species@712": {
+        "__@species@652": {
           "$ref": "#/definitions/SharedArrayBuffer"
         },
-        "__@toStringTag@458": {
+        "__@toStringTag@599": {
           "const": "SharedArrayBuffer",
           "type": "string"
         },
@@ -2828,8 +2859,8 @@
         }
       },
       "required": [
-        "__@species@712",
-        "__@toStringTag@458",
+        "__@species@652",
+        "__@toStringTag@599",
         "byteLength"
       ],
       "type": "object"
@@ -2838,23 +2869,8 @@
       "description": "Test configuration specifying which test suites to run.",
       "properties": {
         "phpunit": {
-          "description": "PHPUnit test configuration.\nSpecifies paths to PHPUnit executable, config file, and bootstrap file.",
-          "type": "object",
-          "properties": {
-            "phpunitPath": {
-              "type": "string",
-              "description": "Path to the PHPUnit executable"
-            },
-            "configPath": {
-              "type": "string",
-              "description": "Path to the PHPUnit configuration file"
-            },
-            "bootstrapPath": {
-              "type": "string",
-              "description": "Path to the PHPUnit bootstrap file"
-            }
-          },
-          "required": ["phpunitPath", "configPath"]
+          "$ref": "#/definitions/PHPUnitConfig",
+          "description": "PHPUnit test configuration.\nWhen provided, runs PHPUnit tests with the specified paths.\nWhen undefined, PHPUnit tests are disabled."
         },
         "plugin": {
           "description": "Plugin slug to test.\nWhen provided, runs plugin-specific tests including activation, deactivation, and load tests.",
@@ -2918,7 +2934,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@458": {
+                        "__@toStringTag@599": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -2937,7 +2953,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@458",
+                        "__@toStringTag@599",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -3141,7 +3157,7 @@
                 "BYTES_PER_ELEMENT": {
                   "type": "number"
                 },
-                "__@toStringTag@458": {
+                "__@toStringTag@599": {
                   "const": "Uint8Array",
                   "type": "string"
                 },
@@ -3160,7 +3176,7 @@
               },
               "required": [
                 "BYTES_PER_ELEMENT",
-                "__@toStringTag@458",
+                "__@toStringTag@599",
                 "buffer",
                 "byteLength",
                 "byteOffset",
@@ -3201,7 +3217,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@458": {
+                        "__@toStringTag@599": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -3220,7 +3236,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@458",
+                        "__@toStringTag@599",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -3387,6 +3403,22 @@
       "minItems": 1,
       "type": "array"
     },
+    "projectHostPath": {
+      "default": "process.cwd()",
+      "description": "Project root directory (host filesystem path).\nAll relative paths in the config are resolved from this directory.\nIf a relative path is provided, it is relative to the config file location.",
+      "type": "string"
+    },
+    "projectType": {
+      "description": "Detected WordPress project type.\nAutomatically detected during setup based on project structure.",
+      "enum": [
+        "plugin",
+        "theme",
+        "unknown",
+        "wordpress-install",
+        "wp-content"
+      ],
+      "type": "string"
+    },
     "reporters": {
       "default": [
         "default"
@@ -3396,16 +3428,6 @@
         "$ref": "#/definitions/Reporter"
       },
       "type": "array"
-    },
-    "projectRoot": {
-      "default": "process.cwd()",
-      "description": "Project root directory.\nAll relative paths in the config are resolved from this directory.\nIf a relative path is provided, it is relative to the config file location.",
-      "type": "string"
-    },
-    "projectType": {
-      "type": "string",
-      "enum": ["plugin", "theme", "wp-content", "wordpress-install", "unknown"],
-      "description": "Detected WordPress project type"
     },
     "tests": {
       "$ref": "#/definitions/Tests",

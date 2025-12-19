@@ -39,10 +39,16 @@ export interface ResolvedWPTesterConfig {
   $schema?: string;
 
   /**
-   * Project root directory (always set after resolution).
+   * Absolute path to the project on the host filesystem.
    * All relative paths in the config are resolved from this directory.
    */
-  projectRoot: string;
+  projectHostPath: string;
+
+  /**
+   * Path to the project in the VFS (Virtual File System).
+   * Determined by projectType (e.g., /wordpress/wp-content/plugins/my-plugin).
+   */
+  projectVFSPath: string;
 
   /**
    * Detected WordPress project type (always set after resolution).

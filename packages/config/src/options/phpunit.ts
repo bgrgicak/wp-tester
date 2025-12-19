@@ -27,7 +27,7 @@ async function validatePath(basePath: string, relativePath: string): Promise<boo
  */
 async function collectManualPHPUnitConfig(
   config: WPTesterConfig,
-  projectRoot: string
+  projectHostPath: string
 ): Promise<PHPUnitConfig | null> {
   // Get PHPUnit executable path with validation
   let phpunitPath: string;
@@ -47,7 +47,7 @@ async function collectManualPHPUnitConfig(
     }
 
     const trimmed = input.trim();
-    const exists = await validatePath(projectRoot, trimmed);
+    const exists = await validatePath(projectHostPath, trimmed);
     if (exists) {
       phpunitPath = trimmed;
       break;
@@ -73,7 +73,7 @@ async function collectManualPHPUnitConfig(
     }
 
     const trimmed = input.trim();
-    const exists = await validatePath(projectRoot, trimmed);
+    const exists = await validatePath(projectHostPath, trimmed);
     if (exists) {
       configPath = trimmed;
       break;
@@ -102,7 +102,7 @@ async function collectManualPHPUnitConfig(
       break;
     }
 
-    const exists = await validatePath(projectRoot, trimmed);
+    const exists = await validatePath(projectHostPath, trimmed);
     if (exists) {
       bootstrapPath = trimmed;
       break;
@@ -130,15 +130,15 @@ async function collectManualPHPUnitConfig(
  */
 async function handleFullDetection(
   config: WPTesterConfig,
-  projectRoot: string,
+  projectHostPath: string,
   configFile: string,
   executable: string,
   bootstrap: string | null
 ): Promise<WPTesterConfig> {
   // Convert to relative paths
-  const relativeConfig = relative(projectRoot, configFile);
-  const relativeExecutable = relative(projectRoot, executable);
-  const relativeBootstrap = bootstrap ? relative(projectRoot, bootstrap) : null;
+  const relativeConfig = relative(projectHostPath, configFile);
+  const relativeExecutable = relative(projectHostPath, executable);
+  const relativeBootstrap = bootstrap ? relative(projectHostPath, bootstrap) : null;
 
   // Display detected configuration
   const configNote =
@@ -171,7 +171,7 @@ async function handleFullDetection(
   let finalConfig: PHPUnitConfig;
 
   if (action === "customize") {
-    const customConfig = await collectManualPHPUnitConfig(config, projectRoot);
+    const customConfig = await collectManualPHPUnitConfig(config, projectHostPath);
     if (!customConfig) {
       clack.cancel("Setup cancelled.");
       process.exit(0);
@@ -199,10 +199,10 @@ async function handleFullDetection(
  */
 async function handlePartialDetection(
   config: WPTesterConfig,
-  projectRoot: string,
+  projectHostPath: string,
   configFile: string
 ): Promise<WPTesterConfig> {
-  const relativeConfig = relative(projectRoot, configFile);
+  const relativeConfig = relative(projectHostPath, configFile);
 
   while (true) {
     const message =
@@ -233,7 +233,7 @@ async function handlePartialDetection(
     if (action === "custom") {
       const customConfig = await collectManualPHPUnitConfig(
         config,
-        projectRoot
+        projectHostPath
       );
       if (!customConfig) {
         clack.cancel("Setup cancelled.");
@@ -249,13 +249,13 @@ async function handlePartialDetection(
     }
 
     // action === "retry" - re-run detection
-    const executable = await findPhpUnitExecutable(projectRoot);
+    const executable = await findPhpUnitExecutable(projectHostPath);
     if (executable) {
       // Success! Now we have both config and executable
-      const bootstrap = await findPhpUnitBootstrap(projectRoot);
+      const bootstrap = await findPhpUnitBootstrap(projectHostPath);
       return handleFullDetection(
         config,
-        projectRoot,
+        projectHostPath,
         configFile,
         executable,
         bootstrap
@@ -274,7 +274,7 @@ async function handlePartialDetection(
  */
 async function handleNoDetection(
   config: WPTesterConfig,
-  projectRoot: string,
+  projectHostPath: string,
   promptIfNotDetected: boolean
 ): Promise<WPTesterConfig> {
   if (!promptIfNotDetected) {
@@ -296,7 +296,7 @@ async function handleNoDetection(
     return config;
   }
 
-  const manualConfig = await collectManualPHPUnitConfig(config, projectRoot);
+  const manualConfig = await collectManualPHPUnitConfig(config, projectHostPath);
   if (!manualConfig) {
     clack.cancel("Setup cancelled.");
     process.exit(0);
@@ -325,22 +325,22 @@ export async function phpunitOption(
   const configPath = context?.configPath;
 
   // Get the project root directory using the config helper
-  const projectRoot = getProjectDir(config, configPath);
+  const projectHostPath = getProjectDir(config, configPath);
 
   // Run individual detections for granular feedback
-  const configFile = await findPhpUnitConfig(projectRoot);
-  const executable = await findPhpUnitExecutable(projectRoot);
+  const configFile = await findPhpUnitConfig(projectHostPath);
+  const executable = await findPhpUnitExecutable(projectHostPath);
 
   // Handle different detection states
   if (configFile && executable) {
     // Full detection - both found
-    const bootstrap = await findPhpUnitBootstrap(projectRoot);
-    return handleFullDetection(config, projectRoot, configFile, executable, bootstrap);
+    const bootstrap = await findPhpUnitBootstrap(projectHostPath);
+    return handleFullDetection(config, projectHostPath, configFile, executable, bootstrap);
   } else if (configFile && !executable) {
     // Partial detection - config found but executable missing
-    return handlePartialDetection(config, projectRoot, configFile);
+    return handlePartialDetection(config, projectHostPath, configFile);
   } else {
     // No detection - neither found (or unusual case: executable but no config)
-    return handleNoDetection(config, projectRoot, promptIfNotDetected);
+    return handleNoDetection(config, projectHostPath, promptIfNotDetected);
   }
 }

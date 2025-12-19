@@ -32,6 +32,7 @@ export {
 } from './config';
 
 export { getProjectRootMount } from './auto-mount';
+export { hostToVfs, vfsToHost } from './path-mappers';
 export type { ProjectType } from './options/project-type-detect';
 
 // Options

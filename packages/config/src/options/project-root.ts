@@ -44,6 +44,6 @@ export async function projectRootOption(
   // Store the path (using '.' for current directory)
   return {
     ...config,
-    projectRoot: finalPath,
+    projectHostPath: finalPath,
   };
 }
