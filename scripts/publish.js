@@ -31,6 +31,15 @@ function checkNpmLogin() {
   }
 }
 
+function checkVersionExists(packageName, version) {
+  try {
+    execSync(`npm view @wp-tester/${packageName}@${version}`, { stdio: 'pipe' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function main() {
   const args = process.argv.slice(2);
   const isDryRun = args.includes('--dry-run');
@@ -77,6 +86,14 @@ function main() {
     console.log(`\n${'='.repeat(60)}`);
     console.log(`📤 Publishing @wp-tester/${pkg}@${version}`);
     console.log('='.repeat(60));
+
+    // Check if version already exists on npm
+    if (!isDryRun && checkVersionExists(pkg, version)) {
+      console.error(`\n❌ Version ${version} of @wp-tester/${pkg} already exists on npm`);
+      console.error('Please bump the version in packages/${pkg}/package.json and try again.');
+      console.error('You can use: npm version patch|minor|major');
+      process.exit(1);
+    }
 
     const publishCmd = [
       'npm publish',
