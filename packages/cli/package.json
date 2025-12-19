@@ -20,6 +20,7 @@
     "dev": "tsx src/cli/cli.ts",
     "dist": "node dist/cli/cli.js",
     "test": "vitest run",
+    "type-check": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },

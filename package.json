@@ -8,7 +8,9 @@
   ],
   "scripts": {
     "build": "nx run-many --target=build --all",
-    "test": "nx run-many --target=test --all",
+    "test": "npm run test:types && npm run test:unit",
+    "test:unit": "nx run-many --target=test --all",
+    "test:types": "nx run-many --target=type-check --all",
     "cli": "tsx --tsconfig tsconfig.dev.json packages/cli/src/cli/cli.ts",
     "update-schema": "nx run @wp-tester/config:update-schema",
     "lint": "eslint .",

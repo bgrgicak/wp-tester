@@ -17,7 +17,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@php-wasm/util": "3.0.15",

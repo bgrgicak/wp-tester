@@ -17,7 +17,8 @@
     "test": "vitest run",
     "update-schema": "typescript-json-schema tsconfig.json WPTesterConfig --required --skipLibCheck --out src/schema.json && node scripts/fix-schema.js",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@clack/prompts": "^0.11.0",
