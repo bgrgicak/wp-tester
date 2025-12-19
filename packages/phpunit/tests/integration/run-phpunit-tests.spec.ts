@@ -43,9 +43,8 @@ describe("runPhpUnitTests integration", () => {
 				expect(test.status).toBe("passed");
 				expect(test.duration).toBeGreaterThanOrEqual(0);
 			}
-		},
-		60000
-	); // 60 second timeout for WordPress boot
+		}
+	);
 
 	it(
 		"should run theme PHPUnit tests and return CTRF report",
@@ -89,8 +88,7 @@ describe("runPhpUnitTests integration", () => {
 				expect(["passed", "failed"]).toContain(test.status);
 				expect(test.duration).toBeGreaterThanOrEqual(0);
 			}
-		},
-		60000
+		}
 	);
 
 	it("should handle multiple environments correctly", async () => {
@@ -102,7 +100,7 @@ describe("runPhpUnitTests integration", () => {
 		// Each test should have an environment name in its full name or metadata
 		// The runner should have processed the "Latest WordPress and PHP" environment
 		expect(report.results.summary.tests).toBeGreaterThan(0);
-	}, 60000);
+	});
 });
 
 describe("shouldRunPhpUnitTests", () => {
