@@ -12,7 +12,10 @@
     "cli": "tsx --tsconfig tsconfig.dev.json packages/cli/src/cli/cli.ts",
     "update-schema": "nx run @wp-tester/config:update-schema",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "publish": "node scripts/publish.js",
+    "publish:dry-run": "node scripts/publish.js --dry-run",
+    "prepublish": "npm run build && npm test"
   },
   "repository": {
     "type": "git",
