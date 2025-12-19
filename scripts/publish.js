@@ -5,7 +5,7 @@ import { join } from 'path';
 
 const PACKAGES_TO_PUBLISH = [
   'results',      // No internal deps
-  'config',       // Depends on results (indirectly)
+  'config',       // No internal deps
   'runtime',      // Depends on config
   'phpunit',      // Depends on config, results, runtime
   'smoke-tests',  // Depends on results, runtime
