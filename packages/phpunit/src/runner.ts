@@ -119,8 +119,8 @@ async function runPhpUnitTestsForEnvironment(
 
     const exitCode = await result.exitCode;
 
-    if (exitCode !== 0 && exitCode !== 1) {
-      // Exit code 1 indicates test failures, which is acceptable
+    if (exitCode !== 0 && exitCode !== 1 && exitCode !== 2) {
+      // Exit code 1 indicates test failures, exit code 2 indicates errors - both are acceptable
       console.error(`PHPUnit exited with code ${exitCode}`);
       return EMPTY_REPORT;
     }

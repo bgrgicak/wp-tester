@@ -10,6 +10,35 @@ import { access } from "fs/promises";
 import { join, relative } from "path";
 
 /**
+ * Prompt user to select PHPUnit test mode
+ * @returns Selected test mode ("unit" or "integration"), or null if cancelled
+ */
+async function promptForTestMode(): Promise<"unit" | "integration" | null> {
+  const testModeAnswer = await clack.select({
+    message: "What type of PHPUnit tests will you run?",
+    options: [
+      {
+        value: "unit",
+        label: "Unit tests (without WordPress)",
+        hint: "Fast tests for isolated PHP logic, pure functions, classes without WordPress dependencies"
+      },
+      {
+        value: "integration",
+        label: "Integration tests (with WordPress)",
+        hint: "Tests that interact with WordPress APIs, hooks, database, plugins/themes"
+      }
+    ],
+    initialValue: "unit"
+  });
+
+  if (clack.isCancel(testModeAnswer)) {
+    return null;
+  }
+
+  return testModeAnswer as "unit" | "integration";
+}
+
+/**
  * Validate that a file path exists
  */
 async function validatePath(basePath: string, relativePath: string): Promise<boolean> {
@@ -112,9 +141,16 @@ async function collectManualPHPUnitConfig(
     );
   }
 
+  // Prompt for test mode
+  const testMode = await promptForTestMode();
+  if (testMode === null) {
+    return null;
+  }
+
   const result: PHPUnitConfig = {
     phpunitPath,
     configPath,
+    testMode: testMode,
   };
 
   // Only add bootstrapPath if provided
@@ -178,9 +214,17 @@ async function handleFullDetection(
     }
     finalConfig = customConfig;
   } else {
+    // Prompt for test mode even when using detected config
+    const testMode = await promptForTestMode();
+    if (testMode === null) {
+      clack.cancel("Setup cancelled.");
+      process.exit(0);
+    }
+
     finalConfig = {
       phpunitPath: relativeExecutable,
       configPath: relativeConfig,
+      testMode: testMode,
       ...(relativeBootstrap && { bootstrapPath: relativeBootstrap }),
     };
   }
