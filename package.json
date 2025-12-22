@@ -17,7 +17,9 @@
     "lint:fix": "eslint . --fix",
     "publish": "node scripts/publish.js",
     "publish:dry-run": "node scripts/publish.js --dry-run",
-    "prepublishOnly": "npm run build && npm test"
+    "prepublishOnly": "npm run build && npm test",
+    "docs:serve": "docsify serve docs",
+    "docs:dev": "docsify serve docs --open"
   },
   "repository": {
     "type": "git",
@@ -33,6 +35,7 @@
     "@types/xml2js": "^0.4.14",
     "@typescript-eslint/eslint-plugin": "^8.48.1",
     "@typescript-eslint/parser": "^8.48.1",
+    "docsify-cli": "^4.4.4",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
     "nx": "^22.1.3",
