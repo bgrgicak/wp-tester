@@ -392,13 +392,12 @@ Test a plugin with default settings:
           "wp": "latest"
         }
       }
-    },
-    "tests": {
-      "wp": true
-    },
-    "reporters": ["default"]
+    }
   ],
-
+  "tests": {
+    "wp": true
+  },
+  "reporters": ["default"]
 }
 ```
 
