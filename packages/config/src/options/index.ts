@@ -1,20 +1,41 @@
 import type { WPTesterConfig } from '../types';
-import { rootDirOption } from './root-dir';
+import { projectRootOption } from './project-root';
 import { projectTypeOption } from './project-type';
 import { smokeTestsOption } from './smoke-tests';
 import { phpunitOption } from './phpunit';
 
-export type ConfigOption = (config: WPTesterConfig) => Promise<WPTesterConfig>;
+export interface ConfigOptionContext {
+  configPath?: string;
+  [key: string]: unknown;
+}
 
-export const optionMap = {
-  'root-dir': rootDirOption,
-  'project-type': projectTypeOption,
-  'smoke-tests': smokeTestsOption,
-  'phpunit': phpunitOption
-} as const;
+export type ConfigOption = (config: WPTesterConfig, context?: ConfigOptionContext) => Promise<WPTesterConfig>;
 
-export type OptionName = keyof typeof optionMap;
+export interface ConfigOptionDefinition {
+  handler: ConfigOption;
+  getContext?: (configPath: string) => ConfigOptionContext;
+}
 
-export const optionNames = Object.keys(optionMap) as OptionName[];
+const optionMapInternal = {
+  'project-root': {
+    handler: projectRootOption,
+  },
+  'project-type': {
+    handler: projectTypeOption,
+  },
+  'smoke-tests': {
+    handler: smokeTestsOption,
+  },
+  'phpunit': {
+    handler: phpunitOption,
+    getContext: (configPath: string) => ({ promptIfNotDetected: true, configPath }),
+  }
+} satisfies Record<string, ConfigOptionDefinition>;
 
-export const setupOptions = Object.values(optionMap);
+export const optionMap: Record<string, ConfigOptionDefinition> = optionMapInternal;
+
+export type OptionName = keyof typeof optionMapInternal;
+
+export const optionNames = Object.keys(optionMapInternal) as Array<OptionName>;
+
+export const setupOptions = Object.values(optionMap).map(opt => opt.handler);

@@ -19,8 +19,8 @@ export default defineConfig({
   test: {
     include: ["*.spec.ts"],
     passWithNoTests: true,
-    hookTimeout: 60000, // 60s timeout for WordPress boot
-    testTimeout: 60000, // 60s timeout for individual tests
+    hookTimeout: 120000, // 120s timeout for WordPress boot
+    testTimeout: 120000, // 120s timeout for individual tests
     // Retry flaky tests in CI to handle transient WordPress Playground boot failures
     retry: process.env.CI ? 2 : 0,
     // Limit parallelism to reduce resource contention in CI

@@ -1,5 +1,5 @@
 // This file is kept for backwards compatibility.
-// All types have been moved to wp-tester-config.ts
+// All types have been moved to wp-tester-config.ts and resolved-types.ts
 export type {
   WPTesterConfig,
   Environment,
@@ -10,6 +10,11 @@ export type {
   Blueprint,
   JsonReporterOptions,
 } from "./wp-tester-config";
+
+export type {
+  ResolvedEnvironment,
+  ResolvedWPTesterConfig,
+} from "./resolved-types";
 
 /**
  * Individual test type that can be run.

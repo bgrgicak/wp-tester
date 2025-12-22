@@ -83,7 +83,7 @@ describe('Path Helper Functions', () => {
       reporters: ['default'],
     };
 
-    describe('without rootDir config', () => {
+    describe('without projectHostPath config', () => {
       it('should return cwd when no configPath provided', () => {
         expect(getProjectDir(baseConfig)).toBe(process.cwd());
       });
@@ -100,31 +100,31 @@ describe('Path Helper Functions', () => {
       });
     });
 
-    describe('with absolute rootDir', () => {
-      it('should return absolute rootDir regardless of configPath', () => {
+    describe('with absolute projectHostPath', () => {
+      it('should return absolute projectHostPath regardless of configPath', () => {
         const config: WPTesterConfig = {
           ...baseConfig,
-          rootDir: '/absolute/project/root',
+          projectHostPath: '/absolute/project/root',
         };
         expect(getProjectDir(config)).toBe('/absolute/project/root');
         expect(getProjectDir(config, '/some/config/path/wp-tester.json')).toBe('/absolute/project/root');
       });
     });
 
-    describe('with relative rootDir', () => {
-      it('should resolve rootDir relative to cwd when no configPath', () => {
+    describe('with relative projectHostPath', () => {
+      it('should resolve projectHostPath relative to cwd when no configPath', () => {
         const config: WPTesterConfig = {
           ...baseConfig,
-          rootDir: 'src',
+          projectHostPath: 'src',
         };
         const expected = path.resolve(process.cwd(), 'src');
         expect(getProjectDir(config)).toBe(expected);
       });
 
-      it('should resolve rootDir relative to config directory', () => {
+      it('should resolve projectHostPath relative to config directory', () => {
         const config: WPTesterConfig = {
           ...baseConfig,
-          rootDir: '../src',
+          projectHostPath: '../src',
         };
         const configPath = '/projects/my-plugin/config/wp-tester.json';
         expect(getProjectDir(config, configPath)).toBe('/projects/my-plugin/src');
@@ -133,7 +133,7 @@ describe('Path Helper Functions', () => {
       it('should resolve . as config directory', () => {
         const config: WPTesterConfig = {
           ...baseConfig,
-          rootDir: '.',
+          projectHostPath: '.',
         };
         const configPath = '/projects/my-plugin/wp-tester.json';
         expect(getProjectDir(config, configPath)).toBe('/projects/my-plugin');
@@ -142,7 +142,7 @@ describe('Path Helper Functions', () => {
       it('should resolve nested relative paths', () => {
         const config: WPTesterConfig = {
           ...baseConfig,
-          rootDir: 'packages/plugin',
+          projectHostPath: 'packages/plugin',
         };
         const configPath = '/projects/monorepo/wp-tester.json';
         expect(getProjectDir(config, configPath)).toBe('/projects/monorepo/packages/plugin');
@@ -150,19 +150,19 @@ describe('Path Helper Functions', () => {
     });
 
     describe('integration scenarios', () => {
-      it('should handle config in subdirectory with rootDir pointing to parent', () => {
+      it('should handle config in subdirectory with projectHostPath pointing to parent', () => {
         const config: WPTesterConfig = {
           ...baseConfig,
-          rootDir: '..',
+          projectHostPath: '..',
         };
         const configPath = '/projects/my-plugin/configs/wp-tester.json';
         expect(getProjectDir(config, configPath)).toBe('/projects/my-plugin');
       });
 
-      it('should handle config at root with rootDir pointing to subdirectory', () => {
+      it('should handle config at root with projectHostPath pointing to subdirectory', () => {
         const config: WPTesterConfig = {
           ...baseConfig,
-          rootDir: 'wordpress',
+          projectHostPath: 'wordpress',
         };
         const configPath = 'wp-tester.json';
         const expected = path.resolve(process.cwd(), 'wordpress');
@@ -196,7 +196,7 @@ describe('Path Helper Functions', () => {
         environments: [],
         tests: {},
         reporters: ['default'],
-        rootDir: '../src',
+        projectHostPath: '../src',
       };
       const configPath = 'project/config/wp-tester.json';
 
@@ -208,7 +208,7 @@ describe('Path Helper Functions', () => {
       const configDir = getConfigDir(configPath);
       expect(configDir).toBe(path.dirname(absoluteConfigPath));
 
-      // getProjectDir resolves rootDir relative to config directory
+      // getProjectDir resolves projectHostPath relative to config directory
       const projectDir = getProjectDir(config, configPath);
       expect(projectDir).toBe(path.resolve(configDir, '../src'));
     });

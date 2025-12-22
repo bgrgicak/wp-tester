@@ -8,34 +8,32 @@ describe("PHPUnit error handling", () => {
 	it(
 		"should handle missing PHPUnit config file gracefully",
 		async () => {
-			const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
+      const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
 
-			// Point to a non-existent phpunit.xml.dist
-			config.rootDir = "/non/existent/path";
+      // Point to a non-existent phpunit.xml.dist
+      config.projectHostPath = "/non/existent/path";
 
-			const result = await runPhpUnitTests(config);
+      const result = await runPhpUnitTests(config);
 
-			// Should return empty report when config file is missing
-			expect(result.results.summary.tests).toBe(0);
-		},
-		60000
+      // Should return empty report when config file is missing
+      expect(result.results.summary.tests).toBe(0);
+    }
 	);
 
 	it(
 		"should handle missing vendor/bin/phpunit gracefully",
 		async () => {
-			const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
+      const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
 
-			// Create a config that points to a directory without PHPUnit installed
-			const tempDir = path.join(process.cwd(), "tests", "fixtures");
-			config.rootDir = tempDir;
+      // Create a config that points to a directory without PHPUnit installed
+      const tempDir = path.join(process.cwd(), "tests", "fixtures");
+      config.projectHostPath = tempDir;
 
-			const result = await runPhpUnitTests(config);
+      const result = await runPhpUnitTests(config);
 
-			// Should return empty report when phpunit binary is missing
-			expect(result.results.summary.tests).toBe(0);
-		},
-		60000
+      // Should return empty report when phpunit binary is missing
+      expect(result.results.summary.tests).toBe(0);
+    }
 	);
 
 	it("should return empty report when no tests are configured", async () => {

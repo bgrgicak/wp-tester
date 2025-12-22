@@ -11,10 +11,15 @@
     }
   },
   "scripts": {
-    "postinstall": "cd fixtures/wp-tester-plugin && composer install && cd ../wp-tester-theme && composer install"
+    "postinstall": "cd fixtures/wp-tester-plugin && composer install && cd ../wp-tester-theme && composer install",
+    "type-check": "tsc --noEmit"
   },
   "description": "Minimal WordPress theme and plugin fixtures for testing",
-  "keywords": ["wordpress", "testing", "fixtures"],
+  "keywords": [
+    "wordpress",
+    "testing",
+    "fixtures"
+  ],
   "author": "",
   "license": "ISC",
   "devDependencies": {

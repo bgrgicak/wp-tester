@@ -19,7 +19,8 @@
   "scripts": {
     "build": "node ../../scripts/build-package.js",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@wp-playground/blueprints": "3.0.15",

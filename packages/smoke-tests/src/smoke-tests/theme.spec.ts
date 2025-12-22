@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll, inject } from 'vitest';
-import type { WPTesterConfig } from '@wp-tester/config';
+import type { ResolvedWPTesterConfig } from '@wp-tester/config';
 import { startPlayground, stopPlayground, wpCli, type RunCLIServer } from '@wp-tester/runtime';
 
 // Get config from Vitest's provide/inject
-const config = inject('config') as WPTesterConfig;
+const config = inject('config') as ResolvedWPTesterConfig;
 const environments = config.environments;
 const themeSlug = config.tests.theme;
 

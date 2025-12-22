@@ -43,22 +43,22 @@ describe("runPhpUnitTests integration", () => {
 				expect(test.status).toBe("passed");
 				expect(test.duration).toBeGreaterThanOrEqual(0);
 			}
-		},
-		60000
-	); // 60 second timeout for WordPress boot
+		}
+	);
 
 	it(
 		"should run theme PHPUnit tests and return CTRF report",
 		async () => {
-			// Load config, enable PHPUnit, set rootDir
+			// Load config, enable PHPUnit, set projectHostPath
 			const config = await resolveConfig(TEST_THEME_CONFIG_PATH);
 			config.tests.phpunit = {
 				phpunitPath: "vendor/bin/phpunit",
 				configPath: "phpunit.xml.dist",
 				bootstrapPath: "tests/bootstrap.php",
+				testMode: "integration",
 			};
-			// Set rootDir to theme fixture path so runner can find phpunit.xml.dist
-			config.rootDir = TEST_THEME_CONFIG_PATH.replace("/wp-tester.json", "");
+			// Set projectHostPath to theme fixture path so runner can find phpunit.xml.dist
+			config.projectHostPath = TEST_THEME_CONFIG_PATH.replace("/wp-tester.json", "");
 
 			const report = await runPhpUnitTests(config);
 
@@ -89,8 +89,7 @@ describe("runPhpUnitTests integration", () => {
 				expect(["passed", "failed"]).toContain(test.status);
 				expect(test.duration).toBeGreaterThanOrEqual(0);
 			}
-		},
-		60000
+		}
 	);
 
 	it("should handle multiple environments correctly", async () => {
@@ -102,7 +101,7 @@ describe("runPhpUnitTests integration", () => {
 		// Each test should have an environment name in its full name or metadata
 		// The runner should have processed the "Latest WordPress and PHP" environment
 		expect(report.results.summary.tests).toBeGreaterThan(0);
-	}, 60000);
+	});
 });
 
 describe("shouldRunPhpUnitTests", () => {
@@ -120,6 +119,7 @@ describe("shouldRunPhpUnitTests", () => {
 			phpunitPath: "vendor/bin/phpunit",
 			configPath: "phpunit.xml.dist",
 			bootstrapPath: "tests/bootstrap.php",
+			testMode: "integration",
 		};
 
 		const result = shouldRunPhpUnitTests(config);

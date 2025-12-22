@@ -23,7 +23,8 @@
     "phpunit": {
       "phpunitPath": "vendor/bin/phpunit",
       "configPath": "phpunit.xml.dist",
-      "bootstrapPath": "tests/bootstrap.php"
+      "bootstrapPath": "tests/bootstrap.php",
+      "testMode": "integration"
     }
   },
   "reporters": [

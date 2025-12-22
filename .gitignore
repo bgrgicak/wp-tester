@@ -2,8 +2,6 @@ node_modules/
 dist/
 *.log
 .DS_Store
-.claude/
-.worktrees/
 
 # Nx cache
 .nx/cache
@@ -12,4 +10,7 @@ dist/
 # WP Tester config file
 /wp-tester.json
 
-./docs/plans/
+# Claude
+docs/plans/*
+.claude/
+.worktrees/

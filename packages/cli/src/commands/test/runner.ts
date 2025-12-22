@@ -1,7 +1,7 @@
 import { access, constants, stat } from 'fs/promises';
 import path from 'path';
 import * as clack from '../../cli/theme';
-import { runSmokeTests, shouldRunSmokeTests } from "@wp-tester/smoke-tests";
+import { runSmokeTests } from "@wp-tester/smoke-tests";
 import { runPhpUnitTests } from "@wp-tester/phpunit";
 import { mergeReports, type Report } from "@wp-tester/results";
 import type { TestType } from "@wp-tester/config";
@@ -45,6 +45,20 @@ async function checkConfigExists(configPath: string): Promise<boolean> {
   }
 }
 
+/**
+ * Determines if the given test type is a smoke test type.
+ * Returns the test type if it's a smoke test, undefined if no filter needed, or false if it should be skipped.
+ */
+function getSmokeTestFilter(testType?: TestType): TestType | undefined | false {
+  const smokeTestTypes: TestType[] = ["wp", "plugin", "theme"];
+  
+  if (!testType) {
+    return undefined; // Run all smoke tests
+  }
+  
+  return smokeTestTypes.includes(testType) ? testType : false;
+}
+
 export const runTests = async (
   configPath: string,
   testType?: TestType
@@ -81,10 +95,11 @@ export const runTests = async (
   const shouldRunPhpUnit = !testType || testType === "phpunit";
 
   // Run smoke tests (wp, plugin, theme) - smoke tests package handles whether to run
-  const smokeTestFilter = testType && ["wp", "plugin", "theme"].includes(testType)
-    ? testType
-    : undefined;
-  const smokeTestReport = await runSmokeTests(absoluteConfigPath, smokeTestFilter);
+  const smokeTestFilter = getSmokeTestFilter(testType);
+  const smokeTestReport = await runSmokeTests(
+    absoluteConfigPath,
+    smokeTestFilter
+  );
   if (smokeTestReport.results.summary.tests > 0) {
     reports.push(smokeTestReport);
   }

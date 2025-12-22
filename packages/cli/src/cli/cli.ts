@@ -65,6 +65,7 @@ void yargs(hideBin(process.argv))
       await testHandler(argv);
     }
   )
+  .demandCommand(1, "You must provide a command. Use --help to see available commands.")
   .help()
   .version()
   .parse();

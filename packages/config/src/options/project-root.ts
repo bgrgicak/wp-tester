@@ -3,9 +3,10 @@ import * as clack from '@clack/prompts';
 import * as path from 'path';
 import * as fs from 'fs';
 
-export function validatePath(value: string): string | undefined {
+export function validatePath(value: string | undefined): string | undefined {
+  // Allow empty value - will be replaced with cwd
   if (!value || value.trim().length === 0) {
-    return 'Path cannot be empty';
+    return undefined;
   }
 
   const resolvedPath = path.isAbsolute(value)
@@ -19,29 +20,16 @@ export function validatePath(value: string): string | undefined {
   return undefined;
 }
 
-export async function rootDirOption(
+export async function projectRootOption(
   config: WPTesterConfig
 ): Promise<WPTesterConfig> {
   const cwd = process.cwd();
 
-  const isCwdRoot = await clack.confirm({
-    message: `Is ${cwd} the project root directory?`,
-    initialValue: true,
-  });
-
-  if (clack.isCancel(isCwdRoot)) {
-    clack.cancel('Setup cancelled.');
-    process.exit(0);
-  }
-
-  // If CWD is the root, omit rootDir from config (uses default)
-  if (isCwdRoot) {
-    return config;
-  }
-
-  // Prompt for the project root path
+  // Single input step: user can press Enter to confirm cwd or type a new path
   const rootPath = await clack.text({
-    message: 'Enter the path to your project root:',
+    message: 'Where is your project located? (Press Enter to use current directory)',
+    placeholder: cwd,
+    initialValue: '',
     validate: validatePath,
   });
 
@@ -50,9 +38,12 @@ export async function rootDirOption(
     process.exit(0);
   }
 
-  // Store the path exactly as the user provided it
+  // If empty (user pressed Enter), use '.' to represent current directory
+  const finalPath = !rootPath || rootPath.trim() === '' ? '.' : rootPath;
+
+  // Store the path (using '.' for current directory)
   return {
     ...config,
-    rootDir: rootPath,
+    projectHostPath: finalPath,
   };
 }

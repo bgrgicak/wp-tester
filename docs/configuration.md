@@ -289,6 +289,7 @@ See [WordPress Playground CLI mounting documentation](https://wordpress.github.i
 - `phpunitPath` (string, required): Path to the PHPUnit executable relative to the project root. Typically `vendor/bin/phpunit` when installed via Composer.
 - `configPath` (string, required): Path to the PHPUnit configuration file relative to the project root (e.g., `phpunit.xml` or `phpunit.xml.dist`).
 - `bootstrapPath` (string, required): Path to the PHPUnit bootstrap file relative to the project root (e.g., `tests/bootstrap.php`).
+- `testMode` (string, optional): Specifies which type of PHPUnit tests to run. Options are `"unit"` (default) or `"integration"`. See [PHPUnit Test Modes](#phpunit-test-modes) for details.
 
 **Example:**
 ```json
@@ -312,13 +313,97 @@ See [WordPress Playground CLI mounting documentation](https://wordpress.github.i
     "phpunit": {
       "phpunitPath": "vendor/bin/phpunit",
       "configPath": "phpunit.xml.dist",
-      "bootstrapPath": "tests/bootstrap.php"
+      "bootstrapPath": "tests/bootstrap.php",
+      "testMode": "integration"
     }
   }
 }
 ```
 
-**Note:** The PHPUnit tests will run inside the WordPress Playground environment, allowing you to test against the exact PHP and WordPress versions specified in your environment configuration.
+**Note:** The PHPUnit tests can run inside the WordPress Playground environment, allowing you to test against the exact PHP and WordPress versions specified in your environment configuration.
+
+#### PHPUnit Test Modes
+
+The `testMode` option allows you to choose between different types of PHPUnit tests based on your testing needs. This feature is particularly useful when you have both unit tests (fast, isolated) and integration tests (slower, requires WordPress) in your test suite.
+
+##### Unit Test Mode (`"unit"`)
+
+**Default behavior.** Unit test mode runs your tests quickly without loading the full WordPress environment. This is ideal for:
+
+- Testing isolated business logic
+- Testing utility functions and classes that don't depend on WordPress
+- Fast feedback during development
+- CI pipelines where speed is critical
+
+**Benefits:**
+- Faster execution time
+- No WordPress bootstrap overhead
+- Tests run in isolation
+- Suitable for TDD workflows
+
+**Example configuration:**
+```json
+{
+  "tests": {
+    "phpunit": {
+      "phpunitPath": "vendor/bin/phpunit",
+      "configPath": "phpunit.xml.dist",
+      "bootstrapPath": "tests/bootstrap.php",
+      "testMode": "unit"
+    }
+  }
+}
+```
+
+**When to use:** When your tests don't require WordPress functions, database access, or WordPress-specific functionality.
+
+##### Integration Test Mode (`"integration"`)
+
+Integration test mode runs your tests with the full WordPress environment loaded. This is essential for:
+
+- Testing code that uses WordPress functions (e.g., `get_option()`, `wp_insert_post()`)
+- Testing database operations
+- Testing hooks and filters
+- Testing plugin/theme functionality that depends on WordPress core
+
+**Benefits:**
+- Full WordPress environment available in tests
+- Test real-world scenarios with database and WordPress APIs
+- Verify integration points between your code and WordPress
+- Test hooks, filters, and WordPress-specific functionality
+
+**Example configuration:**
+```json
+{
+  "tests": {
+    "phpunit": {
+      "phpunitPath": "vendor/bin/phpunit",
+      "configPath": "phpunit.xml.dist",
+      "bootstrapPath": "tests/bootstrap.php",
+      "testMode": "integration"
+    }
+  }
+}
+```
+
+**When to use:** When your tests need WordPress functions, database access, or any WordPress-specific functionality.
+
+##### Default Behavior
+
+If you omit the `testMode` property, it defaults to `"unit"`:
+
+```json
+{
+  "tests": {
+    "phpunit": {
+      "phpunitPath": "vendor/bin/phpunit",
+      "configPath": "phpunit.xml.dist",
+      "bootstrapPath": "tests/bootstrap.php"
+      // testMode defaults to "unit"
+    }
+  }
+}
+```
 
 ### `reporters`
 
@@ -516,7 +601,8 @@ Test a plugin across multiple PHP versions with PHPUnit integration:
     "phpunit": {
       "phpunitPath": "vendor/bin/phpunit",
       "configPath": "phpunit.xml.dist",
-      "bootstrapPath": "tests/bootstrap.php"
+      "bootstrapPath": "tests/bootstrap.php",
+      "testMode": "integration"
     }
   },
   "reporters": [
@@ -529,5 +615,85 @@ Test a plugin across multiple PHP versions with PHPUnit integration:
 This configuration will:
 - Run your plugin's activation/deactivation tests
 - Run WordPress boot tests
-- Execute your PHPUnit test suite in both PHP 8.1 and PHP 8.2 environments
+- Execute your PHPUnit integration test suite with WordPress loaded in both PHP 8.1 and PHP 8.2 environments
 - Output results to console and JSON file
+
+### Plugin with Separate Unit and Integration Tests
+
+Run unit tests quickly, then run integration tests with WordPress loaded:
+
+```json
+{
+  "environments": [
+    {
+      "name": "PHP 8.2 + WP 6.7",
+      "blueprint": {
+        "preferredVersions": {
+          "php": "8.2",
+          "wp": "6.7"
+        }
+      },
+      "mounts": [
+        {
+          "hostPath": ".",
+          "vfsPath": "/wordpress/wp-content/plugins/my-plugin"
+        }
+      ]
+    }
+  ],
+  "tests": {
+    "plugin": "my-plugin",
+    "phpunit": {
+      "phpunitPath": "vendor/bin/phpunit",
+      "configPath": "phpunit.xml.dist",
+      "bootstrapPath": "tests/bootstrap.php",
+      "testMode": "unit"
+    }
+  },
+  "reporters": ["default"]
+}
+```
+
+For integration tests, create a separate configuration file `wp-tester-integration.json`:
+
+```json
+{
+  "environments": [
+    {
+      "name": "PHP 8.2 + WP 6.7",
+      "blueprint": {
+        "preferredVersions": {
+          "php": "8.2",
+          "wp": "6.7"
+        }
+      },
+      "mounts": [
+        {
+          "hostPath": ".",
+          "vfsPath": "/wordpress/wp-content/plugins/my-plugin"
+        }
+      ]
+    }
+  ],
+  "tests": {
+    "plugin": "my-plugin",
+    "phpunit": {
+      "phpunitPath": "vendor/bin/phpunit",
+      "configPath": "phpunit.xml.dist",
+      "bootstrapPath": "tests/bootstrap.php",
+      "testMode": "integration"
+    }
+  },
+  "reporters": ["default"]
+}
+```
+
+Then run them separately:
+
+```bash
+# Run fast unit tests
+wp-tester test
+
+# Run integration tests when needed
+wp-tester test --config wp-tester-integration.json
+```

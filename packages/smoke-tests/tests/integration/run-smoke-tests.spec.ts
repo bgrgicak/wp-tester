@@ -26,7 +26,7 @@ describe("runSmokeTests integration", () => {
     expect(report.results).toBeDefined();
     expect(report.results.summary).toBeDefined();
     expect(report.results.summary.tests).toBeGreaterThan(0);
-  }, 60000); // 60s timeout for WordPress boot
+  });
 
   it("should run plugin tests and return CTRF report", async () => {
     const report = await runSmokeTests(TEST_PLUGIN_CONFIG_PATH);
@@ -43,7 +43,7 @@ describe("runSmokeTests integration", () => {
       test.name.toLowerCase().includes("plugin")
     );
     expect(hasPluginTests).toBe(true);
-  }, 60000); // 60s timeout for WordPress boot
+  });
 
   it("should run theme tests and return CTRF report", async () => {
     const report = await runSmokeTests(TEST_THEME_CONFIG_PATH);
@@ -60,7 +60,7 @@ describe("runSmokeTests integration", () => {
       test.name.toLowerCase().includes("theme")
     );
     expect(hasThemeTests).toBe(true);
-  }, 60000); // 60s timeout for WordPress boot
+  });
 
   it("should return a EMPTY_REPORT when no tests are configured", async () => {
     const config: WPTesterConfig = {

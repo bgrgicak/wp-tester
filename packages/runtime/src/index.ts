@@ -6,11 +6,9 @@
 
 import { runCLI, type RunCLIServer } from "@wp-playground/cli";
 import type { PHPRequest, PHPResponse, RemoteAPI } from "@php-wasm/universal";
-import type { Environment } from "@wp-tester/config";
+import type { ResolvedEnvironment } from "@wp-tester/config";
 import { PlaygroundCliBlueprintV1Worker } from "@wp-playground/cli/blueprints-v1/worker-thread-v1";
 import { PlaygroundCliBlueprintV2Worker } from "@wp-playground/cli/blueprints-v2/worker-thread-v2";
-
-import { readFileSync } from "fs";
 import type { BlueprintV1Declaration } from "@wp-playground/blueprints";
 
 export const defaultWpCliPath = "/tmp/wp-cli.phar";
@@ -21,62 +19,48 @@ export type { Mount } from "@wp-playground/cli/mounts";
 
 export type { RunCLIServer } from "@wp-playground/cli";
 
-/**
- * Resolve a blueprint configuration to a BlueprintV1Declaration object.
- * If the blueprint is a string (file path), reads and parses the JSON file.
- * If it's already an object, returns it as-is.
- *
- * @param blueprint - Blueprint object or file path
- * @returns Resolved BlueprintV1Declaration object
- */
-function resolveBlueprint(
-  blueprint: BlueprintV1Declaration | string
-): BlueprintV1Declaration {
-  if (typeof blueprint === "string") {
-    const blueprintContent = readFileSync(blueprint, "utf-8");
-    return JSON.parse(blueprintContent) as BlueprintV1Declaration;
-  }
-  return blueprint;
-}
-
 // TODO Remove once @wp-playground/cli exports this type
 type PlaygroundCliWorker =
   | PlaygroundCliBlueprintV1Worker
   | PlaygroundCliBlueprintV2Worker;
 
 /**
- * Start a WordPress Playground server from an Environment configuration
+ * Start a WordPress Playground server from an Environment configuration.
+ * Expects environment to be already resolved (blueprint loaded, paths absolute).
  */
 export async function startPlayground(
-  environment: Environment
+  environment: ResolvedEnvironment
 ): Promise<RunCLIServer> {
   // Configure mounts from environment
   const mountsBeforeInstall = [];
   const mountAfterInstall = [];
 
   // Separate mounts into beforeInstall and afterInstall
-  if (environment.mounts) {
-    mountsBeforeInstall.push(
-      ...environment.mounts
-        .filter((m) => m.beforeInstall === true)
-        .map((m) => ({ hostPath: m.hostPath, vfsPath: m.vfsPath }))
-    );
-    mountAfterInstall.push(
-      ...environment.mounts
-        .filter((m) => m.beforeInstall !== true)
-        .map((m) => ({ hostPath: m.hostPath, vfsPath: m.vfsPath }))
-    );
-  }
+  mountsBeforeInstall.push(
+    ...environment.mounts
+      .filter((m) => m.beforeInstall === true)
+      .map((m) => ({ hostPath: m.hostPath, vfsPath: m.vfsPath }))
+  );
+  mountAfterInstall.push(
+    ...environment.mounts
+      .filter((m) => m.beforeInstall !== true)
+      .map((m) => ({ hostPath: m.hostPath, vfsPath: m.vfsPath }))
+  );
 
-  const blueprint = resolveBlueprint(environment.blueprint);
-
+  // Blueprint should already be resolved by resolveConfig
   // Create a mutable copy to avoid modifying the original
-  if (!blueprint.extraLibraries) {
-    blueprint.extraLibraries = [];
+  const extraLibraries = environment.blueprint.extraLibraries
+    ? [...environment.blueprint.extraLibraries]
+    : [];
+
+  if (!extraLibraries.includes("wp-cli")) {
+    extraLibraries.push("wp-cli");
   }
-  if (!blueprint.extraLibraries.includes("wp-cli")) {
-    blueprint.extraLibraries.push("wp-cli");
-  }
+
+  const blueprint: BlueprintV1Declaration = {
+    ...environment.blueprint,
+    extraLibraries,
+  };
 
   return await runCLI({
     command: "server",
