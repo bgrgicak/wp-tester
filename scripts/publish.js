@@ -1,30 +1,89 @@
 #!/usr/bin/env node
 import { execSync } from 'child_process';
-import { readFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 
 const PACKAGES_TO_PUBLISH = [
   'results',      // No internal deps
-  'config',       // Depends on results (indirectly)
+  'config',       // No internal deps
   'runtime',      // Depends on config
   'phpunit',      // Depends on config, results, runtime
   'smoke-tests',  // Depends on results, runtime
   'cli',          // Depends on all above
 ];
 
+const PACKAGE_SCOPE = '@wp-tester/';
+
 function exec(cmd, opts = {}) {
   return execSync(cmd, { stdio: 'inherit', ...opts });
 }
 
 function getPackageVersion(packageName) {
-  const pkgPath = join(process.cwd(), 'packages', packageName, 'package.json');
+  const pkgPath = getPackagePath(packageName);
   const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
   return pkg.version;
+}
+
+function getPackagePath(packageName) {
+  return join(process.cwd(), 'packages', packageName, 'package.json');
+}
+
+function readPackageJson(packageName) {
+  const pkgPath = getPackagePath(packageName);
+  return JSON.parse(readFileSync(pkgPath, 'utf-8'));
+}
+
+function writePackageJson(packageName, packageJson) {
+  const pkgPath = getPackagePath(packageName);
+  writeFileSync(pkgPath, JSON.stringify(packageJson, null, 2) + '\n', 'utf-8');
+}
+
+function transformWildcardDependencies(packageName) {
+  const pkg = readPackageJson(packageName);
+  let hasChanges = false;
+  
+  // Transform "*" dependencies to actual versions
+  ['dependencies', 'devDependencies', 'peerDependencies'].forEach(depType => {
+    if (pkg[depType]) {
+      Object.keys(pkg[depType]).forEach(depName => {
+        if (pkg[depType][depName] === '*' && depName.startsWith(PACKAGE_SCOPE)) {
+          // Extract package name from scoped package
+          const internalPkgName = depName.replace(PACKAGE_SCOPE, '');
+          if (PACKAGES_TO_PUBLISH.includes(internalPkgName)) {
+            const version = getPackageVersion(internalPkgName);
+            pkg[depType][depName] = `^${version}`;
+            hasChanges = true;
+          }
+        }
+      });
+    }
+  });
+  
+  // Only write if changes were made
+  if (hasChanges) {
+    writePackageJson(packageName, pkg);
+    return true;
+  }
+  return false;
+}
+
+function restorePackageJson(packageName, originalContent) {
+  const pkgPath = getPackagePath(packageName);
+  writeFileSync(pkgPath, originalContent, 'utf-8');
 }
 
 function checkNpmLogin() {
   try {
     execSync('npm whoami', { stdio: 'pipe' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function checkVersionExists(packageName, version) {
+  try {
+    execSync(`npm view @wp-tester/${packageName}@${version}`, { stdio: 'pipe' });
     return true;
   } catch {
     return false;
@@ -47,8 +106,14 @@ function main() {
   // Build packages
   if (!skipBuild) {
     console.log('🔨 Building all packages...\n');
-    exec('npm run build');
-    console.log('\n✓ Build complete\n');
+    try {
+      exec('npm run build');
+      console.log('\n✓ Build complete\n');
+    } catch (error) {
+      console.error('\n❌ Build failed.');
+      console.error('Error:', error.message);
+      process.exit(1);
+    }
   } else {
     console.log('⏭️  Skipping build (--skip-build)\n');
   }
@@ -65,12 +130,43 @@ function main() {
     console.log('🔍 Dry run mode - checking what would be published...\n');
   }
 
+  // Transform wildcard dependencies before publishing
+  console.log('🔄 Transforming wildcard dependencies to actual versions...\n');
+  const packageBackups = new Map();
+  
+  for (const pkg of PACKAGES_TO_PUBLISH) {
+    const pkgPath = getPackagePath(pkg);
+    const originalContent = readFileSync(pkgPath, 'utf-8');
+    packageBackups.set(pkg, originalContent);
+    
+    const wasTransformed = transformWildcardDependencies(pkg);
+    if (wasTransformed) {
+      console.log(`  ✓ Transformed dependencies in @wp-tester/${pkg}`);
+    }
+  }
+  console.log('');
+
   // Publish each package
+  let publishError = null;
+  
   for (const pkg of PACKAGES_TO_PUBLISH) {
     const version = getPackageVersion(pkg);
     console.log(`\n${'='.repeat(60)}`);
     console.log(`📤 Publishing @wp-tester/${pkg}@${version}`);
     console.log('='.repeat(60));
+
+    // Check if version already exists on npm
+    const versionExists = checkVersionExists(pkg, version);
+    if (versionExists) {
+      if (isDryRun) {
+        console.log(`⚠️  Version ${version} already exists on npm`);
+      } else {
+        console.error(`\n❌ Version ${version} of @wp-tester/${pkg} already exists on npm`);
+        console.error(`Please bump the version in packages/${pkg}/package.json and try again.`);
+        console.error('You can use: npm version patch|minor|major');
+        process.exit(1);
+      }
+    }
 
     const publishCmd = [
       'npm publish',
@@ -86,8 +182,22 @@ function main() {
     } catch (error) {
       console.error(`\n❌ Failed to publish @wp-tester/${pkg}`);
       console.error('Error:', error.message);
-      process.exit(1);
+      publishError = error;
+      break;
     }
+  }
+
+  // Restore original package.json files
+  console.log('\n🔄 Restoring original package.json files...\n');
+  for (const [pkg, originalContent] of packageBackups.entries()) {
+    restorePackageJson(pkg, originalContent);
+    console.log(`  ✓ Restored @wp-tester/${pkg}/package.json`);
+  }
+  console.log('');
+
+  // Exit with error if publishing failed
+  if (publishError) {
+    process.exit(1);
   }
 
   console.log('\n' + '='.repeat(60));
