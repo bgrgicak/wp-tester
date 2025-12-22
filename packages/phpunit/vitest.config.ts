@@ -7,7 +7,7 @@ export default mergeConfig(
     test: {
       passWithNoTests: true,
       // Increase timeout for WordPress Playground initialization (downloads on first run)
-      testTimeout: 120000, // 120s timeout
+      testTimeout: 180000, // 180s timeout
     },
   })
 );

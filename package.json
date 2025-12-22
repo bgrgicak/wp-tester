@@ -14,7 +14,9 @@
     "cli": "tsx --tsconfig tsconfig.dev.json packages/cli/src/cli/cli.ts",
     "update-schema": "nx run @wp-tester/config:update-schema",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "docs:serve": "docsify serve docs",
+    "docs:dev": "docsify serve docs --open"
   },
   "repository": {
     "type": "git",
@@ -30,6 +32,7 @@
     "@types/xml2js": "^0.4.14",
     "@typescript-eslint/eslint-plugin": "^8.48.1",
     "@typescript-eslint/parser": "^8.48.1",
+    "docsify-cli": "^4.4.4",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
     "nx": "^22.1.3",
