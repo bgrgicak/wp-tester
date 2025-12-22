@@ -15,6 +15,9 @@
     "update-schema": "nx run @wp-tester/config:update-schema",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "publish": "node scripts/publish.js",
+    "publish:dry-run": "node scripts/publish.js --dry-run",
+    "prepublishOnly": "npm run build && npm test",
     "docs:serve": "docsify serve docs",
     "docs:dev": "docsify serve docs --open"
   },
