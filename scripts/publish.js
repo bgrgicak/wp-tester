@@ -94,6 +94,8 @@ function main() {
   const args = process.argv.slice(2);
   const isDryRun = args.includes('--dry-run');
   const skipBuild = args.includes('--skip-build');
+  const otpArg = args.find(arg => arg.startsWith('--otp='));
+  const otp = otpArg ? otpArg.split('=')[1] : null;
 
   console.log('📦 wp-tester Publishing Script\n');
 
@@ -171,6 +173,7 @@ function main() {
     const publishCmd = [
       'npm publish',
       '--access public',
+      otp ? `--otp=${otp}` : '',
       isDryRun ? '--dry-run' : '',
     ]
       .filter(Boolean)
