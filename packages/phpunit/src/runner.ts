@@ -135,7 +135,6 @@ async function runPhpUnitTestsForEnvironment(
     }
 
     // Run PHPUnit tests using WP-CLI
-    // Set WP_TESTS_DIR environment variable only for unit tests (when test library is mounted)
     const result = await playground.cli(cliArgs, {
       env: phpUnitEnvironmentVariables,
     });
