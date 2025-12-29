@@ -30,7 +30,6 @@
     "@wp-tester/config": "*",
     "@wp-tester/results": "*",
     "@wp-tester/runtime": "*",
-    "tar": "^7.5.2",
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
