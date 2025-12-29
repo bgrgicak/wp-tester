@@ -30,7 +30,8 @@
     "@wp-tester/config": "*",
     "@wp-tester/results": "*",
     "@wp-tester/runtime": "*",
-    "xml2js": "^0.6.2"
+    "xml2js": "^0.6.2",
+    "yauzl": "*"
   },
   "devDependencies": {
     "@types/xml2js": "^0.4.14",
