@@ -43,7 +43,7 @@
     },
     "ArrayBuffer": {
       "properties": {
-        "__@toStringTag@599": {
+        "__@toStringTag@630": {
           "type": "string"
         },
         "byteLength": {
@@ -51,7 +51,7 @@
         }
       },
       "required": [
-        "__@toStringTag@599",
+        "__@toStringTag@630",
         "byteLength"
       ],
       "type": "object"
@@ -193,7 +193,7 @@
                               "BYTES_PER_ELEMENT": {
                                 "type": "number"
                               },
-                              "__@toStringTag@599": {
+                              "__@toStringTag@630": {
                                 "const": "Uint8Array",
                                 "type": "string"
                               },
@@ -212,7 +212,7 @@
                             },
                             "required": [
                               "BYTES_PER_ELEMENT",
-                              "__@toStringTag@599",
+                              "__@toStringTag@630",
                               "buffer",
                               "byteLength",
                               "byteOffset",
@@ -1329,7 +1329,7 @@
                     "BYTES_PER_ELEMENT": {
                       "type": "number"
                     },
-                    "__@toStringTag@599": {
+                    "__@toStringTag@630": {
                       "const": "Uint8Array",
                       "type": "string"
                     },
@@ -1348,7 +1348,7 @@
                   },
                   "required": [
                     "BYTES_PER_ELEMENT",
-                    "__@toStringTag@599",
+                    "__@toStringTag@630",
                     "buffer",
                     "byteLength",
                     "byteOffset",
@@ -1590,7 +1590,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@599": {
+                        "__@toStringTag@630": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -1609,7 +1609,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@599",
+                        "__@toStringTag@630",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -1798,7 +1798,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@599": {
+                        "__@toStringTag@630": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -1817,7 +1817,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@599",
+                        "__@toStringTag@630",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -2011,7 +2011,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@599": {
+                        "__@toStringTag@630": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -2030,7 +2030,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@599",
+                        "__@toStringTag@630",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -2219,7 +2219,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@599": {
+                        "__@toStringTag@630": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -2238,7 +2238,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@599",
+                        "__@toStringTag@630",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -2447,7 +2447,7 @@
                 "BYTES_PER_ELEMENT": {
                   "type": "number"
                 },
-                "__@toStringTag@599": {
+                "__@toStringTag@630": {
                   "const": "Uint8Array",
                   "type": "string"
                 },
@@ -2466,7 +2466,7 @@
               },
               "required": [
                 "BYTES_PER_ELEMENT",
-                "__@toStringTag@599",
+                "__@toStringTag@630",
                 "buffer",
                 "byteLength",
                 "byteOffset",
@@ -2532,7 +2532,7 @@
                 "BYTES_PER_ELEMENT": {
                   "type": "number"
                 },
-                "__@toStringTag@599": {
+                "__@toStringTag@630": {
                   "const": "Uint8Array",
                   "type": "string"
                 },
@@ -2551,7 +2551,7 @@
               },
               "required": [
                 "BYTES_PER_ELEMENT",
-                "__@toStringTag@599",
+                "__@toStringTag@630",
                 "buffer",
                 "byteLength",
                 "byteOffset",
@@ -2622,7 +2622,7 @@
         },
         "testMode": {
           "default": "unit",
-          "description": "Test mode - determines whether WordPress is loaded during tests\n\n- \"unit\": WordPress is NOT loaded. Use for testing isolated PHP logic,\n  pure functions, classes that don't depend on WordPress. (DEFAULT)\n\n- \"integration\": WordPress is loaded before tests run. Use for testing\n  WordPress APIs, hooks, database interactions, etc.",
+          "description": "Test mode - determines whether WordPress is loaded during tests",
           "enum": [
             "integration",
             "unit"
@@ -2847,10 +2847,10 @@
     },
     "SharedArrayBuffer": {
       "properties": {
-        "__@species@652": {
+        "__@species@697": {
           "$ref": "#/definitions/SharedArrayBuffer"
         },
-        "__@toStringTag@599": {
+        "__@toStringTag@630": {
           "const": "SharedArrayBuffer",
           "type": "string"
         },
@@ -2859,8 +2859,8 @@
         }
       },
       "required": [
-        "__@species@652",
-        "__@toStringTag@599",
+        "__@species@697",
+        "__@toStringTag@630",
         "byteLength"
       ],
       "type": "object"
@@ -2934,7 +2934,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@599": {
+                        "__@toStringTag@630": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -2953,7 +2953,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@599",
+                        "__@toStringTag@630",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -3157,7 +3157,7 @@
                 "BYTES_PER_ELEMENT": {
                   "type": "number"
                 },
-                "__@toStringTag@599": {
+                "__@toStringTag@630": {
                   "const": "Uint8Array",
                   "type": "string"
                 },
@@ -3176,7 +3176,7 @@
               },
               "required": [
                 "BYTES_PER_ELEMENT",
-                "__@toStringTag@599",
+                "__@toStringTag@630",
                 "buffer",
                 "byteLength",
                 "byteOffset",
@@ -3217,7 +3217,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@599": {
+                        "__@toStringTag@630": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -3236,7 +3236,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@599",
+                        "__@toStringTag@630",
                         "buffer",
                         "byteLength",
                         "byteOffset",

@@ -5,8 +5,9 @@ import type { ProjectType } from "./options/project-type-detect";
 /**
  * Test mode - determines whether WordPress is loaded during tests
  *
- * - "unit": WordPress is NOT loaded. Use for testing isolated PHP logic,
- *   pure functions, classes that don't depend on WordPress.
+ * - "unit": The WordPress test library is made available for mocking, but WordPress is NOT loaded.
+ *   Use for testing isolated PHP logic, pure functions, classes that don't depend on WordPress,
+ *   or when mocking WordPress functions using the WordPress test library.
  *
  * - "integration": WordPress is loaded before tests run. Use for testing
  *   WordPress APIs, hooks, database interactions, etc.
