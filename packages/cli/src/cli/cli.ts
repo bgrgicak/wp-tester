@@ -8,6 +8,9 @@ import { optionNames } from "@wp-tester/config";
 import { logo } from "./logo";
 
 void yargs(hideBin(process.argv))
+  .parserConfiguration({
+    'populate--': true
+  })
   .scriptName("wp-tester")
   .usage("$0 <command> [options]")
   .command(

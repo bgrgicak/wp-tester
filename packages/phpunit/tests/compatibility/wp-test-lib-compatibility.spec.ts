@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { runPhpUnitTests } from '../../src/runner.js';
+import { runPhpunitTests } from '../../src/runner.js';
+import type { PHPUnitConfig } from '@wp-tester/config';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
@@ -17,7 +18,7 @@ interface PluginTestConfig {
   repo: string; // GitHub repo in format "owner/repo"
   branch?: string; // Default: main
   setupCommands?: string[]; // Commands to run after clone (e.g., composer install)
-  phpunitConfig?: string; // Path to phpunit config relative to repo root
+  phpunit: PHPUnitConfig; // PHPUnit configuration
   expectedMinTests?: number; // Minimum number of tests we expect to run
   allowedFailures?: number; // Number of test failures we tolerate (for known issues)
 }
@@ -31,22 +32,32 @@ const PLUGINS_TO_TEST: PluginTestConfig[] = [
     setupCommands: [
       "composer install --no-interaction --prefer-dist --ignore-platform-reqs",
     ],
-    phpunitConfig: "phpunit.xml",
+    phpunit: {
+      phpunitPath: "vendor/bin/phpunit",
+      configPath: "phpunit.xml",
+    },
     expectedMinTests: 200, // Friends has 227 tests
     allowedFailures: 5, // We know 5 tests fail due to REST API mocking limitations
   },
   // AMP - Automattic's AMP plugin (has 2841 tests, takes a long time to run)
-  // {
-  //   name: "AMP",
-  //   repo: "Automattic/amp-wp",
-  //   branch: "develop",
-  //   setupCommands: [
-  //     "composer install --no-interaction --prefer-dist --ignore-platform-reqs",
-  //   ],
-  //   phpunitConfig: "phpunit.xml.dist",
-  //   expectedMinTests: 2000, // AMP has 2841 tests
-  //   allowedFailures: undefined, // TBD - we'll see how many pass
-  // },
+  {
+    name: "AMP",
+    repo: "Automattic/amp-wp",
+    branch: "develop",
+    setupCommands: [
+      "composer install --no-interaction --prefer-dist --ignore-platform-reqs",
+    ],
+    phpunit: {
+      phpunitPath: "vendor/bin/phpunit",
+      configPath: "phpunit.xml.dist",
+      phpunitArgs: [
+        "--filter",
+        "(?!.*AMP_Image_Dimension_Extract_Download_Test)" // Exclude test that requires PHP built-in server (exec php -S) which doesn't work in Playground
+      ],
+    },
+    expectedMinTests: 2000, // AMP has 2837 tests (2841 - 4 excluded)
+    allowedFailures: undefined, // TBD - we'll see how many pass
+  },
   // SQLite Database Integration
   {
     name: "SQLite Database Integration",
@@ -55,7 +66,10 @@ const PLUGINS_TO_TEST: PluginTestConfig[] = [
     setupCommands: [
       "composer install --no-interaction --prefer-dist --ignore-platform-reqs",
     ],
-    phpunitConfig: "phpunit.xml.dist",
+    phpunit: {
+      phpunitPath: "vendor/bin/phpunit",
+      configPath: "phpunit.xml.dist",
+    },
     expectedMinTests: 100, // Conservative estimate
     allowedFailures: 11, // TBD - we'll see how many pass
   },
@@ -135,24 +149,22 @@ describe('External WordPress plugins compatibility', () => {
           throw new Error(`Setup failed for ${plugin.name}`);
         }
 
-        const configPath = plugin.phpunitConfig
-          ? path.join(pluginDir, plugin.phpunitConfig)
-          : path.join(pluginDir, 'phpunit.xml');
+        const configPath = path.join(pluginDir, plugin.phpunit.configPath);
 
         // Verify config exists
         if (!fs.existsSync(configPath)) {
           throw new Error(`PHPUnit config not found at ${configPath}`);
         }
 
+        // Get additional PHPUnit arguments from config
+        const phpunitArgs: string[] = plugin.phpunit.phpunitArgs || [];
+
         // Run tests
-        const report = await runPhpUnitTests({
+        const report = await runPhpunitTests({
           projectHostPath: pluginDir,
           projectType: 'plugin',
           tests: {
-            phpunit: {
-              phpunitPath: 'vendor/bin/phpunit',
-              configPath,
-            }
+            phpunit: plugin.phpunit
           },
           environments: [
             {
@@ -166,7 +178,7 @@ describe('External WordPress plugins compatibility', () => {
             }
           ],
           reporters: ['default'] // Show output during tests
-        });
+        }, phpunitArgs);
 
         // Validate results
         expect(report.results.summary.tests).toBeGreaterThan(0);

@@ -72,6 +72,13 @@ export interface PHPUnitConfig {
    * @default "unit"
    */
   testMode?: TestMode;
+
+  /**
+   * Additional arguments to pass to PHPUnit
+   * @example ["--filter", "MyTest"]
+   * @example ["--group", "integration"]
+   */
+  phpunitArgs?: string[];
 }
 
 /**

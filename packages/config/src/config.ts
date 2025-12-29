@@ -177,6 +177,11 @@ function resolveTests(tests: Tests, projectDir: string): ResolvedTests {
     resolvedPhpunit.bootstrapPath = resolveAbsolute(phpunit.bootstrapPath, projectDir);
   }
 
+  // Preserve phpunitArgs if present
+  if (phpunit.phpunitArgs) {
+    resolvedPhpunit.phpunitArgs = phpunit.phpunitArgs;
+  }
+
   return {
     plugin: tests.plugin,
     theme: tests.theme,
