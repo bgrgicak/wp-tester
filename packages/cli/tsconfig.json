@@ -5,15 +5,17 @@
     "rootDir": "src",
     "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo",
     "paths": {
+      "@wp-tester/config": ["../config/src/index.ts"],
+      "@wp-tester/config/*": ["../config/src/*"],
+      "@wp-tester/phpunit": ["../phpunit/src/index.ts"],
+      "@wp-tester/phpunit/*": ["../phpunit/src/*"],
+      "@wp-tester/results": ["../results/src/index.ts"],
+      "@wp-tester/results/*": ["../results/src/*"],
+      "@wp-tester/smoke-tests": ["../smoke-tests/src/index.ts"],
+      "@wp-tester/smoke-tests/*": ["../smoke-tests/src/*"],
       "@wp-playground/cli/mounts": ["node_modules/@wp-playground/cli/mounts.d.ts"]
     }
   },
-  "references": [
-    { "path": "../config" },
-    { "path": "../phpunit" },
-    { "path": "../results" },
-    { "path": "../smoke-tests" }
-  ],
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }

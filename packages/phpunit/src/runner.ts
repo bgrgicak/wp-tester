@@ -1,12 +1,16 @@
 import type { WPTesterConfig, ResolvedWPTesterConfig, ResolvedEnvironment } from "@wp-tester/config";
-import { resolveConfig, parseBootstrapPath, hostToVfs } from "@wp-tester/config";
+import {
+  resolveConfig,
+  parseBootstrapPath,
+  hostToVfs,
+  resolveAbsolute,
+} from "@wp-tester/config";
 import type { Report } from "@wp-tester/results";
 import { EMPTY_REPORT, mergeReports } from "@wp-tester/results";
 import { startPlayground } from "@wp-tester/runtime";
 import { parseJUnitXml } from "./junit-parser";
+import { mountWordPressTestLibrary } from "./wordpress-test-lib";
 import { access } from "fs/promises";
-import { join } from "path";
-
 
 export function shouldRunPhpUnitTests(config: WPTesterConfig): boolean {
   return config.tests?.phpunit !== undefined;
@@ -25,28 +29,47 @@ async function runPhpUnitTestsForEnvironment(
   environment: ResolvedEnvironment,
   hostPhpunitConfigPath: string
 ): Promise<Report> {
-  const runtime = await startPlayground(environment);
+  const testMode = config.tests.phpunit!.testMode;
+
+  let phpUnitEnvironmentVariables: Record<string, string> = {};
+  let environmentWithMount: ResolvedEnvironment = environment;
+
+  // Prepare environment with WordPress test library for unit tests only
+  // Integration tests use standard WordPress installation via wp-load.php
+  if (testMode === "unit") {
+    environmentWithMount = await mountWordPressTestLibrary(environment);
+    phpUnitEnvironmentVariables = {
+      WP_TESTS_DIR: "/tmp/wordpress-tests-lib",
+    };
+  }
+
+  // Start playground with all mounts and steps including test library initialization
+  const runtime = await startPlayground(environmentWithMount);
   const playground = runtime.playground;
 
-  // Get testMode from config (defaults to "unit")
-  const testMode = (config.tests.phpunit?.testMode ?? "unit") as "unit" | "integration";
-
   if (config.reporters && config.reporters.includes("default")) {
-    const modeLabel = testMode === "unit"
-      ? "unit tests (without WordPress)"
-      : "integration tests (with WordPress)";
-    console.log(`Running PHPUnit ${modeLabel} for environment: ${environment.name}`);
+    const modeLabel =
+      testMode === "unit"
+        ? "unit tests (without WordPress)"
+        : "integration tests (with WordPress)";
+    console.log(
+      `Running PHPUnit ${modeLabel} for environment: ${environment.name}`
+    );
   }
 
   try {
     // Determine the plugin or theme being tested
     if (!config.projectType) {
-      console.error("Project type must be specified in config for PHPUnit tests");
+      console.error(
+        "Project type must be specified in config for PHPUnit tests"
+      );
       return EMPTY_REPORT;
     }
 
     if (!config.projectVFSPath) {
-      console.error(`Project type '${config.projectType}' does not support PHPUnit tests`);
+      console.error(
+        `Project type '${config.projectType}' does not support PHPUnit tests`
+      );
       return EMPTY_REPORT;
     }
 
@@ -62,7 +85,10 @@ async function runPhpUnitTestsForEnvironment(
       let userBootstrap = `${config.projectVFSPath}/tests/bootstrap.php`; // Default fallback
       if (bootstrapPath) {
         // Bootstrap path from parseBootstrapPath is relative, convert to absolute
-        const absoluteBootstrapPath = join(config.projectHostPath, bootstrapPath);
+        const absoluteBootstrapPath = resolveAbsolute(
+          bootstrapPath,
+          config.projectHostPath
+        );
         userBootstrap = hostToVfs(absoluteBootstrapPath, config);
       }
 
@@ -88,14 +114,19 @@ async function runPhpUnitTestsForEnvironment(
     // npx @php-wasm/cli@1.1.2 ./vendor/bin/phpunit
     const logFilePath = `/tmp/phpunit-results-${Date.now()}.xml`;
 
-    // Build PHP CLI arguments
+    // Build PHP CLI arguments with environment variables
     const cliArgs = [
       "php",
+      "-d",
+      // Set variables_order to EGPCS to ensure environment variables are accessible.
+      // This is required for WordPress test library to access WP_TESTS_DIR via getenv().
+      // Default PHP settings often exclude 'E' (Environment), which would break test setup.
+      "variables_order=EGPCS",
       `${config.projectVFSPath}/vendor/bin/phpunit`,
       "-c",
       vfsPhpunitConfigPath,
       "--log-junit",
-      logFilePath
+      logFilePath,
     ];
 
     // Override bootstrap file with our custom one (only in integration mode)
@@ -104,17 +135,31 @@ async function runPhpUnitTestsForEnvironment(
     }
 
     // Run PHPUnit tests using WP-CLI
-    const result = await playground.cli(cliArgs);
-
+    // Set WP_TESTS_DIR environment variable only for unit tests (when test library is mounted)
+    const result = await playground.cli(cliArgs, {
+      env: phpUnitEnvironmentVariables,
+    });
     if (!config.reporters || config.reporters.includes("default")) {
-      await result.stdout.pipeTo(new WritableStream({
-        write(chunk) {
-          process.stdout.write(chunk);
-        }
-      }));
+      // Consume both stdout and stderr
+      await Promise.all([
+        result.stdout.pipeTo(
+          new WritableStream({
+            write(chunk) {
+              process.stdout.write(chunk);
+            },
+          })
+        ),
+        result.stderr.pipeTo(
+          new WritableStream({
+            write(chunk) {
+              process.stderr.write(chunk);
+            },
+          })
+        ),
+      ]);
     } else {
-      // Still need to consume the stream even if not displaying
-      await result.stdout.cancel();
+      // Still need to consume the streams even if not displaying
+      await Promise.all([result.stdout.cancel(), result.stderr.cancel()]);
     }
 
     const exitCode = await result.exitCode;
@@ -126,7 +171,7 @@ async function runPhpUnitTestsForEnvironment(
     }
 
     // Check if the log file was created
-    if (!await playground.fileExists(logFilePath)) {
+    if (!(await playground.fileExists(logFilePath))) {
       console.error(`PHPUnit log file not created at ${logFilePath}`);
       return EMPTY_REPORT;
     }
@@ -140,7 +185,10 @@ async function runPhpUnitTestsForEnvironment(
 
     return report;
   } catch (error) {
-    console.error(`Error running PHPUnit tests for environment "${environment.name}":`, error);
+    console.error(
+      `Error running PHPUnit tests for environment "${environment.name}":`,
+      error
+    );
     return EMPTY_REPORT;
   } finally {
     // Cleanup

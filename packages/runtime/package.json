@@ -18,6 +18,8 @@
   ],
   "scripts": {
     "build": "node ../../scripts/build-package.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "type-check": "tsc --noEmit"
@@ -30,6 +32,7 @@
   "devDependencies": {
     "@types/node": "^24.10.1",
     "tsc-alias": "^1.8.16",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.13"
   }
 }

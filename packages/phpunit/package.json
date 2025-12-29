@@ -20,6 +20,8 @@
     "build": "node ../../scripts/build-package.js",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:real-world": "vitest run real-world-plugins",
+    "test:compatibility": "vitest run --config vitest.compatibility.config.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "type-check": "tsc --noEmit"
@@ -28,6 +30,7 @@
     "@wp-tester/config": "*",
     "@wp-tester/results": "*",
     "@wp-tester/runtime": "*",
+    "tar": "^7.5.2",
     "xml2js": "^0.6.2"
   },
   "devDependencies": {

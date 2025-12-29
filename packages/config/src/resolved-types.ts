@@ -1,78 +1,53 @@
 import type { BlueprintV1Declaration } from "@wp-playground/blueprints";
-import type { Mount, Tests, Reporter } from "./wp-tester-config";
+import type { Mount, Reporter, PHPUnitConfig, Tests, Environment, WPTesterConfig, TestMode, ProjectType } from "./wp-tester-config";
 
 /**
- * Resolved test environment configuration.
- * After resolveConfig() runs, all blueprints are loaded and all paths are absolute.
+ * Resolved PHPUnit configuration with absolute paths and required testMode.
  */
-export interface ResolvedEnvironment {
-  /**
-   * Optional descriptive name for this environment
-   * @example "PHP 8.1 + WP 6.7"
-   * @example "WooCommerce Environment"
-   */
-  name?: string;
+export interface ResolvedPHPUnitConfig extends Omit<PHPUnitConfig, 'testMode'> {
+  /** Test mode (always defined after resolution, defaults to "unit") */
+  testMode: TestMode;
+}
 
-  /**
-   * WordPress Playground Blueprint configuration.
-   * Always a BlueprintV1Declaration object after resolution.
-   */
-  blueprint: BlueprintV1Declaration;
+/**
+ * Resolved test configuration with resolved PHPUnit config.
+ */
+export interface ResolvedTests extends Omit<Tests, 'phpunit'> {
+  phpunit?: ResolvedPHPUnitConfig;
+}
 
-  /**
-   * Filesystem mounts to apply to this environment.
-   * All paths are absolute after resolution.
-   * Always defined (may be empty array if no mounts).
-   */
+/**
+ * Resolved blueprint with guaranteed preferredVersions.
+ */
+export interface ResolvedBlueprint extends Omit<BlueprintV1Declaration, 'preferredVersions'> {
+  /** Preferred versions (always defined after resolution, defaults to "latest") */
+  preferredVersions: Required<NonNullable<BlueprintV1Declaration['preferredVersions']>>;
+}
+
+/**
+ * Resolved environment with loaded blueprint and required mounts array.
+ */
+export interface ResolvedEnvironment extends Omit<Environment, 'blueprint' | 'mounts'> {
+  /** Blueprint loaded from file (if it was a string path) with guaranteed preferredVersions */
+  blueprint: ResolvedBlueprint;
+  /** Mounts array (always defined, may be empty) */
   mounts: Mount[];
 }
 
 /**
- * Resolved wp-tester configuration.
- * After resolveConfig() runs, all blueprints are loaded and all paths are absolute.
- * All optional fields from WPTesterConfig are guaranteed to have values.
+ * Resolved config with all paths absolute and optional fields set.
  */
-export interface ResolvedWPTesterConfig {
-  /**
-   * JSON Schema reference for IDE validation and autocomplete
-   */
-  $schema?: string;
-
-  /**
-   * Absolute path to the project on the host filesystem.
-   * All relative paths in the config are resolved from this directory.
-   */
+export interface ResolvedWPTesterConfig extends Omit<WPTesterConfig, 'projectHostPath' | 'projectType' | 'reporters' | 'environments' | 'tests'> {
+  /** Absolute path to project on host (always defined after resolution) */
   projectHostPath: string;
-
-  /**
-   * Path to the project in the VFS (Virtual File System).
-   * Determined by projectType (e.g., /wordpress/wp-content/plugins/my-plugin).
-   */
+  /** VFS path determined by project type */
   projectVFSPath: string;
-
-  /**
-   * Detected WordPress project type (always set after resolution).
-   * Automatically detected during setup based on project structure.
-   */
-  projectType: 'plugin' | 'theme' | 'wp-content' | 'wordpress-install' | 'unknown';
-
-  /**
-   * Test environments to run.
-   * Each environment can have different PHP/WordPress versions and setup.
-   * Tests will run against all defined environments (matrix testing).
-   * All blueprints are loaded and all paths are absolute.
-   * @minItems 1
-   */
+  /** Project type (always defined after resolution) */
+  projectType: ProjectType;
+  /** Resolved environments with loaded blueprints */
   environments: ResolvedEnvironment[];
-
-  /**
-   * Test suites to execute
-   */
-  tests: Tests;
-
-  /**
-   * Output reporters for test results (always set after resolution).
-   * @default ["default"]
-   */
+  /** Resolved tests with absolute paths and defaults */
+  tests: ResolvedTests;
+  /** Reporters (always defined after resolution) */
   reporters: Reporter[];
 }

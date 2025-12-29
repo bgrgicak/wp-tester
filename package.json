@@ -33,6 +33,7 @@
   "homepage": "https://github.com/bgrgicak/wp-tester#readme",
   "devDependencies": {
     "@types/xml2js": "^0.4.14",
+    "@types/yauzl": "^2.10.3",
     "@typescript-eslint/eslint-plugin": "^8.48.1",
     "@typescript-eslint/parser": "^8.48.1",
     "docsify-cli": "^4.4.4",
@@ -42,5 +43,8 @@
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.48.1"
+  },
+  "dependencies": {
+    "yauzl": "^3.2.0"
   }
 }
