@@ -25,7 +25,8 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "ctrf": "^0.0.17"
+    "ctrf": "^0.0.17",
+    "picocolors": "^1.1.1"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

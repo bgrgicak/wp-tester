@@ -6,6 +6,7 @@
  */
 
 import type { Test, TestStatus, Report } from "ctrf";
+import pc from "picocolors";
 
 /**
  * Test event emitted during test execution
@@ -56,20 +57,6 @@ export const stdoutWriter: StreamWriter = {
   writeLine(text: string) {
     process.stdout.write(text + "\n");
   },
-};
-
-/**
- * ANSI color codes for terminal output
- */
-const colors = {
-  reset: "\x1b[0m",
-  bold: "\x1b[1m",
-  dim: "\x1b[2m",
-  green: "\x1b[32m",
-  red: "\x1b[31m",
-  yellow: "\x1b[33m",
-  cyan: "\x1b[36m",
-  gray: "\x1b[90m",
 };
 
 /**
@@ -166,9 +153,7 @@ export class StreamingReporter {
 
     if (this.enabled) {
       this.writer.writeLine("");
-      this.writer.writeLine(
-        `${colors.cyan}${colors.bold}Running tests: ${this.toolName}${colors.reset}`
-      );
+      this.writer.writeLine(pc.cyan(pc.bold(`Running tests: ${this.toolName}`)));
       this.writer.writeLine("");
     }
   }
@@ -191,9 +176,7 @@ export class StreamingReporter {
     if (!this.enabled) return;
 
     this.currentSuite = name;
-    this.writer.writeLine(
-      `${colors.dim}▸ ${name}${colors.reset}`
-    );
+    this.writer.writeLine(pc.dim(`▸ ${name}`));
   }
 
   /**
@@ -217,11 +200,9 @@ export class StreamingReporter {
 
     if (!this.enabled) return;
 
-    const durationStr = `${colors.gray}(${formatDuration(duration)})${colors.reset}`;
+    const durationStr = pc.gray(`(${formatDuration(duration)})`);
     const displayName = this.formatDisplayName(name, suiteName);
-    this.writer.writeLine(
-      `  ${colors.green}✓${colors.reset} ${displayName} ${durationStr}`
-    );
+    this.writer.writeLine(`  ${pc.green("✓")} ${displayName} ${durationStr}`);
   }
 
   /**
@@ -246,16 +227,14 @@ export class StreamingReporter {
 
     if (!this.enabled) return;
 
-    const durationStr = `${colors.gray}(${formatDuration(duration)})${colors.reset}`;
+    const durationStr = pc.gray(`(${formatDuration(duration)})`);
     const displayName = this.formatDisplayName(name, suiteName);
-    this.writer.writeLine(
-      `  ${colors.red}✗${colors.reset} ${displayName} ${durationStr}`
-    );
+    this.writer.writeLine(`  ${pc.red("✗")} ${displayName} ${durationStr}`);
 
     if (message) {
       const indentedMessage = message
         .split("\n")
-        .map((line) => `    ${colors.red}${line}${colors.reset}`)
+        .map((line) => `    ${pc.red(line)}`)
         .join("\n");
       this.writer.writeLine(indentedMessage);
     }
@@ -277,9 +256,9 @@ export class StreamingReporter {
     if (!this.enabled) return;
 
     const displayName = this.formatDisplayName(name, suiteName);
-    const reasonStr = reason ? ` ${colors.gray}(${reason})${colors.reset}` : "";
+    const reasonStr = reason ? ` ${pc.gray(`(${reason})`)}` : "";
     this.writer.writeLine(
-      `  ${colors.yellow}○${colors.reset} ${colors.dim}${displayName}${colors.reset}${reasonStr}`
+      `  ${pc.yellow("○")} ${pc.dim(displayName)}${reasonStr}`
     );
   }
 
@@ -297,9 +276,7 @@ export class StreamingReporter {
     if (!this.enabled) return;
 
     const displayName = this.formatDisplayName(name, suiteName);
-    this.writer.writeLine(
-      `  ${colors.yellow}◌${colors.reset} ${colors.dim}${displayName}${colors.reset}`
-    );
+    this.writer.writeLine(`  ${pc.yellow("◌")} ${pc.dim(displayName)}`);
   }
 
   /**
@@ -333,29 +310,21 @@ export class StreamingReporter {
     const failed = this.failCount;
     const skipped = this.skipCount;
 
-    this.writer.writeLine(
-      `${colors.bold}Test Summary:${colors.reset}`
-    );
+    this.writer.writeLine(pc.bold("Test Summary:"));
 
     if (passed > 0) {
-      this.writer.writeLine(
-        `  ${colors.green}✓ ${passed} passed${colors.reset}`
-      );
+      this.writer.writeLine(pc.green(`  ✓ ${passed} passed`));
     }
     if (failed > 0) {
-      this.writer.writeLine(
-        `  ${colors.red}✗ ${failed} failed${colors.reset}`
-      );
+      this.writer.writeLine(pc.red(`  ✗ ${failed} failed`));
     }
     if (skipped > 0) {
-      this.writer.writeLine(
-        `  ${colors.yellow}○ ${skipped} skipped${colors.reset}`
-      );
+      this.writer.writeLine(pc.yellow(`  ○ ${skipped} skipped`));
     }
 
     this.writer.writeLine("");
     this.writer.writeLine(
-      `${colors.dim}Total: ${total} tests in ${formatDuration(duration)}${colors.reset}`
+      pc.dim(`Total: ${total} tests in ${formatDuration(duration)}`)
     );
     this.writer.writeLine("");
   }
