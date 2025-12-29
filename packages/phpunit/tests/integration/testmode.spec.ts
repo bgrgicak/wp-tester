@@ -33,7 +33,7 @@ describe("PHPUnit testMode integration", () => {
 
 		// Verify console output shows unit mode
 		expect(consoleLogSpy).toHaveBeenCalledWith(
-			expect.stringContaining("Running PHPUnit unit tests (without WordPress)")
+			expect.stringContaining("Running PHPUnit unit tests (with WordPress test library)")
 		);
 
 		// In unit mode with WP test library, all tests in UnitTest.php should pass
@@ -112,7 +112,7 @@ describe("PHPUnit testMode integration", () => {
 
 		// Verify console output shows unit mode (the default)
 		expect(consoleLogSpy).toHaveBeenCalledWith(
-			expect.stringContaining("Running PHPUnit unit tests (without WordPress)")
+			expect.stringContaining("Running PHPUnit unit tests (with WordPress test library)")
 		);
 
 		// Without testMode specified, defaults to unit mode with WP test library
