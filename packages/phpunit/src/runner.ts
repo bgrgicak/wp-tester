@@ -50,7 +50,7 @@ async function runPhpUnitTestsForEnvironment(
   if (config.reporters && config.reporters.includes("default")) {
     const modeLabel =
       testMode === "unit"
-        ? "unit tests (without WordPress)"
+        ? "unit tests (with WordPress test library)"
         : "integration tests (with WordPress)";
     console.log(
       `Running PHPUnit ${modeLabel} for environment: ${environment.name}`
