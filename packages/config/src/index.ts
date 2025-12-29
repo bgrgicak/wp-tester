@@ -15,6 +15,9 @@ export type {
 export type {
   ResolvedEnvironment,
   ResolvedWPTesterConfig,
+  ResolvedPHPUnitConfig,
+  ResolvedTests,
+  ResolvedBlueprint,
 } from './resolved-types';
 
 // Functions
@@ -29,7 +32,8 @@ export {
   getProjectDir,
   getConfigDir,
   getConfigPath,
-} from './config';
+  resolveAbsolute,
+} from "./config";
 
 export { getProjectRootMount } from './auto-mount';
 export { hostToVfs, vfsToHost } from './path-mappers';

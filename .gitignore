@@ -10,6 +10,9 @@ dist/
 # WP Tester config file
 /wp-tester.json
 
+# TypeScript incremental build cache
+tsconfig.tsbuildinfo
+
 # Claude
 docs/plans/*
 .claude/

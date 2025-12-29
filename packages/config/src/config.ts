@@ -1,5 +1,5 @@
-import type { WPTesterConfig } from "./wp-tester-config";
-import type { ResolvedWPTesterConfig, ResolvedEnvironment } from "./resolved-types";
+import type { WPTesterConfig, Tests } from "./wp-tester-config";
+import type { ResolvedWPTesterConfig, ResolvedEnvironment, ResolvedTests, ResolvedPHPUnitConfig } from "./resolved-types";
 import type { BlueprintV1Declaration } from "@wp-playground/blueprints";
 import { readFile, writeFile, access, constants as fsConstants } from "fs/promises";
 import { existsSync } from "fs";
@@ -19,7 +19,7 @@ export type { WPTesterConfig } from "./wp-tester-config";
  * @param baseDir - Base directory to resolve relative paths from
  * @returns Absolute path
  */
-function resolveAbsolute(path: string, baseDir: string): string {
+export function resolveAbsolute(path: string, baseDir: string): string {
   return isAbsolute(path) ? path : resolve(baseDir, path);
 }
 
@@ -149,6 +149,43 @@ export function getProjectDir(config: WPTesterConfig, configPath?: string): stri
 }
 
 /**
+ * Resolve PHPUnit config paths and set default testMode
+ * @param tests - Tests configuration
+ * @param projectDir - Project directory for resolving relative paths
+ * @returns Resolved tests configuration
+ */
+function resolveTests(tests: Tests, projectDir: string): ResolvedTests {
+  // If no PHPUnit config, return tests as-is (but explicitly typed)
+  if (!tests.phpunit) {
+    return {
+      plugin: tests.plugin,
+      theme: tests.theme,
+      wp: tests.wp,
+    };
+  }
+
+  // Resolve PHPUnit config with absolute paths and default testMode
+  const phpunit = tests.phpunit;
+  const resolvedPhpunit: ResolvedPHPUnitConfig = {
+    phpunitPath: resolveAbsolute(phpunit.phpunitPath, projectDir),
+    configPath: resolveAbsolute(phpunit.configPath, projectDir),
+    testMode: phpunit.testMode ?? "unit",
+  };
+
+  // Add optional bootstrapPath if present
+  if (phpunit.bootstrapPath) {
+    resolvedPhpunit.bootstrapPath = resolveAbsolute(phpunit.bootstrapPath, projectDir);
+  }
+
+  return {
+    plugin: tests.plugin,
+    theme: tests.theme,
+    wp: tests.wp,
+    phpunit: resolvedPhpunit,
+  };
+}
+
+/**
  * Resolve config from path or object and adjust relative paths to absolute paths
  * @param config - Config file path or config object
  * @returns Config with all paths resolved to absolute paths, blueprints loaded, and all required fields set
@@ -191,6 +228,15 @@ export async function resolveConfig(
         blueprint = env.blueprint;
       }
 
+      // Ensure preferredVersions exists with defaults to create a ResolvedBlueprint
+      const resolvedBlueprint = {
+        ...blueprint,
+        preferredVersions: {
+          php: blueprint.preferredVersions?.php || "latest",
+          wp: blueprint.preferredVersions?.wp || "latest",
+        },
+      };
+
       // Auto-detect and add mounts if needed
       let mounts = env.mounts || [];
       if (mounts.length === 0 && resolvedConfig.projectHostPath) {
@@ -208,29 +254,14 @@ export async function resolveConfig(
 
       return {
         name: env.name,
-        blueprint,
+        blueprint: resolvedBlueprint,
         mounts: resolvedMounts,
       };
     })
   );
 
-  // Resolve PHPUnit paths to absolute paths
-  let resolvedTests = resolvedConfig.tests;
-  if (resolvedTests.phpunit) {
-    resolvedTests = {
-      ...resolvedTests,
-      phpunit: {
-        phpunitPath: resolveAbsolute(resolvedTests.phpunit.phpunitPath, projectDir),
-        configPath: resolveAbsolute(resolvedTests.phpunit.configPath, projectDir),
-        ...(resolvedTests.phpunit.bootstrapPath && {
-          bootstrapPath: resolveAbsolute(resolvedTests.phpunit.bootstrapPath, projectDir),
-        }),
-        ...(resolvedTests.phpunit.testMode && {
-          testMode: resolvedTests.phpunit.testMode,
-        }),
-      },
-    };
-  }
+  // Resolve PHPUnit paths to absolute paths and ensure testMode has a default
+  const resolvedTests: ResolvedTests = resolveTests(resolvedConfig.tests, projectDir);
 
   // Get project VFS path from the mount
   const mount = getProjectRootMount(projectDir, projectType);

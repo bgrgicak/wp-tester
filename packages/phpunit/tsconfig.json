@@ -4,13 +4,16 @@
     "target": "ES2022",
     "outDir": "dist",
     "rootDir": "src",
-    "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo"
+    "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo",
+    "paths": {
+      "@wp-tester/config": ["../config/src/index.ts"],
+      "@wp-tester/config/*": ["../config/src/*"],
+      "@wp-tester/results": ["../results/src/index.ts"],
+      "@wp-tester/results/*": ["../results/src/*"],
+      "@wp-tester/runtime": ["../runtime/src/index.ts"],
+      "@wp-tester/runtime/*": ["../runtime/src/*"]
+    }
   },
-  "references": [
-    { "path": "../config" },
-    { "path": "../results" },
-    { "path": "../runtime" }
-  ],
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }

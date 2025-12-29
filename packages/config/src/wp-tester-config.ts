@@ -1,5 +1,21 @@
 import type { BlueprintV1Declaration } from "@wp-playground/blueprints";
 import type { Mount as PlaygroundMount } from "@wp-playground/cli/mounts";
+import type { ProjectType } from "./options/project-type-detect";
+
+/**
+ * Test mode - determines whether WordPress is loaded during tests
+ *
+ * - "unit": The WordPress test library is made available for mocking, but WordPress is NOT loaded.
+ *   Use for testing isolated PHP logic, pure functions, classes that don't depend on WordPress,
+ *   or when mocking WordPress functions using the WordPress test library.
+ *
+ * - "integration": WordPress is loaded before tests run. Use for testing
+ *   WordPress APIs, hooks, database interactions, etc.
+ */
+export type TestMode = "unit" | "integration";
+
+// Re-export ProjectType for convenience
+export type { ProjectType };
 
 /**
  * WordPress Playground Blueprint configuration.
@@ -53,15 +69,9 @@ export interface PHPUnitConfig {
   /**
    * Test mode - determines whether WordPress is loaded during tests
    *
-   * - "unit": WordPress is NOT loaded. Use for testing isolated PHP logic,
-   *   pure functions, classes that don't depend on WordPress. (DEFAULT)
-   *
-   * - "integration": WordPress is loaded before tests run. Use for testing
-   *   WordPress APIs, hooks, database interactions, etc.
-   *
    * @default "unit"
    */
-  testMode?: "unit" | "integration";
+  testMode?: TestMode;
 }
 
 /**
@@ -168,7 +178,7 @@ export interface WPTesterConfig {
    * Detected WordPress project type.
    * Automatically detected during setup based on project structure.
    */
-  projectType?: 'plugin' | 'theme' | 'wp-content' | 'wordpress-install' | 'unknown';
+  projectType?: ProjectType;
 
   /**
    * Test environments to run.

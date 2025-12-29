@@ -16,7 +16,7 @@ describe("PHPUnit testMode integration", () => {
 		consoleLogSpy.mockRestore();
 	});
 
-	it("should run in unit mode without WordPress", async () => {
+	it("should run in unit mode with WordPress test library", async () => {
 		// Load config and override testMode to "unit"
 		const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
 		config.tests.phpunit = {
@@ -33,10 +33,10 @@ describe("PHPUnit testMode integration", () => {
 
 		// Verify console output shows unit mode
 		expect(consoleLogSpy).toHaveBeenCalledWith(
-			expect.stringContaining("Running PHPUnit unit tests (without WordPress)")
+			expect.stringContaining("Running PHPUnit unit tests (with WordPress test library)")
 		);
 
-		// In unit mode, all tests in UnitTest.php should pass
+		// In unit mode with WP test library, all tests in UnitTest.php should pass
 		const unitTests = report.results.tests.filter(test =>
 			test.name.includes("UnitTest")
 		);
@@ -45,13 +45,14 @@ describe("PHPUnit testMode integration", () => {
 			expect(test.status).toBe("passed");
 		});
 
-		// In unit mode, all tests in WordPressTest.php should fail
+		// In unit mode with WP test library, WordPress is loaded via the test library
+		// so tests in WordPressTest.php should also pass
 		const wpTests = report.results.tests.filter(test =>
 			test.name.includes("WordPressTest")
 		);
 		expect(wpTests.length).toBeGreaterThan(0);
 		wpTests.forEach(test => {
-			expect(test.status).toBe("failed");
+			expect(test.status).toBe("passed");
 		});
 	});
 
@@ -111,10 +112,10 @@ describe("PHPUnit testMode integration", () => {
 
 		// Verify console output shows unit mode (the default)
 		expect(consoleLogSpy).toHaveBeenCalledWith(
-			expect.stringContaining("Running PHPUnit unit tests (without WordPress)")
+			expect.stringContaining("Running PHPUnit unit tests (with WordPress test library)")
 		);
 
-		// Without testMode specified, defaults to unit mode
+		// Without testMode specified, defaults to unit mode with WP test library
 		// All tests in UnitTest.php should pass
 		const unitTests = report.results.tests.filter(test =>
 			test.name.includes("UnitTest")
@@ -124,13 +125,14 @@ describe("PHPUnit testMode integration", () => {
 			expect(test.status).toBe("passed");
 		});
 
-		// All tests in WordPressTest.php should fail
+		// In unit mode with WP test library, WordPress is loaded via the test library
+		// so all tests in WordPressTest.php should also pass
 		const wpTests = report.results.tests.filter(test =>
 			test.name.includes("WordPressTest")
 		);
 		expect(wpTests.length).toBeGreaterThan(0);
 		wpTests.forEach(test => {
-			expect(test.status).toBe("failed");
+			expect(test.status).toBe("passed");
 		});
 	});
 });

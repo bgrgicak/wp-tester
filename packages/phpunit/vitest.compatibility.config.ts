@@ -13,9 +13,8 @@ export default mergeConfig(
       // Multiple parallel tests downloading the same WordPress version cause ENOENT errors
       // when trying to rename .zip.partial files
       fileParallelism: false,
-      // Exclude compatibility tests from regular test runs
-      // Use npm run test:compatibility to run them separately
-      exclude: ['**/node_modules/**', '**/dist/**', '**/tests/compatibility/**'],
+      // Only run compatibility tests
+      include: ['**/tests/compatibility/**/*.{test,spec}.?(c|m)[jt]s?(x)'],
     },
   })
 );

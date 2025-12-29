@@ -4,11 +4,12 @@
     "target": "ES2022",
     "outDir": "dist",
     "rootDir": "src",
-    "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo"
+    "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo",
+    "paths": {
+      "@wp-tester/config": ["../config/src/index.ts"],
+      "@wp-tester/config/*": ["../config/src/*"]
+    }
   },
-  "references": [
-    { "path": "../config" }
-  ],
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }
