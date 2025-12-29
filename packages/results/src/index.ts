@@ -18,6 +18,20 @@ export type {
 
 export { vitestToCTRF } from './parsers/vitest.js';
 export { mergeReports } from './merge.js';
+export {
+  StreamingReporter,
+  stdoutWriter,
+  createTestFromEvent,
+  type StreamEvent,
+  type TestEvent,
+  type SuiteEvent,
+  type RunEvent,
+  type StreamWriter,
+} from './streaming.js';
+export {
+  VitestStreamingReporter,
+  createVitestStreamingReporter,
+} from './vitest-streaming-reporter.js';
 
 export const EMPTY_REPORT: Report = {
   results: {

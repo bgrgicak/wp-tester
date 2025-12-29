@@ -4,12 +4,16 @@
  * Provides environment validation smoke tests for wp-tester.
  */
 
-import { startVitest } from "vitest/node";
+import { startVitest, type Reporter } from "vitest/node";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { WPTesterConfig, Tests, TestType } from "@wp-tester/config";
 import { resolveConfig } from "@wp-tester/config";
-import { vitestToCTRF, EMPTY_REPORT } from "@wp-tester/results";
+import {
+  EMPTY_REPORT,
+  VitestStreamingReporter,
+  StreamingReporter,
+} from "@wp-tester/results";
 import type { Report } from "@wp-tester/results";
 
 export function shouldRunSmokeTests(config: WPTesterConfig): boolean {
@@ -57,11 +61,13 @@ export function selectTestFiles(
  *
  * @param config - Test configuration or path to config file
  * @param test - Optional filter to run only specific test type (wp, plugin, or theme)
+ * @param streamingReporter - Optional streaming reporter for real-time output
  * @returns CTRF report with test results
  */
 export async function runSmokeTests(
   config: WPTesterConfig | string,
-  test?: TestType | false
+  test?: TestType | false,
+  streamingReporter?: StreamingReporter
 ): Promise<Report> {
   // Resolve config (loads from path if string, resolves paths)
   const resolvedConfig = await resolveConfig(config);
@@ -82,12 +88,22 @@ export async function runSmokeTests(
     return Promise.resolve(EMPTY_REPORT);
   }
 
-  const reporters = [];
-  if (resolvedConfig.reporters?.includes("default")) {
-    reporters.push("default");
+  // Determine if streaming should be enabled
+  const useStreaming = resolvedConfig.reporters?.includes("default") ?? true;
+
+  // Create Vitest streaming reporter
+  const vitestReporter = new VitestStreamingReporter("wp-tester-smoke-tests");
+  const reporter = vitestReporter.getStreamingReporter();
+
+  // Configure streaming based on config
+  if (!useStreaming) {
+    reporter.setEnabled(false);
   }
 
-  // Start Vitest programmatically
+  // Build reporters array - use our streaming reporter
+  const reporters: Reporter[] = [vitestReporter];
+
+  // Start Vitest programmatically with our streaming reporter
   const vitest = await startVitest("test", [], {
     config: join(packageRoot, "src/smoke-tests/vitest.config.ts"),
     root: packageRoot,
@@ -106,10 +122,8 @@ export async function runSmokeTests(
   // Wait for tests to complete
   await vitest.close();
 
-  // Keep the filter active to suppress any lingering output
-  // Don't restore stdout here
-
-  const result = vitestToCTRF(vitest, "wp-tester");
+  // Get report from streaming reporter
+  const result = reporter.getReport();
 
   return result;
 }

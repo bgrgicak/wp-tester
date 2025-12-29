@@ -6,9 +6,9 @@ import {
   resolveAbsolute,
 } from "@wp-tester/config";
 import type { Report } from "@wp-tester/results";
-import { EMPTY_REPORT, mergeReports } from "@wp-tester/results";
+import { EMPTY_REPORT, mergeReports, StreamingReporter } from "@wp-tester/results";
 import { startPlayground } from "@wp-tester/runtime";
-import { parseJUnitXml } from "./junit-parser";
+import { TeamCityParser } from "./teamcity-parser";
 import { mountWordPressTestLibrary } from "./wordpress-test-lib";
 import { access } from "fs/promises";
 
@@ -22,12 +22,14 @@ export function shouldRunPhpUnitTests(config: WPTesterConfig): boolean {
  * @param config - Resolved test configuration
  * @param environment - Environment configuration
  * @param hostPhpunitConfigPath - Absolute path to PHPUnit config on host
+ * @param streamingReporter - Optional streaming reporter for real-time output
  * @returns CTRF report with test results
  */
 async function runPhpUnitTestsForEnvironment(
   config: ResolvedWPTesterConfig,
   environment: ResolvedEnvironment,
-  hostPhpunitConfigPath: string
+  hostPhpunitConfigPath: string,
+  streamingReporter?: StreamingReporter
 ): Promise<Report> {
   const testMode = config.tests.phpunit!.testMode;
 
@@ -111,10 +113,8 @@ async function runPhpUnitTestsForEnvironment(
       );
     }
 
-    // npx @php-wasm/cli@1.1.2 ./vendor/bin/phpunit
-    const logFilePath = `/tmp/phpunit-results-${Date.now()}.xml`;
-
     // Build PHP CLI arguments with environment variables
+    // Use TeamCity format for streaming output
     const cliArgs = [
       "php",
       "-d",
@@ -125,8 +125,7 @@ async function runPhpUnitTestsForEnvironment(
       `${config.projectVFSPath}/vendor/bin/phpunit`,
       "-c",
       vfsPhpunitConfigPath,
-      "--log-junit",
-      logFilePath,
+      "--teamcity", // Use TeamCity format for streaming
     ];
 
     // Override bootstrap file with our custom one (only in integration mode)
@@ -134,32 +133,49 @@ async function runPhpUnitTestsForEnvironment(
       cliArgs.push("--bootstrap", bootstrapFilePath);
     }
 
-    // Run PHPUnit tests using WP-CLI
+    // Create a local streaming reporter if one wasn't provided
+    const useStreaming = config.reporters?.includes("default") ?? true;
+    const reporter = streamingReporter || new StreamingReporter();
+
+    // Configure reporter based on config
+    if (!useStreaming) {
+      reporter.setEnabled(false);
+    }
+
+    // Create TeamCity parser connected to the reporter
+    const parser = TeamCityParser.withReporter(reporter);
+
+    // Run PHPUnit tests
     const result = await playground.cli(cliArgs, {
       env: phpUnitEnvironmentVariables,
     });
-    if (!config.reporters || config.reporters.includes("default")) {
-      // Consume both stdout and stderr
-      await Promise.all([
-        result.stdout.pipeTo(
-          new WritableStream({
-            write(chunk) {
-              process.stdout.write(chunk);
-            },
-          })
-        ),
-        result.stderr.pipeTo(
-          new WritableStream({
-            write(chunk) {
+
+    // Process stdout with TeamCity parser for streaming results
+    // Stderr is still piped to console for error messages
+    const textDecoder = new TextDecoder();
+    await Promise.all([
+      result.stdout.pipeTo(
+        new WritableStream({
+          write(chunk) {
+            const text = textDecoder.decode(chunk, { stream: true });
+            parser.write(text);
+          },
+          close() {
+            parser.flush();
+          },
+        })
+      ),
+      result.stderr.pipeTo(
+        new WritableStream({
+          write(chunk) {
+            // Only show stderr if streaming is enabled
+            if (useStreaming) {
               process.stderr.write(chunk);
-            },
-          })
-        ),
-      ]);
-    } else {
-      // Still need to consume the streams even if not displaying
-      await Promise.all([result.stdout.cancel(), result.stderr.cancel()]);
-    }
+            }
+          },
+        })
+      ),
+    ]);
 
     const exitCode = await result.exitCode;
 
@@ -169,18 +185,11 @@ async function runPhpUnitTestsForEnvironment(
       return EMPTY_REPORT;
     }
 
-    // Check if the log file was created
-    if (!(await playground.fileExists(logFilePath))) {
-      console.error(`PHPUnit log file not created at ${logFilePath}`);
-      return EMPTY_REPORT;
-    }
+    // Get the report from the streaming reporter
+    const report = reporter.getReport();
 
-    // Read the JUnit XML log file
-    const xmlString = await playground.readFileAsText(logFilePath);
-
-    // Parse the JUnit XML output to CTRF format
-    const environmentName = environment.name;
-    const report = await parseJUnitXml(xmlString, environmentName);
+    // Update tool name with environment
+    report.results.tool.name = `wp-tester-phpunit (${environment.name})`;
 
     return report;
   } catch (error) {
@@ -199,10 +208,12 @@ async function runPhpUnitTestsForEnvironment(
  * Run PHPUnit tests in WordPress Playground environment
  *
  * @param config - Test configuration or path to config file
+ * @param streamingReporter - Optional streaming reporter for real-time output
  * @returns CTRF report with test results
  */
 export async function runPhpUnitTests(
-  config: WPTesterConfig | string
+  config: WPTesterConfig | string,
+  streamingReporter?: StreamingReporter
 ): Promise<Report> {
   // Resolve config (loads from path if string, resolves paths)
   const resolvedConfig = await resolveConfig(config);
@@ -229,7 +240,8 @@ export async function runPhpUnitTests(
     const report = await runPhpUnitTestsForEnvironment(
       resolvedConfig,
       environment,
-      hostPhpunitConfigPath
+      hostPhpunitConfigPath,
+      streamingReporter
     );
     if (report.results.summary.tests > 0) {
       reports.push(report);
