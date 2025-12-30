@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseTeamCityOutput, TeamCityParser } from "../../src/teamcity-parser";
+import { parseTeamCityOutput, TeamCityParser } from "@wp-tester/results";
 import type { StreamEvent } from "@wp-tester/results";
 
 describe("TeamCityParser", () => {
