@@ -53,6 +53,7 @@ export async function startPlayground(
     "mount-before-install": mountsBeforeInstall,
     quiet: true,
     internalCookieStore: true,
+    port: 0, // Use any available port to avoid EADDRINUSE errors
   });
 }
 
