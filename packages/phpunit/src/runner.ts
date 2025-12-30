@@ -12,7 +12,7 @@ import { parseJUnitXml } from "./junit-parser";
 import { mountWordPressTestLibrary } from "./wordpress-test-lib";
 import { access } from "fs/promises";
 
-export function shouldRunPhpUnitTests(config: WPTesterConfig): boolean {
+export function shouldRunPhpunitTests(config: WPTesterConfig): boolean {
   return config.tests?.phpunit !== undefined;
 }
 
@@ -24,7 +24,7 @@ export function shouldRunPhpUnitTests(config: WPTesterConfig): boolean {
  * @param hostPhpunitConfigPath - Absolute path to PHPUnit config on host
  * @returns CTRF report with test results
  */
-async function runPhpUnitTestsForEnvironment(
+async function runPhpunitTestsForEnvironment(
   config: ResolvedWPTesterConfig,
   environment: ResolvedEnvironment,
   hostPhpunitConfigPath: string
@@ -76,6 +76,9 @@ async function runPhpUnitTestsForEnvironment(
     // Map host PHPUnit config path to VFS
     const vfsPhpunitConfigPath = hostToVfs(hostPhpunitConfigPath, config);
 
+    // Map host PHPUnit executable path to VFS
+    const vfsPhpunitPath = hostToVfs(config.tests.phpunit!.phpunitPath, config);
+
     // Only create WordPress bootstrap in integration mode
     let bootstrapFilePath: string | null = null;
     if (testMode === "integration") {
@@ -117,12 +120,12 @@ async function runPhpUnitTestsForEnvironment(
     // Build PHP CLI arguments with environment variables
     const cliArgs = [
       "php",
-      "-d",
       // Set variables_order to EGPCS to ensure environment variables are accessible.
       // This is required for WordPress test library to access WP_TESTS_DIR via getenv().
       // Default PHP settings often exclude 'E' (Environment), which would break test setup.
+      "-d",
       "variables_order=EGPCS",
-      `${config.projectVFSPath}/vendor/bin/phpunit`,
+      vfsPhpunitPath,
       "-c",
       vfsPhpunitConfigPath,
       "--log-junit",
@@ -132,6 +135,12 @@ async function runPhpUnitTestsForEnvironment(
     // Override bootstrap file with our custom one (only in integration mode)
     if (bootstrapFilePath !== null) {
       cliArgs.push("--bootstrap", bootstrapFilePath);
+    }
+
+    // Append additional PHPUnit arguments from config
+    const phpunitArgs = config.tests.phpunit?.phpunitArgs;
+    if (phpunitArgs && phpunitArgs.length > 0) {
+      cliArgs.push(...phpunitArgs);
     }
 
     // Run PHPUnit tests using WP-CLI
@@ -201,14 +210,14 @@ async function runPhpUnitTestsForEnvironment(
  * @param config - Test configuration or path to config file
  * @returns CTRF report with test results
  */
-export async function runPhpUnitTests(
+export async function runPhpunitTests(
   config: WPTesterConfig | string
 ): Promise<Report> {
   // Resolve config (loads from path if string, resolves paths)
   const resolvedConfig = await resolveConfig(config);
 
   // Check if PHPUnit tests are configured
-  if (!shouldRunPhpUnitTests(resolvedConfig)) {
+  if (!shouldRunPhpunitTests(resolvedConfig)) {
     return Promise.resolve(EMPTY_REPORT);
   }
 
@@ -226,7 +235,7 @@ export async function runPhpUnitTests(
   // Run tests for all environments
   const reports: Report[] = [];
   for (const environment of resolvedConfig.environments) {
-    const report = await runPhpUnitTestsForEnvironment(
+    const report = await runPhpunitTestsForEnvironment(
       resolvedConfig,
       environment,
       hostPhpunitConfigPath
