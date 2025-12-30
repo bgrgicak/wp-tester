@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { runPhpunitTests } from "../../src/index";
+import { runPhpUnitTests } from "../../src/index";
 import { resolveConfig } from "@wp-tester/config";
 import { TEST_PLUGIN_CONFIG_PATH } from "@wp-tester/test-fixtures";
 
@@ -24,7 +24,7 @@ describe("PHPUnit testMode integration", () => {
 			testMode: "unit",
 		};
 
-		const report = await runPhpunitTests(config);
+		const report = await runPhpUnitTests(config);
 
 		// Verify report structure
 		expect(report).toBeDefined();
@@ -63,7 +63,7 @@ describe("PHPUnit testMode integration", () => {
 		// Verify the fixture has testMode set to "integration"
 		expect(config.tests.phpunit?.testMode).toBe("integration");
 
-		const report = await runPhpunitTests(config);
+		const report = await runPhpUnitTests(config);
 
 		// Verify report structure
 		expect(report).toBeDefined();
@@ -103,7 +103,7 @@ describe("PHPUnit testMode integration", () => {
 			config.tests.phpunit = rest as any;
 		}
 
-		const report = await runPhpunitTests(config);
+		const report = await runPhpUnitTests(config);
 
 		// Verify report structure
 		expect(report).toBeDefined();
