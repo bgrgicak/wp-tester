@@ -6,9 +6,8 @@ import {
   resolveAbsolute,
 } from "@wp-tester/config";
 import type { Report } from "@wp-tester/results";
-import { EMPTY_REPORT, mergeReports, StreamingReporter } from "@wp-tester/results";
+import { EMPTY_REPORT, mergeReports, StreamingReporter, TeamCityParser } from "@wp-tester/results";
 import { startPlayground } from "@wp-tester/runtime";
-import { TeamCityParser } from "./teamcity-parser";
 import { mountWordPressTestLibrary } from "./wordpress-test-lib";
 import { access } from "fs/promises";
 

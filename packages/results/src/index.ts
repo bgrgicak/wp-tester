@@ -32,6 +32,11 @@ export {
   VitestStreamingReporter,
   createVitestStreamingReporter,
 } from './vitest-streaming-reporter.js';
+export {
+  TeamCityParser,
+  createTeamCityParserStream,
+  parseTeamCityOutput,
+} from './teamcity-parser.js';
 
 export const EMPTY_REPORT: Report = {
   results: {

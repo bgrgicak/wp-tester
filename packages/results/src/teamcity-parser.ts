@@ -14,7 +14,8 @@
  * ##teamcity[testSuiteFinished name='SuiteName']
  */
 
-import type { StreamEvent, StreamingReporter } from "@wp-tester/results";
+import type { StreamEvent } from "./streaming.js";
+import type { StreamingReporter } from "./streaming.js";
 
 /**
  * TeamCity message types we care about
