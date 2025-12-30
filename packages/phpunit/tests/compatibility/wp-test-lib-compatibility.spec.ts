@@ -121,7 +121,7 @@ const CORE_TO_TEST: CoreTestConfig[] = [
     srcPath: "src",
     testsPath: "tests/phpunit",
     phpunitPath: "vendor/bin/phpunit",
-    phpunitConfigPath: "tests/phpunit/phpunit.xml.dist",
+    phpunitConfigPath: "phpunit.xml.dist", // Config is in repo root, not tests/phpunit/
     // Run a subset of core tests for compatibility testing
     // Full test suite would take too long for CI
     phpunitArgs: [
