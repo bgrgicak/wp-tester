@@ -35,6 +35,7 @@ export {
   resolveAbsolute,
 } from "./config";
 
+export { mergePhpunitArgs } from './phpunit';
 export { getProjectRootMount } from './auto-mount';
 export { hostToVfs, vfsToHost } from './path-mappers';
 export type { ProjectType } from './options/project-type-detect';

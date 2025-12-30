@@ -2,9 +2,10 @@ import { access, constants, stat } from 'fs/promises';
 import path from 'path';
 import * as clack from '../../cli/theme';
 import { runSmokeTests } from "@wp-tester/smoke-tests";
-import { runPhpUnitTests } from "@wp-tester/phpunit";
+import { runPhpunitTests } from "@wp-tester/phpunit";
 import { mergeReports, type Report } from "@wp-tester/results";
-import type { TestType } from "@wp-tester/config";
+import type { TestType, WPTesterConfig } from "@wp-tester/config";
+import { mergePhpunitArgs } from "@wp-tester/config";
 
 async function resolveConfigPath(configPath: string): Promise<string> {
   const resolvedPath = path.resolve(process.cwd(), configPath);
@@ -51,17 +52,18 @@ async function checkConfigExists(configPath: string): Promise<boolean> {
  */
 function getSmokeTestFilter(testType?: TestType): TestType | undefined | false {
   const smokeTestTypes: TestType[] = ["wp", "plugin", "theme"];
-  
+
   if (!testType) {
     return undefined; // Run all smoke tests
   }
-  
+
   return smokeTestTypes.includes(testType) ? testType : false;
 }
 
 export const runTests = async (
   configPath: string,
-  testType?: TestType
+  testType?: TestType,
+  phpunitArgs?: string[]
 ): Promise<void> => {
   let finalConfigPath = await resolveConfigPath(configPath);
 
@@ -88,6 +90,12 @@ export const runTests = async (
 
   const absoluteConfigPath = path.resolve(process.cwd(), finalConfigPath);
 
+  // Load and merge config with CLI args
+  let configForTests: string | WPTesterConfig = absoluteConfigPath;
+  if (phpunitArgs && phpunitArgs.length > 0) {
+    configForTests = await mergePhpunitArgs(absoluteConfigPath, phpunitArgs);
+  }
+
   // Run all test suites and collect results
   const reports: Report[] = [];
 
@@ -106,7 +114,7 @@ export const runTests = async (
 
   // Run PHPUnit tests
   if (shouldRunPhpUnit) {
-    const phpunitReport = await runPhpUnitTests(absoluteConfigPath);
+    const phpunitReport = await runPhpunitTests(configForTests);
     if (phpunitReport.results.summary.tests > 0) {
       reports.push(phpunitReport);
     }

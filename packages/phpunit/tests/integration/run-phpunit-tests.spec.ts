@@ -1,17 +1,17 @@
 import { describe, it, expect } from "vitest";
-import { runPhpUnitTests, shouldRunPhpUnitTests } from "../../src/index";
+import { runPhpunitTests, shouldRunPhpunitTests } from "../../src/index";
 import { resolveConfig } from "@wp-tester/config";
 import {
 	TEST_PLUGIN_CONFIG_PATH,
 	TEST_THEME_CONFIG_PATH,
 } from "@wp-tester/test-fixtures";
 
-describe("runPhpUnitTests integration", () => {
+describe("runPhpunitTests integration", () => {
 	it(
 		"should run plugin PHPUnit tests and return CTRF report",
 		async () => {
 			// Pass the config path string directly so the runner can determine project root
-			const report = await runPhpUnitTests(TEST_PLUGIN_CONFIG_PATH);
+			const report = await runPhpunitTests(TEST_PLUGIN_CONFIG_PATH);
 
 			// Validate report structure
 			expect(report).toBeDefined();
@@ -60,7 +60,7 @@ describe("runPhpUnitTests integration", () => {
 			// Set projectHostPath to theme fixture path so runner can find phpunit.xml.dist
 			config.projectHostPath = TEST_THEME_CONFIG_PATH.replace("/wp-tester.json", "");
 
-			const report = await runPhpUnitTests(config);
+			const report = await runPhpunitTests(config);
 
 			// Validate report structure
 			expect(report).toBeDefined();
@@ -94,7 +94,7 @@ describe("runPhpUnitTests integration", () => {
 
 	it("should handle multiple environments correctly", async () => {
 		// Pass config path so runner can determine project root
-		const report = await runPhpUnitTests(TEST_PLUGIN_CONFIG_PATH);
+		const report = await runPhpunitTests(TEST_PLUGIN_CONFIG_PATH);
 
 		expect(report.results.tests).toBeDefined();
 
@@ -104,11 +104,11 @@ describe("runPhpUnitTests integration", () => {
 	});
 });
 
-describe("shouldRunPhpUnitTests", () => {
+describe("shouldRunPhpunitTests", () => {
 	it("should return true for plugin config with phpunit enabled", async () => {
 		const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
 
-		const result = shouldRunPhpUnitTests(config);
+		const result = shouldRunPhpunitTests(config);
 
 		expect(result).toBe(true);
 	});
@@ -122,7 +122,7 @@ describe("shouldRunPhpUnitTests", () => {
 			testMode: "integration",
 		};
 
-		const result = shouldRunPhpUnitTests(config);
+		const result = shouldRunPhpunitTests(config);
 
 		expect(result).toBe(true);
 	});
@@ -131,7 +131,7 @@ describe("shouldRunPhpUnitTests", () => {
 		const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
 		config.tests.phpunit = undefined;
 
-		const result = shouldRunPhpUnitTests(config);
+		const result = shouldRunPhpunitTests(config);
 
 		expect(result).toBe(false);
 	});
@@ -141,7 +141,7 @@ describe("shouldRunPhpUnitTests", () => {
 		// @ts-expect-error - Testing missing tests config
 		delete config.tests;
 
-		const result = shouldRunPhpUnitTests(config);
+		const result = shouldRunPhpunitTests(config);
 
 		expect(result).toBe(false);
 	});

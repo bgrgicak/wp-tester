@@ -11,7 +11,7 @@ import { startPlayground } from "@wp-tester/runtime";
 import { mountWordPressTestLibrary } from "./wordpress-test-lib";
 import { access } from "fs/promises";
 
-export function shouldRunPhpUnitTests(config: WPTesterConfig): boolean {
+export function shouldRunPhpunitTests(config: WPTesterConfig): boolean {
   return config.tests?.phpunit !== undefined;
 }
 
@@ -24,7 +24,7 @@ export function shouldRunPhpUnitTests(config: WPTesterConfig): boolean {
  * @param streamingReporter - Optional streaming reporter for real-time output
  * @returns CTRF report with test results
  */
-async function runPhpUnitTestsForEnvironment(
+async function runPhpunitTestsForEnvironment(
   config: ResolvedWPTesterConfig,
   environment: ResolvedEnvironment,
   hostPhpunitConfigPath: string,
@@ -77,6 +77,9 @@ async function runPhpUnitTestsForEnvironment(
     // Map host PHPUnit config path to VFS
     const vfsPhpunitConfigPath = hostToVfs(hostPhpunitConfigPath, config);
 
+    // Map host PHPUnit executable path to VFS
+    const vfsPhpunitPath = hostToVfs(config.tests.phpunit!.phpunitPath, config);
+
     // Only create WordPress bootstrap in integration mode
     let bootstrapFilePath: string | null = null;
     if (testMode === "integration") {
@@ -116,12 +119,12 @@ async function runPhpUnitTestsForEnvironment(
     // Use TeamCity format for streaming output
     const cliArgs = [
       "php",
-      "-d",
       // Set variables_order to EGPCS to ensure environment variables are accessible.
       // This is required for WordPress test library to access WP_TESTS_DIR via getenv().
       // Default PHP settings often exclude 'E' (Environment), which would break test setup.
+      "-d",
       "variables_order=EGPCS",
-      `${config.projectVFSPath}/vendor/bin/phpunit`,
+      vfsPhpunitPath,
       "-c",
       vfsPhpunitConfigPath,
       "--teamcity", // Use TeamCity format for streaming
@@ -210,7 +213,7 @@ async function runPhpUnitTestsForEnvironment(
  * @param streamingReporter - Optional streaming reporter for real-time output
  * @returns CTRF report with test results
  */
-export async function runPhpUnitTests(
+export async function runPhpunitTests(
   config: WPTesterConfig | string,
   streamingReporter?: StreamingReporter
 ): Promise<Report> {
@@ -218,7 +221,7 @@ export async function runPhpUnitTests(
   const resolvedConfig = await resolveConfig(config);
 
   // Check if PHPUnit tests are configured
-  if (!shouldRunPhpUnitTests(resolvedConfig)) {
+  if (!shouldRunPhpunitTests(resolvedConfig)) {
     return Promise.resolve(EMPTY_REPORT);
   }
 
@@ -236,7 +239,7 @@ export async function runPhpUnitTests(
   // Run tests for all environments
   const reports: Report[] = [];
   for (const environment of resolvedConfig.environments) {
-    const report = await runPhpUnitTestsForEnvironment(
+    const report = await runPhpunitTestsForEnvironment(
       resolvedConfig,
       environment,
       hostPhpunitConfigPath,

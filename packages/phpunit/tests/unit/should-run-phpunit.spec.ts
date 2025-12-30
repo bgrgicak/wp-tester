@@ -1,15 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import type { WPTesterConfig } from '@wp-tester/config';
-import { shouldRunPhpUnitTests } from '../../src/runner';
+import { shouldRunPhpunitTests } from '../../src/runner';
 
-describe('shouldRunPhpUnitTests', () => {
+describe('shouldRunPhpunitTests', () => {
   it('should return false when phpunit is undefined', () => {
     const config: WPTesterConfig = {
       environments: [],
       tests: {},
     };
 
-    expect(shouldRunPhpUnitTests(config)).toBe(false);
+    expect(shouldRunPhpunitTests(config)).toBe(false);
   });
 
   it('should return true when phpunit config object is provided', () => {
@@ -24,6 +24,6 @@ describe('shouldRunPhpUnitTests', () => {
       },
     };
 
-    expect(shouldRunPhpUnitTests(config)).toBe(true);
+    expect(shouldRunPhpunitTests(config)).toBe(true);
   });
 });
