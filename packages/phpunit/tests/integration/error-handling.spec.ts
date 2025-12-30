@@ -1,11 +1,40 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { runPhpunitTests } from "../../src/index";
 import { resolveConfig } from "@wp-tester/config";
 import { TEST_PLUGIN_CONFIG_PATH } from "@wp-tester/test-fixtures";
 import path from "path";
+import { execSync } from "child_process";
+
+// Check if we have network access by trying to ping WordPress.org
+function hasNetworkAccess(): boolean {
+	try {
+		// Try to resolve wordpress.org DNS
+		execSync("getent hosts wordpress.org || nslookup wordpress.org || ping -c 1 -W 1 wordpress.org", {
+			stdio: "pipe",
+			timeout: 2000,
+		});
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+const skipTests = !hasNetworkAccess();
+if (skipTests) {
+	console.warn("Skipping PHPUnit error handling integration tests: No network access");
+}
+
+// Mock the WordPress release resolver to avoid additional network calls
+vi.mock("@wp-playground/wordpress", () => ({
+	resolveWordPressRelease: vi.fn().mockResolvedValue({
+		releaseUrl: "https://wordpress.org/wordpress-6.6.2.zip",
+		version: "6.6.2",
+		source: "cache",
+	}),
+}));
 
 describe("PHPUnit error handling", () => {
-	it(
+	it.skipIf(skipTests)(
 		"should handle missing PHPUnit config file gracefully",
 		async () => {
       const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
@@ -20,7 +49,7 @@ describe("PHPUnit error handling", () => {
     }
 	);
 
-	it(
+	it.skipIf(skipTests)(
 		"should handle missing vendor/bin/phpunit gracefully",
 		async () => {
       const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);

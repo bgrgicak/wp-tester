@@ -1,13 +1,42 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { runPhpunitTests, shouldRunPhpunitTests } from "../../src/index";
 import { resolveConfig } from "@wp-tester/config";
 import {
 	TEST_PLUGIN_CONFIG_PATH,
 	TEST_THEME_CONFIG_PATH,
 } from "@wp-tester/test-fixtures";
+import { execSync } from "child_process";
+
+// Check if we have network access by trying to ping WordPress.org
+function hasNetworkAccess(): boolean {
+	try {
+		// Try to resolve wordpress.org DNS
+		execSync("getent hosts wordpress.org || nslookup wordpress.org || ping -c 1 -W 1 wordpress.org", {
+			stdio: "pipe",
+			timeout: 2000,
+		});
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+const skipTests = !hasNetworkAccess();
+if (skipTests) {
+	console.warn("Skipping runPhpunitTests integration tests: No network access");
+}
+
+// Mock the WordPress release resolver to avoid additional network calls
+vi.mock("@wp-playground/wordpress", () => ({
+	resolveWordPressRelease: vi.fn().mockResolvedValue({
+		releaseUrl: "https://wordpress.org/wordpress-6.6.2.zip",
+		version: "6.6.2",
+		source: "cache",
+	}),
+}));
 
 describe("runPhpunitTests integration", () => {
-	it(
+	it.skipIf(skipTests)(
 		"should run plugin PHPUnit tests and return CTRF report",
 		async () => {
 			// Pass the config path string directly so the runner can determine project root
@@ -46,7 +75,7 @@ describe("runPhpunitTests integration", () => {
 		}
 	);
 
-	it(
+	it.skipIf(skipTests)(
 		"should run theme PHPUnit tests and return CTRF report",
 		async () => {
 			// Load config, enable PHPUnit, set projectHostPath
@@ -92,7 +121,7 @@ describe("runPhpunitTests integration", () => {
 		}
 	);
 
-	it("should handle multiple environments correctly", async () => {
+	it.skipIf(skipTests)("should handle multiple environments correctly", async () => {
 		// Pass config path so runner can determine project root
 		const report = await runPhpunitTests(TEST_PLUGIN_CONFIG_PATH);
 
