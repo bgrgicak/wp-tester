@@ -3,7 +3,7 @@ import path from 'path';
 import * as clack from '../../cli/theme';
 import { runSmokeTests } from "@wp-tester/smoke-tests";
 import { runPhpunitTests } from "@wp-tester/phpunit";
-import { mergeReports, type Report } from "@wp-tester/results";
+import { mergeReports, printSummary, type Report } from "@wp-tester/results";
 import type { TestType, WPTesterConfig } from "@wp-tester/config";
 import { mergePhpunitArgs } from "@wp-tester/config";
 
@@ -129,20 +129,12 @@ export const runTests = async (
   // Merge results from all test suites
   const mergedReport = mergeReports(reports);
 
-  // Display results using CTRF format
+  // Display unified summary
   const { summary } = mergedReport.results;
-  const duration = summary.stop - summary.start;
   const success = summary.failed === 0;
 
-  if (success) {
-    clack.log.success(
-      `All tests passed! ${summary.passed}/${summary.tests} tests passed in ${duration}ms`
-    );
-    process.exit(0);
-  } else {
-    clack.log.error(
-      `Tests failed: ${summary.failed}/${summary.tests} tests failed`
-    );
-    process.exit(1);
-  }
+  // Print final combined summary
+  printSummary(summary);
+
+  process.exit(success ? 0 : 1);
 };

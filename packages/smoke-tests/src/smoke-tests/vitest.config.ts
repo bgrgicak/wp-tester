@@ -25,6 +25,8 @@ export default defineConfig({
     retry: process.env.CI ? 2 : 0,
     // Limit parallelism to reduce resource contention in CI
     maxConcurrency: process.env.CI ? 1 : 5,
+    // Run test files in parallel - output buffering ensures clean display
+    fileParallelism: true,
     provide: {
       config: {
         environments: [],

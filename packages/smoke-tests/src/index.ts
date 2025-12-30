@@ -61,13 +61,11 @@ export function selectTestFiles(
  *
  * @param config - Test configuration or path to config file
  * @param test - Optional filter to run only specific test type (wp, plugin, or theme)
- * @param streamingReporter - Optional streaming reporter for real-time output
  * @returns CTRF report with test results
  */
 export async function runSmokeTests(
   config: WPTesterConfig | string,
-  test?: TestType | false,
-  streamingReporter?: StreamingReporter
+  test?: TestType | false
 ): Promise<Report> {
   // Resolve config (loads from path if string, resolves paths)
   const resolvedConfig = await resolveConfig(config);
@@ -91,14 +89,13 @@ export async function runSmokeTests(
   // Determine if streaming should be enabled
   const useStreaming = resolvedConfig.reporters?.includes("default") ?? true;
 
-  // Create Vitest streaming reporter
-  const vitestReporter = new VitestStreamingReporter("wp-tester-smoke-tests");
+  // Create Vitest streaming reporter with streaming configured
+  // Disable summary since the CLI will print a combined summary
+  const vitestReporter = new VitestStreamingReporter(
+    "wp-tester-smoke-tests",
+    new StreamingReporter({ enabled: useStreaming, showSummary: false })
+  );
   const reporter = vitestReporter.getStreamingReporter();
-
-  // Configure streaming based on config
-  if (!useStreaming) {
-    reporter.setEnabled(false);
-  }
 
   // Build reporters array - use our streaming reporter
   const reporters: Reporter[] = [vitestReporter];

@@ -57,6 +57,46 @@ function getSuiteName(testCase: TestCase): string | undefined {
 }
 
 /**
+ * Get the file ID from a test module
+ */
+function getFileId(testModule: TestModule): string {
+  return testModule.moduleId;
+}
+
+/**
+ * Get the file name from a test module
+ */
+function getFileName(testModule: TestModule): string {
+  // Extract filename from the module path
+  const parts = testModule.moduleId.split('/');
+  return parts[parts.length - 1] || testModule.moduleId;
+}
+
+/**
+ * Get the file ID from a test case by traversing to parent module
+ */
+function getFileIdFromTestCase(testCase: TestCase): string {
+  let current: TestCase | TestSuite | TestModule = testCase;
+  while (current && 'parent' in current) {
+    current = current.parent;
+  }
+  // At this point, current should be a TestModule
+  return (current as TestModule).moduleId;
+}
+
+/**
+ * Get the file ID from a test suite by traversing to parent module
+ */
+function getFileIdFromTestSuite(testSuite: TestSuite): string {
+  let current: TestSuite | TestModule = testSuite;
+  while (current && 'parent' in current) {
+    current = current.parent;
+  }
+  // At this point, current should be a TestModule
+  return (current as TestModule).moduleId;
+}
+
+/**
  * Custom Vitest reporter that streams test results in real-time
  */
 export class VitestStreamingReporter implements Reporter {
@@ -64,8 +104,8 @@ export class VitestStreamingReporter implements Reporter {
   private vitest: Vitest | null = null;
   private toolName: string;
 
-  constructor(toolName: string = "vitest") {
-    this.streaming = new StreamingReporter();
+  constructor(toolName: string = "vitest", streamingReporter?: StreamingReporter) {
+    this.streaming = streamingReporter || new StreamingReporter();
     this.toolName = toolName;
   }
 
@@ -99,14 +139,27 @@ export class VitestStreamingReporter implements Reporter {
 
   /**
    * Called when a test module is collected (file loaded)
+   * Emit file:start event to begin buffering for this file
    */
   onTestModuleCollected(testModule: TestModule): void {
-    // Get the module path relative to the project root
-    const modulePath = testModule.moduleId;
-    const fileName = modulePath.split("/").pop() || modulePath;
+    const fileId = getFileId(testModule);
+    const fileName = getFileName(testModule);
     this.streaming.onEvent({
-      type: "suite:start",
-      name: fileName,
+      type: "file:start",
+      fileId,
+      fileName,
+    });
+  }
+
+  /**
+   * Called when a test module finishes
+   * Emit file:end event to flush the buffer for this file
+   */
+  onTestModuleResult(testModule: TestModule): void {
+    const fileId = getFileId(testModule);
+    this.streaming.onEvent({
+      type: "file:end",
+      fileId,
     });
   }
 
@@ -114,9 +167,11 @@ export class VitestStreamingReporter implements Reporter {
    * Called when a test suite starts
    */
   onTestSuiteReady(testSuite: TestSuite): void {
+    const fileId = getFileIdFromTestSuite(testSuite);
     this.streaming.onEvent({
       type: "suite:start",
       name: testSuite.name,
+      fileId,
     });
   }
 
@@ -124,9 +179,25 @@ export class VitestStreamingReporter implements Reporter {
    * Called when a test suite ends
    */
   onTestSuiteResult(testSuite: TestSuite): void {
+    const fileId = getFileIdFromTestSuite(testSuite);
     this.streaming.onEvent({
       type: "suite:end",
       name: testSuite.name,
+      fileId,
+    });
+  }
+
+  /**
+   * Called when a test case is ready to run
+   */
+  onTestCaseReady(testCase: TestCase): void {
+    const suiteName = getSuiteName(testCase);
+    const fileId = getFileIdFromTestCase(testCase);
+    this.streaming.onEvent({
+      type: "test:start",
+      name: testCase.name,
+      suiteName,
+      fileId,
     });
   }
 
@@ -137,6 +208,7 @@ export class VitestStreamingReporter implements Reporter {
     const state = getTestState(testCase);
     const duration = getTestDuration(testCase);
     const suiteName = getSuiteName(testCase);
+    const fileId = getFileIdFromTestCase(testCase);
     const { message, trace } = getErrorInfo(testCase);
 
     switch (state) {
@@ -146,6 +218,7 @@ export class VitestStreamingReporter implements Reporter {
           name: testCase.name,
           suiteName,
           duration,
+          fileId,
         });
         break;
       case "failed":
@@ -156,6 +229,7 @@ export class VitestStreamingReporter implements Reporter {
           duration,
           message,
           trace,
+          fileId,
         });
         break;
       case "skipped":
@@ -163,6 +237,7 @@ export class VitestStreamingReporter implements Reporter {
           type: "test:skip",
           name: testCase.name,
           suiteName,
+          fileId,
         });
         break;
       default:
@@ -170,6 +245,7 @@ export class VitestStreamingReporter implements Reporter {
           type: "test:pending",
           name: testCase.name,
           suiteName,
+          fileId,
         });
     }
   }
