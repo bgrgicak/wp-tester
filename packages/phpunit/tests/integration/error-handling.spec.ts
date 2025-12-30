@@ -3,14 +3,14 @@ import { runPhpunitTests } from "../../src/index";
 import { resolveConfig } from "@wp-tester/config";
 import { TEST_PLUGIN_CONFIG_PATH } from "@wp-tester/test-fixtures";
 import path from "path";
-import { execSync } from "child_process";
 
-// Check if we have network access by trying to ping WordPress.org
+// Check if we have network access
+// We use this to skip integration tests that require downloading WordPress
 function hasNetworkAccess(): boolean {
 	try {
-		// Try to resolve wordpress.org DNS
-		execSync("getent hosts wordpress.org || nslookup wordpress.org || ping -c 1 -W 1 wordpress.org", {
-			stdio: "pipe",
+		const {execSync} = require('child_process');
+		execSync('node -e "require(\'dns\').lookup(\'wordpress.org\', (e) => process.exit(e ? 1 : 0))"', {
+			stdio: 'pipe',
 			timeout: 2000,
 		});
 		return true;

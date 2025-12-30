@@ -2,14 +2,14 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { startPlayground, stopPlayground, getWordPressVersion } from '../src/index.js';
 import type { RunCLIServer } from '../src/index.js';
 import type { ResolvedEnvironment } from '@wp-tester/config';
-import { execSync } from 'child_process';
 
 // Check if we have network access
+// We use this to skip integration tests that require downloading WordPress
 function hasNetworkAccess(): boolean {
 	try {
-		// Try to resolve wordpress.org DNS
-		execSync("getent hosts wordpress.org || nslookup wordpress.org || ping -c 1 -W 1 wordpress.org", {
-			stdio: "pipe",
+		const {execSync} = require('child_process');
+		execSync('node -e "require(\'dns\').lookup(\'wordpress.org\', (e) => process.exit(e ? 1 : 0))"', {
+			stdio: 'pipe',
 			timeout: 2000,
 		});
 		return true;
