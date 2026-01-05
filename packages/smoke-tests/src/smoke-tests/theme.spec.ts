@@ -8,11 +8,11 @@ const environments = config.environments;
 const themeSlug = config.tests.theme;
 
 // Skip all tests if no theme is configured
-describe.skipIf(!themeSlug)('Theme Tests', () => {
-  // Test each environment
-  describe.each(environments)('Theme Tests - $name', (environment) => {
+describe.skipIf(!themeSlug).each(environments)(
+  "Theme Smoke Tests - $name",
+  (environment) => {
     let runtime: RunCLIServer;
-    let playground: RunCLIServer['playground'];
+    let playground: RunCLIServer["playground"];
     let bootError: Error | undefined;
 
     beforeAll(async () => {
@@ -21,14 +21,7 @@ describe.skipIf(!themeSlug)('Theme Tests', () => {
         playground = runtime.playground;
 
         // activate theme
-        await wpCli(
-          playground,
-          [
-            'theme',
-            'activate',
-            themeSlug!,
-          ]
-        );
+        await wpCli(playground, ["theme", "activate", themeSlug!]);
       } catch (error) {
         bootError = error as Error;
       }
@@ -38,32 +31,27 @@ describe.skipIf(!themeSlug)('Theme Tests', () => {
       stopPlayground(runtime);
     });
 
-    describe('boot', () => {
-      it('should boot without errors', ({ task }) => {
-        if (bootError) {
-          task.meta['error'] = {
-            message: bootError?.message,
-            stack: bootError?.stack,
-          };
-        }
-        expect(bootError).toBeUndefined();
-      });
+    it("should boot WordPress without errors", ({ task }) => {
+      if (bootError) {
+        task.meta["error"] = {
+          message: bootError?.message,
+          stack: bootError?.stack,
+        };
+      }
+      expect(bootError).toBeUndefined();
     });
 
-    describe.skipIf(bootError)('theme', () => {
-      it('should be active', async () => {
-        const activeThemes = await wpCli(
-          playground,
-          [
-            'theme',
-            'list',
-            '--status=active',
-            '--field=name',
-            '--format=json',
-          ]
-        );
+    describe.skipIf(bootError)("theme", () => {
+      it("should be active", async () => {
+        const activeThemes = await wpCli(playground, [
+          "theme",
+          "list",
+          "--status=active",
+          "--field=name",
+          "--format=json",
+        ]);
         expect(activeThemes).toContain(themeSlug);
       });
     });
-  });
-});
+  }
+);

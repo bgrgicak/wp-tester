@@ -4,17 +4,6 @@ import { resolveConfig } from "@wp-tester/config";
 import { TEST_PLUGIN_CONFIG_PATH } from "@wp-tester/test-fixtures";
 
 describe("PHPUnit testMode integration", () => {
-	let consoleLogSpy: ReturnType<typeof vi.spyOn>;
-
-	beforeEach(() => {
-		// Spy on console.log to capture output
-		consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-	});
-
-	afterEach(() => {
-		// Restore console.log
-		consoleLogSpy.mockRestore();
-	});
 
 	it("should run in unit mode with WordPress test library", async () => {
 		// Load config and override testMode to "unit"
@@ -30,11 +19,6 @@ describe("PHPUnit testMode integration", () => {
 		expect(report).toBeDefined();
 		expect(report.results).toBeDefined();
 		expect(report.results.summary).toBeDefined();
-
-		// Verify console output shows unit mode
-		expect(consoleLogSpy).toHaveBeenCalledWith(
-			expect.stringContaining("Running PHPUnit unit tests (with WordPress test library)")
-		);
 
 		// In unit mode with WP test library, all tests in UnitTest.php should pass
 		const unitTests = report.results.tests.filter(test =>
@@ -70,11 +54,6 @@ describe("PHPUnit testMode integration", () => {
 		expect(report.results).toBeDefined();
 		expect(report.results.summary).toBeDefined();
 
-		// Verify console output shows integration mode
-		expect(consoleLogSpy).toHaveBeenCalledWith(
-			expect.stringContaining("Running PHPUnit integration tests (with WordPress)")
-		);
-
 		// In integration mode, all tests in UnitTest.php should pass
 		const unitTests = report.results.tests.filter(test =>
 			test.name.includes("UnitTest")
@@ -109,11 +88,6 @@ describe("PHPUnit testMode integration", () => {
 		expect(report).toBeDefined();
 		expect(report.results).toBeDefined();
 		expect(report.results.summary).toBeDefined();
-
-		// Verify console output shows unit mode (the default)
-		expect(consoleLogSpy).toHaveBeenCalledWith(
-			expect.stringContaining("Running PHPUnit unit tests (with WordPress test library)")
-		);
 
 		// Without testMode specified, defaults to unit mode with WP test library
 		// All tests in UnitTest.php should pass

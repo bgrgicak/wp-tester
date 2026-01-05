@@ -102,6 +102,41 @@ describe("runPhpunitTests integration", () => {
 		// The runner should have processed the "Latest WordPress and PHP" environment
 		expect(report.results.summary.tests).toBeGreaterThan(0);
 	});
+
+	it(
+		"should pass phpunitArgs to PHPUnit CLI to filter tests",
+		async () => {
+			// Load config and add phpunitArgs to filter only WordPressTest
+			const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
+			config.tests.phpunit!.phpunitArgs = ["--filter", "WordPressTest"];
+
+			const report = await runPhpunitTests(config);
+
+			// Validate report structure
+			expect(report).toBeDefined();
+			expect(report.results).toBeDefined();
+			expect(report.results.summary).toBeDefined();
+
+			// With --filter WordPressTest, only 3 tests should run (from WordPressTest.php)
+			// Without the filter, all 5 tests run (2 from UnitTest.php + 3 from WordPressTest.php)
+			expect(report.results.summary.tests).toBe(3);
+
+			// Validate all filtered tests passed
+			expect(report.results.summary.passed).toBe(3);
+			expect(report.results.summary.failed).toBe(0);
+			expect(report.results.summary.skipped).toBe(0);
+
+			// Check that only WordPressTest tests are present
+			const testNames = report.results.tests.map((test) => test.name);
+			expect(testNames.some(name => name.includes("test_can_create_and_retrieve_post"))).toBe(true);
+			expect(testNames.some(name => name.includes("test_wordpress_sanitize_functions"))).toBe(true);
+			expect(testNames.some(name => name.includes("test_wordpress_options"))).toBe(true);
+
+			// UnitTest tests should NOT be present
+			expect(testNames.some(name => name.includes("test_sanitize_text_removes_extra_whitespace"))).toBe(false);
+			expect(testNames.some(name => name.includes("test_custom_content_filter_is_registered"))).toBe(false);
+		}
+	);
 });
 
 describe("shouldRunPhpunitTests", () => {
