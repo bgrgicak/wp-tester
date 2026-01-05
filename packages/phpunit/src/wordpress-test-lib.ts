@@ -350,6 +350,10 @@ define( 'WPLANG', '' );
         vfsPath: wpTestsDir,
       },
     ],
+    env: {
+      ...environment.env,
+      WP_TESTS_DIR: wpTestsDir,
+    },
   };
   return result;
 }
