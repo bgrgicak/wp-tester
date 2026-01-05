@@ -197,6 +197,17 @@ async function runPhpunitTestsForEnvironment(
       ),
     ]);
 
+    // Close the outer suite that was started earlier
+    reporter.onEvent({
+      type: "suite:end",
+      name: `PHPUnit ${testMode} tests - '${environment.name}'`,
+    });
+
+    // Signal test run end to finalize timing
+    reporter.onEvent({
+      type: "run:end",
+    });
+
     const exitCode = await result.exitCode;
 
     if (exitCode !== 0 && exitCode !== 1 && exitCode !== 2) {
