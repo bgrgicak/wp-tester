@@ -84,6 +84,45 @@ describe("TeamCityParser", () => {
       });
     });
 
+    it("should handle multiple consecutive pipes", () => {
+      const output = `##teamcity[testFailed name='testMethod' message='Value with || double pipe']`;
+      const events = parseTeamCityOutput(output);
+
+      expect(events[0]).toMatchObject({
+        message: "Value with | double pipe",
+      });
+    });
+
+    it("should handle complex escape sequences", () => {
+      const output = `##teamcity[testFailed name='testMethod' message='Line 1|nLine 2|rLine 3|nWith |'quotes|' and || pipes']`;
+      const events = parseTeamCityOutput(output);
+
+      expect(events[0]).toMatchObject({
+        message: "Line 1\nLine 2\rLine 3\nWith 'quotes' and | pipes",
+      });
+    });
+
+    it("should handle escaped brackets", () => {
+      const output = `##teamcity[testFailed name='testMethod' message='Array|[0|] = value']`;
+      const events = parseTeamCityOutput(output);
+
+      expect(events[0]).toMatchObject({
+        message: "Array[0] = value",
+      });
+    });
+
+    it("should handle multiple escaped pipes in a row", () => {
+      // In TeamCity format, || escapes to |
+      // So 6 pipes (||||||) unescapes to 3 pipes (|||)
+      // Using 6 pipes for a clean test case
+      const output = `##teamcity[testFailed name='testMethod' message='||||||']`;
+      const events = parseTeamCityOutput(output);
+
+      expect(events[0]).toMatchObject({
+        message: "|||",
+      });
+    });
+
     it("should handle multiple tests", () => {
       const output = `
 ##teamcity[testSuiteStarted name='Suite']

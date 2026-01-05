@@ -38,7 +38,13 @@ interface TeamCityMessage {
 
 /**
  * Unescape TeamCity string values
- * TeamCity uses special escaping for certain characters
+ * TeamCity uses special escaping for certain characters:
+ * - |' -> '
+ * - |n -> newline
+ * - |r -> carriage return
+ * - |[ -> [
+ * - |] -> ]
+ * - || -> |
  */
 function unescapeTeamCityValue(value: string): string {
   return value
@@ -64,9 +70,10 @@ function parseTeamCityLine(line: string): TeamCityMessage | null {
 
   // Parse attributes (name='value' pairs)
   // Values can contain escaped characters like |' (quote), |n (newline), || (pipe)
-  // The pattern matches: non-quote/non-pipe chars OR pipe followed by any char
+  // The pattern matches: non-quote/non-pipe chars OR pipe followed by any char (or lookahead for quote)
+  // The lookahead (?=') handles edge case of pipes at end of value before closing quote
   const attributes: Record<string, string> = {};
-  const attrRegex = /(\w+)='((?:[^'|]|\|.)*)'/g;
+  const attrRegex = /(\w+)='((?:[^'|]|\|(?:.|(?=')))*?)'/g;
   let attrMatch;
 
   while ((attrMatch = attrRegex.exec(attributesStr)) !== null) {
