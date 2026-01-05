@@ -123,6 +123,12 @@ async function runPhpunitTestsForEnvironment(
       cliArgs.push("--bootstrap", bootstrapFilePath);
     }
 
+    // Append additional PHPUnit arguments from config
+    const phpunitArgs = config.tests.phpunit!.phpunitArgs;
+    if (phpunitArgs && phpunitArgs.length > 0) {
+      cliArgs.push(...phpunitArgs);
+    }
+
     // Create streaming reporter
     // Disable summary since the CLI will print a combined summary
     const useStreaming = config.reporters?.includes("default") ?? true;
