@@ -17,7 +17,7 @@ export async function projectTypeOption(
   const detectedType = detectProjectType(projectHostPath);
 
   // Ask for confirmation with the detected type in the question
-  const message = detectedType === 'unknown'
+  const message = detectedType === 'other'
     ? "We couldn't detect your project type. Continue with setup anyway?"
     : `Is this project a ${detectedType}?`;
 

@@ -261,16 +261,27 @@ export async function resolveConfig(
         name: env.name,
         blueprint: resolvedBlueprint,
         mounts: resolvedMounts,
+        env: env.env || {},
       };
     })
   );
 
   // Resolve PHPUnit paths to absolute paths and ensure testMode has a default
-  const resolvedTests: ResolvedTests = resolveTests(resolvedConfig.tests, projectDir);
+  const resolvedTests: ResolvedTests = resolveTests(
+    resolvedConfig.tests,
+    projectDir
+  );
 
-  // Get project VFS path from the mount
-  const mount = getProjectRootMount(projectDir, projectType);
-  const projectVFSPath = mount?.vfsPath || projectDir;
+  // Determine project VFS path
+  let projectVFSPath: string;
+  if (resolvedConfig.projectVFSPath) {
+    // Explicitly specified in config
+    projectVFSPath = resolvedConfig.projectVFSPath;
+  } else {
+    // Auto-detect from projectType
+    const mount = getProjectRootMount(projectDir, projectType);
+    projectVFSPath = mount?.vfsPath || projectDir;
+  }
 
   // Return fully resolved config with all required fields
   return {

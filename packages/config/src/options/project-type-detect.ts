@@ -6,7 +6,7 @@
 import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 
-export type ProjectType = 'plugin' | 'theme' | 'wp-content' | 'wordpress-install' | 'unknown';
+export type ProjectType = 'plugin' | 'theme' | 'wp-content' | 'wordpress' | 'other';
 
 /**
  * Check if directory contains a full WordPress installation
@@ -73,6 +73,6 @@ export function detectProjectType(path: string): ProjectType {
   if (isPluginFilename(path)) return 'plugin';
   if (isThemeDirectory(path)) return 'theme';
   if (containsWpContentDirectories(path)) return 'wp-content';
-  if (containsFullWordPressInstallation(path)) return 'wordpress-install';
-  return 'unknown';
+  if (containsFullWordPressInstallation(path)) return 'wordpress';
+  return 'other';
 }

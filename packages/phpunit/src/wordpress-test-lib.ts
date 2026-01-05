@@ -8,6 +8,12 @@ import type { ResolvedEnvironment } from '@wp-tester/config';
 import { resolveWordPressRelease } from '@wp-playground/wordpress';
 import type { StepDefinition } from '@wp-playground/blueprints';
 
+/**
+ * Default path where WordPress test library is mounted in the VFS.
+ * Can be overridden via environment.env.WP_TESTS_DIR
+ */
+export const DEFAULT_WP_TESTS_DIR = "/tmp/wordpress-tests-lib";
+
 interface GitHubTag {
   name: string;
   zipball_url: string;
@@ -277,11 +283,16 @@ export async function mountWordPressTestLibrary(
   environment: ResolvedEnvironment
 ): Promise<ResolvedEnvironment> {
   // Resolve WordPress version from environment
-  const wpRelease = await resolveWordPressRelease(environment.blueprint.preferredVersions.wp);
+  const wpRelease = await resolveWordPressRelease(
+    environment.blueprint.preferredVersions.wp
+  );
   const wpVersion = wpRelease.version as string;
 
   // Download and cache test library
   const cachePath = await downloadWordPressTestLib(wpVersion);
+
+  // Get WP_TESTS_DIR from environment or use default
+  const wpTestsDir = environment.env["WP_TESTS_DIR"] || DEFAULT_WP_TESTS_DIR;
 
   // Create wp-tests-config.php content
   const wpTestsConfig = `<?php
@@ -316,8 +327,8 @@ define( 'WPLANG', '' );
   const initSteps: StepDefinition[] = [
     // Write wp-tests-config.php
     {
-      step: 'writeFile' as const,
-      path: '/tmp/wordpress-tests-lib/wp-tests-config.php',
+      step: "writeFile" as const,
+      path: `${wpTestsDir}/wp-tests-config.php`,
       data: wpTestsConfig,
     },
   ];
@@ -326,7 +337,7 @@ define( 'WPLANG', '' );
   const existingSteps = environment.blueprint.steps || [];
 
   // Return environment copy with test library mount and initialization steps added
-  return {
+  const result: ResolvedEnvironment = {
     ...environment,
     blueprint: {
       ...environment.blueprint,
@@ -336,10 +347,11 @@ define( 'WPLANG', '' );
       ...environment.mounts,
       {
         hostPath: cachePath,
-        vfsPath: '/tmp/wordpress-tests-lib',
+        vfsPath: wpTestsDir,
       },
     ],
   };
+  return result;
 }
 
 

@@ -1,4 +1,8 @@
-import type { WPTesterConfig, ResolvedWPTesterConfig, ResolvedEnvironment } from "@wp-tester/config";
+import type {
+  WPTesterConfig,
+  ResolvedWPTesterConfig,
+  ResolvedEnvironment,
+} from "@wp-tester/config";
 import {
   resolveConfig,
   parseBootstrapPath,
@@ -30,17 +34,14 @@ async function runPhpunitTestsForEnvironment(
   hostPhpunitConfigPath: string
 ): Promise<Report> {
   const testMode = config.tests.phpunit!.testMode;
-
-  let phpUnitEnvironmentVariables: Record<string, string> = {};
-  let environmentWithMount: ResolvedEnvironment = environment;
+  let environmentWithMount: ResolvedEnvironment = {
+    ...environment,
+  };
 
   // Prepare environment with WordPress test library for unit tests only
   // Integration tests use standard WordPress installation via wp-load.php
   if (testMode === "unit") {
     environmentWithMount = await mountWordPressTestLibrary(environment);
-    phpUnitEnvironmentVariables = {
-      WP_TESTS_DIR: "/tmp/wordpress-tests-lib",
-    };
   }
 
   // Start playground with all mounts and steps including test library initialization
@@ -145,7 +146,7 @@ async function runPhpunitTestsForEnvironment(
 
     // Run PHPUnit tests using WP-CLI
     const result = await playground.cli(cliArgs, {
-      env: phpUnitEnvironmentVariables,
+      env: environmentWithMount.env,
     });
     if (!config.reporters || config.reporters.includes("default")) {
       // Consume both stdout and stderr

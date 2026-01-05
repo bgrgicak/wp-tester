@@ -2,6 +2,7 @@
 // All types have been moved to wp-tester-config.ts and resolved-types.ts
 export type {
   WPTesterConfig,
+  EnvironmentVariables,
   Environment,
   Tests,
   PHPUnitConfig,
