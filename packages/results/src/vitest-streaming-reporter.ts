@@ -67,8 +67,8 @@ function getFileId(testModule: TestModule): string {
  * Get the file name from a test module
  */
 function getFileName(testModule: TestModule): string {
-  // Extract filename from the module path
-  const parts = testModule.moduleId.split('/');
+  // Extract filename from the module path using platform-independent path separator
+  const parts = testModule.moduleId.split(/[/\\]/);
   return parts[parts.length - 1] || testModule.moduleId;
 }
 
