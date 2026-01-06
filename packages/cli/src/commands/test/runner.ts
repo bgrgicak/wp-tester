@@ -115,6 +115,8 @@ export const runTests = async (
   // Run PHPUnit tests
   if (shouldRunPhpUnit) {
     const phpunitReport = await runPhpunitTests(configForTests);
+    // Always include report if PHPUnit was configured to run
+    // This ensures bootstrap failures are visible
     if (phpunitReport.results.summary.tests > 0) {
       reports.push(phpunitReport);
     }
@@ -130,8 +132,18 @@ export const runTests = async (
   const mergedReport = mergeReports(reports);
 
   // Display unified summary
-  const { summary } = mergedReport.results;
+  const { summary, tests } = mergedReport.results;
   const success = summary.failed === 0;
+
+  // Print failed test details
+  const failedTests = tests.filter(test => test.status === 'failed');
+  if (failedTests.length > 0) {
+    for (const test of failedTests) {
+      if (test.trace) {
+        console.error(`\n${test.name}:\n${test.trace}`);
+      }
+    }
+  }
 
   // Print final combined summary
   printSummary(summary);
