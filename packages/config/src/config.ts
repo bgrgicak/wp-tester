@@ -284,11 +284,11 @@ export async function resolveConfig(
       projectVFSPath = mount.vfsPath;
     } else {
       // For "other" project types without explicit projectVFSPath,
-      // fall back to projectDir but validate it looks like a VFS path
+      // fall back to projectDir but validate it looks like a path
       if (projectType === "other" && !projectDir.startsWith("/")) {
         throw new Error(
-          `Cannot auto-detect VFS path for projectType "other". ` +
-          `Please specify "projectVFSPath" in your config with a valid VFS path (for example, starting with "/").`
+          `Cannot auto-detect mount path for projectType "other". ` +
+          `Please specify "projectVFSPath" in your config to indicate where your project directory should be mounted (e.g., "/project", "/wordpress/wp-content/mu-plugins/my-plugin").`
         );
       }
       projectVFSPath = projectDir;

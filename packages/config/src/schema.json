@@ -3408,13 +3408,17 @@
       "description": "Project root directory (host filesystem path).\nAll relative paths in the config are resolved from this directory.\nIf a relative path is provided, it is relative to the config file location.",
       "type": "string"
     },
+    "projectVFSPath": {
+      "description": "Path where your project directory will be mounted in the WordPress environment.\n\nWhen not specified, the path is automatically determined based on projectType:\n- plugin: /wordpress/wp-content/plugins/{dir-name}\n- theme: /wordpress/wp-content/themes/{dir-name}\n- wp-content: /wordpress/wp-content\n- wordpress: /wordpress\n- other: **Required** - You must specify where your project directory should be mounted\n\nExamples:\n- \"/project\" - Mount your project at the root level\n- \"/wordpress/wp-content/mu-plugins/my-mu-plugin\" - Mount as a must-use plugin\n- \"/wordpress/wp-content/plugins/my-custom-plugin\" - Mount as a WordPress plugin",
+      "type": "string"
+    },
     "projectType": {
       "description": "Detected WordPress project type.\nAutomatically detected during setup based on project structure.",
       "enum": [
         "plugin",
         "theme",
-        "unknown",
-        "wordpress-install",
+        "other",
+        "wordpress",
         "wp-content"
       ],
       "type": "string"
@@ -3437,6 +3441,20 @@
   "required": [
     "environments",
     "tests"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "projectType": {
+            "const": "other"
+          }
+        }
+      },
+      "then": {
+        "required": ["projectVFSPath"]
+      }
+    }
   ],
   "type": "object",
   "$id": "https://raw.githubusercontent.com/bgrgicak/wp-tester/trunk/packages/config/src/schema.json"

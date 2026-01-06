@@ -212,19 +212,18 @@ export interface WPTesterConfig {
   projectHostPath?: string;
 
   /**
-   * Virtual filesystem path where the project is mounted.
-   * This replaces the default "/wordpress" base path for custom mount configurations.
-   * When not specified, will be auto-detected from projectType:
+   * Path where your project directory will be mounted in the WordPress environment.
+   *
+   * When not specified, the path is automatically determined based on projectType:
    * - plugin: /wordpress/wp-content/plugins/{dir-name}
    * - theme: /wordpress/wp-content/themes/{dir-name}
    * - wp-content: /wordpress/wp-content
    * - wordpress: /wordpress
-   * - other: Must be specified explicitly
+   * - other: **Required** - You must specify where your project directory should be mounted
    *
-   * For custom mount configurations (especially with projectType "other"),
-   * specify this to indicate where the project root is in VFS.
-   * @example "/project"
-   * @example "/custom-wp/wp-content/plugins/my-plugin"
+   * @example "/project" - Mount your project at the root level
+   * @example "/wordpress/wp-content/mu-plugins/my-mu-plugin" - Mount as a must-use plugin
+   * @example "/wordpress/wp-content/plugins/my-custom-plugin" - Mount as a WordPress plugin
    */
   projectVFSPath?: string;
 
