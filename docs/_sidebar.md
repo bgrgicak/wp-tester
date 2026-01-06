@@ -8,6 +8,8 @@
   - [Configuration Overview](configuration.md)
   - [Environments](configuration.md#environments)
   - [Tests](configuration.md#tests)
+    - [PHPUnit Test Modes](configuration.md#phpunit-test-modes)
+    - [WordPress Tests Library](configuration.md#wordpress-tests-library-support)
   - [Reporters](configuration.md#reporters)
   - [Complete Examples](configuration.md#complete-examples)
 

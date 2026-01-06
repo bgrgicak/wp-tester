@@ -1,5 +1,7 @@
 # Development
 
+> **Note for Users:** This guide is for **project contributors** who want to develop WP Tester itself. If you're looking to use WP Tester for testing your WordPress plugins or themes, see the [Getting Started guide](/) instead.
+
 This guide covers setting up the WP Tester monorepo for development.
 
 ## Prerequisites
