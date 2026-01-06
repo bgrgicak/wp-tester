@@ -1,6 +1,6 @@
 {
   "name": "@wp-tester/cli",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "WordPress testing CLI tool",
   "type": "module",
   "private": false,

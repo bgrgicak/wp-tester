@@ -1,6 +1,6 @@
 {
   "name": "@wp-tester/results",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Test result types and formatting for wp-tester",
   "type": "module",
   "private": false,
@@ -26,12 +26,12 @@
   },
   "dependencies": {
     "ctrf": "^0.0.17",
-    "picocolors": "^1.1.1"
+    "picocolors": "^1.1.1",
+    "vitest": "^4.0.13"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
     "tsc-alias": "^1.8.16",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.13"
+    "typescript": "^5.9.3"
   }
 }
