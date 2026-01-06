@@ -15,8 +15,9 @@ describe("PHPUnit error handling", () => {
 
       const result = await runPhpunitTests(config);
 
-      // Should return empty report when config file is missing
-      expect(result.results.summary.tests).toBe(0);
+      // Should return a report with 1 failed test indicating the error
+      expect(result.results.summary.tests).toBe(1);
+      expect(result.results.summary.failed).toBe(1);
     }
 	);
 
@@ -31,8 +32,9 @@ describe("PHPUnit error handling", () => {
 
       const result = await runPhpunitTests(config);
 
-      // Should return empty report when phpunit binary is missing
-      expect(result.results.summary.tests).toBe(0);
+      // Should return a report with 1 failed test indicating the error
+      expect(result.results.summary.tests).toBe(1);
+      expect(result.results.summary.failed).toBe(1);
     }
 	);
 

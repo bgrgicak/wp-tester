@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { WPTesterConfig, PHPUnitConfig } from '../../src/types';
+import type { WPTesterConfig } from '../../src/types';
 
 describe('PHPUnitConfig type', () => {
   it('should accept PHPUnit config object with all required fields', () => {

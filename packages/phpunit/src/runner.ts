@@ -160,11 +160,14 @@ async function runPhpunitTestsForEnvironment(
     // PHPUnit outputs TeamCity format to both stdout and stderr
     const textDecoder = new TextDecoder();
     const stderrDecoder = new TextDecoder();
+    let stdoutCapture = '';
+    let stderrCapture = '';
     await Promise.all([
       result.stdout.pipeTo(
         new WritableStream({
           write(chunk) {
             const text = textDecoder.decode(chunk, { stream: true });
+            stdoutCapture += text;
             parser.write(text);
           },
           close() {
@@ -176,6 +179,7 @@ async function runPhpunitTestsForEnvironment(
         new WritableStream({
           write(chunk) {
             const text = stderrDecoder.decode(chunk, { stream: true });
+            stderrCapture += text;
             // Try to parse as TeamCity format first
             parser.write(text);
 
@@ -210,14 +214,37 @@ async function runPhpunitTestsForEnvironment(
 
     const exitCode = await result.exitCode;
 
+    // Get the report from the streaming reporter
+    const report = reporter.getReport();
+
+    // PHPUnit outputs errors to stdout, not stderr, so we need to check both
+    const errorOutput = stderrCapture.trim() || stdoutCapture.trim();
+
+    // Add error output to CTRF results if present and no tests ran
+    if (errorOutput && report.results.tests.length === 0) {
+      // Bootstrap failure - create a synthetic test with the error
+      report.results.tests.push({
+        name: 'PHPUnit Bootstrap',
+        status: 'failed',
+        duration: 0,
+        message: 'Bootstrap failed - see trace for details',
+        trace: errorOutput,
+      });
+      report.results.summary.tests = 1;
+      report.results.summary.failed = 1;
+    } else if (stderrCapture.trim()) {
+      // Tests ran but there's stderr - add it to extra field
+      report.results.extra = {
+        ...report.results.extra,
+        stderr: stderrCapture.split('\n'),
+      };
+    }
+
     if (exitCode !== 0 && exitCode !== 1 && exitCode !== 2) {
       // Exit code 1 indicates test failures, exit code 2 indicates errors - both are acceptable
       console.error(`PHPUnit exited with code ${exitCode}`);
       return EMPTY_REPORT;
     }
-
-    // Get the report from the streaming reporter
-    const report = reporter.getReport();
 
     // Update tool name with environment
     report.results.tool.name = `wp-tester-phpunit (${environment.name})`;
