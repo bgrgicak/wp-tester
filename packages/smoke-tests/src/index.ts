@@ -16,6 +16,13 @@ import {
 } from "@wp-tester/results";
 import type { Report } from "@wp-tester/results";
 
+// These values will be replaced during the build process:
+// - In src (dev): "src" and "ts"
+// - In dist (prod): "dist" and "js"
+const TEST_DIR = "src";
+const TEST_EXT = "ts";
+const CONFIG_FILE = "src/smoke-tests/vitest.config.ts";
+
 export function shouldRunSmokeTests(config: WPTesterConfig): boolean {
   return (
     config.tests.wp === true ||
@@ -38,10 +45,11 @@ export function selectTestFiles(
   if (test === false) {
     return [];
   }
+
   const testConfigs: Array<{ type: keyof Tests; path: string }> = [
-    { type: "wp", path: "src/smoke-tests/wp.spec.ts" },
-    { type: "plugin", path: "src/smoke-tests/plugin.spec.ts" },
-    { type: "theme", path: "src/smoke-tests/theme.spec.ts" },
+    { type: "wp", path: `${TEST_DIR}/smoke-tests/wp.spec.${TEST_EXT}` },
+    { type: "plugin", path: `${TEST_DIR}/smoke-tests/plugin.spec.${TEST_EXT}` },
+    { type: "theme", path: `${TEST_DIR}/smoke-tests/theme.spec.${TEST_EXT}` },
   ];
 
   const files = testConfigs
@@ -102,7 +110,7 @@ export async function runSmokeTests(
 
   // Start Vitest programmatically with our streaming reporter
   const vitest = await startVitest("test", [], {
-    config: join(packageRoot, "src/smoke-tests/vitest.config.ts"),
+    config: join(packageRoot, CONFIG_FILE),
     root: packageRoot,
     include: testFiles,
     run: true,

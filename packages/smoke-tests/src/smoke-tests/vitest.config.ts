@@ -10,6 +10,7 @@ declare module 'vitest' {
 
 export default defineConfig({
   resolve: {
+    // Aliases for monorepo dev mode - when installed via npm, packages resolve through node_modules
     alias: {
       '@wp-tester/runtime': resolve(__dirname, '../../../runtime/src/index.ts'),
       '@wp-tester/config': resolve(__dirname, '../../../config/src/index.ts'),

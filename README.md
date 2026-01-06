@@ -2,6 +2,8 @@
 
 A CLI tool for testing WordPress plugins and themes using WordPress Playground.
 
+**[Documentation](https://bgrgicak.github.io/wp-tester/)**
+
 ## Quick Start
 
 ```bash
