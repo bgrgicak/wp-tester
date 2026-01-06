@@ -25,7 +25,7 @@ npm install @wp-tester/cli
 Or use directly with npx:
 
 ```bash
-npx @wp-tester/cli test
+npx @wp-tester/cli --help
 ```
 
 ### Setup
