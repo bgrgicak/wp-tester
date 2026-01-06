@@ -274,13 +274,25 @@ export async function resolveConfig(
 
   // Determine project VFS path
   let projectVFSPath: string;
-  if (resolvedConfig.projectVFSPath) {
+  if (resolvedConfig.projectVFSPath !== undefined) {
     // Explicitly specified in config
     projectVFSPath = resolvedConfig.projectVFSPath;
   } else {
     // Auto-detect from projectType
     const mount = getProjectRootMount(projectDir, projectType);
-    projectVFSPath = mount?.vfsPath || projectDir;
+    if (mount?.vfsPath) {
+      projectVFSPath = mount.vfsPath;
+    } else {
+      // For "other" project types without explicit projectVFSPath,
+      // fall back to projectDir but validate it looks like a VFS path
+      if (projectType === "other" && !projectDir.startsWith("/")) {
+        throw new Error(
+          `Cannot auto-detect VFS path for projectType "other". ` +
+          `Please specify "projectVFSPath" in your config with a valid VFS path (for example, starting with "/").`
+        );
+      }
+      projectVFSPath = projectDir;
+    }
   }
 
   // Return fully resolved config with all required fields
