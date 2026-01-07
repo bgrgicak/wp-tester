@@ -215,7 +215,20 @@ export async function resolveConfig(
   const projectDir = getProjectDir(resolvedConfig, configPath);
 
   // Ensure projectType is set (detect if not provided)
-  const projectType = resolvedConfig.projectType || detectProjectType(projectDir);
+  // Skip detection if directory doesn't exist to avoid filesystem errors in tests
+  // that intentionally use invalid paths for error handling
+  let projectType = resolvedConfig.projectType;
+  if (!projectType && existsSync(projectDir)) {
+    try {
+      projectType = detectProjectType(projectDir);
+    } catch {
+      // If detection fails (e.g., permission errors), default to 'other'
+      projectType = 'other';
+    }
+  } else if (!projectType) {
+    // Directory doesn't exist, default to 'other'
+    projectType = 'other';
+  }
 
   // Ensure reporters is set
   const reporters = resolvedConfig.reporters || ["default"];
