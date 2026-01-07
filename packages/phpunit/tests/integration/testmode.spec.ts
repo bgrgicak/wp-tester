@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { runPhpunitTests } from "../../src/index";
 import { resolveConfig } from "@wp-tester/config";
 import { TEST_PLUGIN_CONFIG_PATH } from "@wp-tester/test-fixtures";
@@ -78,7 +78,7 @@ describe("PHPUnit testMode integration", () => {
 		const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
 		if (config.tests.phpunit) {
 			// Remove testMode to test default behavior
-			const { testMode, ...rest } = config.tests.phpunit;
+			const { testMode: _testMode, ...rest } = config.tests.phpunit;
 			config.tests.phpunit = rest as any;
 		}
 

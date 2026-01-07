@@ -20,6 +20,9 @@ export default tseslint.config(
       '**/.worktrees/**',
       'scripts/**',
       'eslint.config.js',
+      '**/vendor/**',
+      '**/*.min.js',
+      'packages/test-fixtures/**',
     ],
   },
   {
@@ -41,7 +44,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['**/*.js', '**/*.mjs', '**/*.test.ts', '**/*.spec.ts', '**/vitest.config.ts'],
+    files: ['**/*.js', '**/*.mjs', '**/*.test.ts', '**/*.spec.ts', '**/vitest.config.ts', '**/vitest.*.config.ts'],
     ...tseslint.configs.disableTypeChecked,
   }
 );

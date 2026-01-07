@@ -38,7 +38,7 @@ function getErrorInfo(testCase: TestCase): { message?: string; trace?: string } 
   if (result.state === "failed" && result.errors && result.errors.length > 0) {
     const error = result.errors[0];
     return {
-      message: error.message || String(error),
+      message: error.message || (error instanceof Error ? error.toString() : JSON.stringify(error)),
       trace: error.stack,
     };
   }
@@ -81,6 +81,7 @@ function getFileIdFromTestCase(testCase: TestCase): string {
     current = current.parent;
   }
   // At this point, current should be a TestModule
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
   return (current as TestModule).moduleId;
 }
 
@@ -93,6 +94,7 @@ function getFileIdFromTestSuite(testSuite: TestSuite): string {
     current = current.parent;
   }
   // At this point, current should be a TestModule
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
   return (current as TestModule).moduleId;
 }
 
