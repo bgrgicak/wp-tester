@@ -377,6 +377,14 @@ export class StreamingReporter {
             .join("\n");
           lines.push(indentedMessage);
         }
+        if (test.trace) {
+          const traceIndent = "  ".repeat(depth + 1);
+          const indentedTrace = test.trace
+            .split("\n")
+            .map((line) => `${traceIndent}${pc.dim(line)}`)
+            .join("\n");
+          lines.push(indentedTrace);
+        }
         break;
       }
       case "skipped": {
