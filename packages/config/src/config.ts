@@ -256,15 +256,19 @@ export async function resolveConfig(
       };
 
       // Auto-detect and add mounts if needed
-      let mounts = env.mounts || [];
+      let mounts = env.mounts ? [...env.mounts] : []; // Create a copy to avoid mutating original
 
       // If projectHostPath is specified, always add the project root mount
       // This ensures the project root is accessible even when custom mounts are specified
-      if (resolvedConfig.projectHostPath) {
+      // Only create the mount if the directory exists to avoid mount errors with invalid paths
+      if (resolvedConfig.projectHostPath && existsSync(projectDir)) {
         const mount = getProjectRootMount(projectDir, projectType);
         if (mount) {
           // Check if this mount already exists (by vfsPath) to avoid duplicates
-          const existingMount = mounts.find(m => m.vfsPath === mount.vfsPath);
+          // Normalize paths by removing trailing slashes for comparison
+          const normalizeVfsPath = (path: string) => path.replace(/\/+$/, '');
+          const mountVfsPath = normalizeVfsPath(mount.vfsPath);
+          const existingMount = mounts.find(m => normalizeVfsPath(m.vfsPath) === mountVfsPath);
           if (!existingMount) {
             // Prepend auto-mount so custom mounts can override if needed
             mounts = [mount, ...mounts];
