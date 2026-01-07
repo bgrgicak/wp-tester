@@ -46,7 +46,7 @@ export async function startPlayground(
     extraLibraries,
   };
 
-  return await runCLI({
+  const cli = await runCLI({
     command: "server",
     blueprint,
     mount: mountAfterInstall,
@@ -55,6 +55,8 @@ export async function startPlayground(
     internalCookieStore: true,
     port: 0, // Use any available port to avoid EADDRINUSE errors
   });
+  await cli.playground.isReady();
+  return cli;
 }
 
 /**
