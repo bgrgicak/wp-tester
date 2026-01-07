@@ -1,10 +1,21 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { runPhpunitTests } from "../../src/index";
 import { resolveConfig } from "@wp-tester/config";
 import { TEST_PLUGIN_CONFIG_PATH } from "@wp-tester/test-fixtures";
 import path from "path";
 
 describe("PHPUnit error handling", () => {
+	let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+
+	beforeEach(() => {
+		// Spy on console.error to capture error messages
+		consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+	});
+
+	afterEach(() => {
+		// Restore console.error after each test
+		consoleErrorSpy.mockRestore();
+	});
 	it(
 		"should handle missing PHPUnit config file gracefully",
 		async () => {
@@ -58,5 +69,21 @@ describe("PHPUnit error handling", () => {
 
 		// With no environments, no tests should run
 		expect(result.results.summary.tests).toBe(0);
+	});
+
+	it("should create synthetic test with error details when PHPUnit executable not found", async () => {
+		const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
+
+		// Point to a non-existent PHPUnit executable
+		config.tests.phpunit!.phpunitPath = "/absolutely/nonexistent/phpunit";
+
+		const result = await runPhpunitTests(config);
+
+		// Should create a synthetic failed test with the error
+		expect(result.results.summary.tests).toBe(1);
+		expect(result.results.summary.failed).toBe(1);
+		expect(result.results.tests[0].name).toBe('PHPUnit Bootstrap');
+		expect(result.results.tests[0].status).toBe('failed');
+		expect(result.results.tests[0].trace).toContain('Could not open input file');
 	});
 });

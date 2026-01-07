@@ -221,7 +221,35 @@ async function runPhpunitTestsForEnvironment(
     // PHPUnit outputs errors to stdout, not stderr, so we need to check both
     const errorOutput = stderrCapture.trim() || stdoutCapture.trim();
 
+    // Check for bad exit codes that indicate fatal errors
+    // Exit code 0 = success, 1 = test failures, 2 = errors (all acceptable)
+    // Other exit codes (e.g., 127 = command not found, 255 = fatal error) are not acceptable
+    if (exitCode !== 0 && exitCode !== 1 && exitCode !== 2) {
+      // For bad exit codes without error output or with tests that already ran, return empty report
+      if (!errorOutput || report.results.tests.length > 0) {
+        console.error('\nPHPUnit tests could not run.');
+
+        // Provide specific guidance based on common exit codes
+        if (exitCode === 127) {
+          console.error('The PHPUnit executable was not found.');
+          console.error('Check that:');
+          console.error('  - PHPUnit is installed (run: composer install)');
+          console.error('  - The phpunitPath in your config points to the correct location');
+        } else if (exitCode === 255) {
+          console.error('PHPUnit encountered a fatal error.');
+          console.error('Check your phpunit.xml configuration and test bootstrap files.');
+        } else {
+          console.error(`Unexpected error occurred (exit code: ${exitCode})`);
+          console.error('Check your PHPUnit configuration and ensure all dependencies are installed.');
+        }
+
+        return EMPTY_REPORT;
+      }
+      // Fall through to create synthetic test below
+    }
+
     // Add error output to CTRF results if present and no tests ran
+    // This handles both bad exit codes (from above) and acceptable exit codes with errors
     if (errorOutput && report.results.tests.length === 0) {
       // Bootstrap failure - create a synthetic test with the error
       report.results.tests.push({
@@ -239,12 +267,6 @@ async function runPhpunitTestsForEnvironment(
         ...report.results.extra,
         stderr: stderrCapture.split('\n'),
       };
-    }
-
-    if (exitCode !== 0 && exitCode !== 1 && exitCode !== 2) {
-      // Exit code 1 indicates test failures, exit code 2 indicates errors - both are acceptable
-      console.error(`PHPUnit exited with code ${exitCode}`);
-      return EMPTY_REPORT;
     }
 
     // Update tool name with environment
