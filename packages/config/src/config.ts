@@ -244,10 +244,18 @@ export async function resolveConfig(
 
       // Auto-detect and add mounts if needed
       let mounts = env.mounts || [];
-      if (mounts.length === 0 && resolvedConfig.projectHostPath) {
+
+      // If projectHostPath is specified, always add the project root mount
+      // This ensures the project root is accessible even when custom mounts are specified
+      if (resolvedConfig.projectHostPath) {
         const mount = getProjectRootMount(projectDir, projectType);
         if (mount) {
-          mounts = [mount];
+          // Check if this mount already exists (by vfsPath) to avoid duplicates
+          const existingMount = mounts.find(m => m.vfsPath === mount.vfsPath);
+          if (!existingMount) {
+            // Prepend auto-mount so custom mounts can override if needed
+            mounts = [mount, ...mounts];
+          }
         }
       }
 
@@ -256,6 +264,17 @@ export async function resolveConfig(
         ...mount,
         hostPath: resolveAbsolute(mount.hostPath, projectDir),
       }));
+
+      // Sort mounts by VFS path depth (shallowest first, deepest last).
+      // WordPress Playground applies mounts in order, with later mounts taking precedence.
+      // By mounting parent paths first and child paths last, child mounts can override
+      // parent mounts when paths overlap.
+      // Example: /wordpress/wp-content/plugins should come before /wordpress/wp-content/plugins/foo
+      resolvedMounts.sort((a, b) => {
+        const depthA = a.vfsPath.split('/').filter(Boolean).length;
+        const depthB = b.vfsPath.split('/').filter(Boolean).length;
+        return depthA - depthB; // Sort ascending (shallowest first)
+      });
 
       return {
         name: env.name,
