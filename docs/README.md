@@ -25,7 +25,7 @@ npm install @wp-tester/cli
 Or use directly with npx:
 
 ```bash
-npx @wp-tester/cli test
+npx @wp-tester/cli --help
 ```
 
 ### Setup
@@ -55,6 +55,9 @@ npx @wp-tester/cli test --test wp
 
 # Run only plugin tests
 npx @wp-tester/cli test --test plugin
+
+# Run only theme tests
+npx @wp-tester/cli test --test theme
 
 # Run only PHPUnit tests
 npx @wp-tester/cli test --test phpunit
@@ -195,6 +198,7 @@ View or validate specific configuration options:
 
 ```bash
 wp-tester config project-type
+wp-tester config project-root
 wp-tester config phpunit
 wp-tester config smoke-tests
 ```

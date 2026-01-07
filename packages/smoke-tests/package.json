@@ -1,6 +1,6 @@
 {
   "name": "@wp-tester/smoke-tests",
-  "version": "0.0.1",
+  "version": "0.0.4",
   "description": "WordPress smoke test suite for environment validation",
   "type": "module",
   "private": false,
@@ -28,11 +28,11 @@
     "@php-wasm/util": "3.0.15",
     "@wp-playground/blueprints": "3.0.15",
     "@wp-tester/results": "*",
-    "@wp-tester/runtime": "*"
+    "@wp-tester/runtime": "*",
+    "vitest": "^4.0.13"
   },
   "devDependencies": {
     "tsc-alias": "^1.8.16",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.13"
+    "typescript": "^5.9.3"
   }
 }

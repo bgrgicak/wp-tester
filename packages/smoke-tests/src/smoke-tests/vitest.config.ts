@@ -10,6 +10,7 @@ declare module 'vitest' {
 
 export default defineConfig({
   resolve: {
+    // Aliases for monorepo dev mode - when installed via npm, packages resolve through node_modules
     alias: {
       '@wp-tester/runtime': resolve(__dirname, '../../../runtime/src/index.ts'),
       '@wp-tester/config': resolve(__dirname, '../../../config/src/index.ts'),
@@ -25,6 +26,8 @@ export default defineConfig({
     retry: process.env.CI ? 2 : 0,
     // Limit parallelism to reduce resource contention in CI
     maxConcurrency: process.env.CI ? 1 : 5,
+    // Run test files in parallel - output buffering ensures clean display
+    fileParallelism: true,
     provide: {
       config: {
         environments: [],

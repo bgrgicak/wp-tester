@@ -72,18 +72,18 @@ async function findMatchingTag(requestedVersion: string): Promise<string> {
 
       // If no patch version provided (e.g., "6.9"), try X.Y.0
       if (!patch) {
-        const tagWithZero = tags.find(tag => tag.name === `${baseVersion}.0`);
+        const tagWithZero = tags.find((tag) => tag.name === `${baseVersion}.0`);
         if (tagWithZero) {
-          console.log(`WordPress test library: Using ${tagWithZero.name} for requested version ${requestedVersion}`);
           return tagWithZero.name;
         }
       }
 
       // Try to find closest patch version
-      const matchingTags = tags.filter(tag => tag.name.startsWith(`${baseVersion}.`));
+      const matchingTags = tags.filter((tag) =>
+        tag.name.startsWith(`${baseVersion}.`)
+      );
       if (matchingTags.length > 0) {
         const closest = matchingTags[0];
-        console.log(`WordPress test library: Using ${closest.name} for requested version ${requestedVersion}`);
         return closest.name;
       }
     }

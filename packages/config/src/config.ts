@@ -47,7 +47,7 @@ export function getSchemaPath(importMetaUrl?: string): string {
     // Monorepo from a package directory
     join(process.cwd(), "../config/src/schema.json"),
     // Installed package
-    join(process.cwd(), "node_modules/@wp-tester/config/dist/esm/schema.json"),
+    join(process.cwd(), "node_modules/@wp-tester/config/dist/schema.json"),
   ];
 
   for (const candidate of candidates) {

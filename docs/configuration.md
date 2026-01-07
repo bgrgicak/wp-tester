@@ -288,8 +288,9 @@ See [WordPress Playground CLI mounting documentation](https://wordpress.github.i
 
 - `phpunitPath` (string, required): Path to the PHPUnit executable relative to the project root. Typically `vendor/bin/phpunit` when installed via Composer.
 - `configPath` (string, required): Path to the PHPUnit configuration file relative to the project root (e.g., `phpunit.xml` or `phpunit.xml.dist`).
-- `bootstrapPath` (string, required): Path to the PHPUnit bootstrap file relative to the project root (e.g., `tests/bootstrap.php`).
+- `bootstrapPath` (string, optional): Path to the PHPUnit bootstrap file relative to the project root (e.g., `tests/bootstrap.php`). If not provided, only the custom wp-tester bootstrap will be used.
 - `testMode` (string, optional): Specifies which type of PHPUnit tests to run. Options are `"unit"` (default) or `"integration"`. See [PHPUnit Test Modes](#phpunit-test-modes) for details.
+- `phpunitArgs` (array of strings, optional): Additional command-line arguments to pass to PHPUnit. For example, `["--verbose", "--stop-on-failure"]` to enable verbose output and stop on the first test failure.
 
 **Example:**
 ```json
@@ -314,7 +315,8 @@ See [WordPress Playground CLI mounting documentation](https://wordpress.github.i
       "phpunitPath": "vendor/bin/phpunit",
       "configPath": "phpunit.xml.dist",
       "bootstrapPath": "tests/bootstrap.php",
-      "testMode": "integration"
+      "testMode": "integration",
+      "phpunitArgs": ["--verbose", "--stop-on-failure"]
     }
   }
 }
@@ -404,6 +406,49 @@ If you omit the `testMode` property, it defaults to `"unit"`:
   }
 }
 ```
+
+##### WordPress Tests Library Support
+
+WP Tester supports the WordPress.org test suite (`wordpress-tests-lib`) for **unit tests only**, enabling existing WordPress plugins and themes to run their PHPUnit unit tests without modification.
+
+**Important:** The WordPress test library is only supported for `testMode: "unit"`. For integration tests, use the standard WordPress installation without the test library.
+
+**What is wordpress-tests-lib?**
+
+The WordPress test library is the official WordPress testing framework used by WordPress core and most plugins. It provides:
+- `WP_UnitTestCase` - Base test class with WordPress-specific assertions
+- `WP_UnitTest_Factory` - Factory for creating test data
+- Test fixtures and utilities for WordPress testing
+- Mock HTTP server for REST API testing
+
+**How it works:**
+
+When you run PHPUnit unit tests, WP Tester automatically:
+1. Detects the WordPress version from your environment configuration
+2. Downloads the matching test library from GitHub (cached at `~/.wp-tester/cache/test-lib/`)
+3. Mounts it in Playground at `/tmp/wordpress-tests-lib/` (standard location)
+4. Generates `wp-tests-config.php` with proper database and path settings
+5. Sets the `WP_TESTS_DIR` environment variable
+
+**Your test bootstrap** should reference wordpress-tests-lib normally:
+
+```php
+<?php
+$_tests_dir = getenv( 'WP_TESTS_DIR' );
+
+if ( ! $_tests_dir ) {
+    $_tests_dir = rtrim( sys_get_temp_dir(), '/\\' ) . '/wordpress-tests-lib';
+}
+
+require_once $_tests_dir . '/includes/functions.php';
+require $_tests_dir . '/includes/bootstrap.php';
+```
+
+**Why unit tests only?**
+
+The WordPress test library expects to control WordPress initialization through its own bootstrap process. This works well for unit tests where the test library is the only thing loading WordPress.
+
+However, integration tests load WordPress via `wp-load.php` before your bootstrap runs, which creates conflicts with the test library's bootstrap expectations. For integration tests, the standard WordPress installation provides a more realistic testing environment that matches production.
 
 ### `reporters`
 
@@ -509,7 +554,7 @@ Test across multiple PHP and WordPress versions:
     {
       "name": "PHP 8.2 + WP 6.7",
       "blueprint": "./blueprint.json"
-    },
+    }
   ],
   "tests": {
     "plugin": "my-plugin",
@@ -558,26 +603,11 @@ Test a theme with custom environment setup:
 
 ### Plugin with PHPUnit Tests
 
-Test a plugin across multiple PHP versions with PHPUnit integration:
+Test a plugin with PHPUnit integration. You can use `testMode` to control whether tests run with WordPress loaded:
 
 ```json
 {
   "environments": [
-    {
-      "name": "PHP 8.1 + WP 6.7",
-      "blueprint": {
-        "preferredVersions": {
-          "php": "8.1",
-          "wp": "6.7"
-        }
-      },
-      "mounts": [
-        {
-          "hostPath": ".",
-          "vfsPath": "/wordpress/wp-content/plugins/my-plugin"
-        }
-      ]
-    },
     {
       "name": "PHP 8.2 + WP 6.7",
       "blueprint": {
@@ -601,7 +631,8 @@ Test a plugin across multiple PHP versions with PHPUnit integration:
       "phpunitPath": "vendor/bin/phpunit",
       "configPath": "phpunit.xml.dist",
       "bootstrapPath": "tests/bootstrap.php",
-      "testMode": "integration"
+      "testMode": "integration",
+      "phpunitArgs": ["--verbose"]
     }
   },
   "reporters": [
@@ -611,88 +642,4 @@ Test a plugin across multiple PHP versions with PHPUnit integration:
 }
 ```
 
-This configuration will:
-- Run your plugin's activation/deactivation tests
-- Run WordPress boot tests
-- Execute your PHPUnit integration test suite with WordPress loaded in both PHP 8.1 and PHP 8.2 environments
-- Output results to console and JSON file
-
-### Plugin with Separate Unit and Integration Tests
-
-Run unit tests quickly, then run integration tests with WordPress loaded:
-
-```json
-{
-  "environments": [
-    {
-      "name": "PHP 8.2 + WP 6.7",
-      "blueprint": {
-        "preferredVersions": {
-          "php": "8.2",
-          "wp": "6.7"
-        }
-      },
-      "mounts": [
-        {
-          "hostPath": ".",
-          "vfsPath": "/wordpress/wp-content/plugins/my-plugin"
-        }
-      ]
-    }
-  ],
-  "tests": {
-    "plugin": "my-plugin",
-    "phpunit": {
-      "phpunitPath": "vendor/bin/phpunit",
-      "configPath": "phpunit.xml.dist",
-      "bootstrapPath": "tests/bootstrap.php",
-      "testMode": "unit"
-    }
-  },
-  "reporters": ["default"]
-}
-```
-
-For integration tests, create a separate configuration file `wp-tester-integration.json`:
-
-```json
-{
-  "environments": [
-    {
-      "name": "PHP 8.2 + WP 6.7",
-      "blueprint": {
-        "preferredVersions": {
-          "php": "8.2",
-          "wp": "6.7"
-        }
-      },
-      "mounts": [
-        {
-          "hostPath": ".",
-          "vfsPath": "/wordpress/wp-content/plugins/my-plugin"
-        }
-      ]
-    }
-  ],
-  "tests": {
-    "plugin": "my-plugin",
-    "phpunit": {
-      "phpunitPath": "vendor/bin/phpunit",
-      "configPath": "phpunit.xml.dist",
-      "bootstrapPath": "tests/bootstrap.php",
-      "testMode": "integration"
-    }
-  },
-  "reporters": ["default"]
-}
-```
-
-Then run them separately:
-
-```bash
-# Run fast unit tests
-wp-tester test
-
-# Run integration tests when needed
-wp-tester test --config wp-tester-integration.json
-```
+**Tip:** Use `"testMode": "unit"` for fast unit tests without WordPress, or `"testMode": "integration"` when your tests need WordPress functions and database access. You can create separate config files (e.g., `wp-tester-unit.json` and `wp-tester-integration.json`) and run them with `wp-tester test --config <file>`.
