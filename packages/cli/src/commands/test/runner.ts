@@ -4,8 +4,7 @@ import * as clack from '../../cli/theme';
 import { runSmokeTests } from "@wp-tester/smoke-tests";
 import { runPhpunitTests } from "@wp-tester/phpunit";
 import { mergeReports, printSummary, type Report } from "@wp-tester/results";
-import type { TestType, WPTesterConfig } from "@wp-tester/config";
-import { mergePhpunitArgs } from "@wp-tester/config";
+import type { TestType } from "@wp-tester/config";
 
 async function resolveConfigPath(configPath: string): Promise<string> {
   const resolvedPath = path.resolve(process.cwd(), configPath);
@@ -90,12 +89,6 @@ export const runTests = async (
 
   const absoluteConfigPath = path.resolve(process.cwd(), finalConfigPath);
 
-  // Load and merge config with CLI args
-  let configForTests: string | WPTesterConfig = absoluteConfigPath;
-  if (phpunitArgs && phpunitArgs.length > 0) {
-    configForTests = await mergePhpunitArgs(absoluteConfigPath, phpunitArgs);
-  }
-
   // Run all test suites and collect results
   const reports: Report[] = [];
 
@@ -114,7 +107,7 @@ export const runTests = async (
 
   // Run PHPUnit tests
   if (shouldRunPhpUnit) {
-    const phpunitReport = await runPhpunitTests(configForTests);
+    const phpunitReport = await runPhpunitTests(absoluteConfigPath, phpunitArgs);
     // Always include report if PHPUnit was configured to run
     // This ensures bootstrap failures are visible
     if (phpunitReport.results.summary.tests > 0) {

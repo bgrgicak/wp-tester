@@ -295,13 +295,32 @@ async function runPhpunitTestsForEnvironment(
  * Run PHPUnit tests in WordPress Playground environment
  *
  * @param config - Test configuration or path to config file
+ * @param phpunitArgs - Additional PHPUnit arguments to append
  * @returns CTRF report with test results
  */
 export async function runPhpunitTests(
-  config: WPTesterConfig | string
+  config: WPTesterConfig | string,
+  phpunitArgs?: string[]
 ): Promise<Report> {
   // Resolve config (loads from path if string, resolves paths)
-  const resolvedConfig = await resolveConfig(config);
+  let resolvedConfig = await resolveConfig(config);
+
+  // Merge additional PHPUnit args if provided
+  if (phpunitArgs && phpunitArgs.length > 0) {
+    const configArgs = resolvedConfig.tests.phpunit?.phpunitArgs || [];
+    const mergedArgs = [...configArgs, ...phpunitArgs];
+
+    resolvedConfig = {
+      ...resolvedConfig,
+      tests: {
+        ...resolvedConfig.tests,
+        phpunit: resolvedConfig.tests.phpunit ? {
+          ...resolvedConfig.tests.phpunit,
+          phpunitArgs: mergedArgs,
+        } : undefined,
+      },
+    };
+  }
 
   // Check if PHPUnit tests are configured
   if (!shouldRunPhpunitTests(resolvedConfig)) {
