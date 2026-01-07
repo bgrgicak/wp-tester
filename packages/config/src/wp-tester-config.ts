@@ -34,6 +34,21 @@ export type Blueprint = BlueprintV1Declaration | string;
  */
 export interface Mount extends PlaygroundMount {
   /**
+   * Absolute or relative path on the host filesystem to mount.
+   * Relative paths are resolved from projectHostPath.
+   * @example "vendor/bin/phpunit"
+   * @example "/absolute/path/to/project"
+   */
+  hostPath: string;
+
+  /**
+   * Virtual filesystem path where the host path should be mounted.
+   * @example "/wordpress/wp-content/plugins/my-plugin"
+   * @example "/project"
+   */
+  vfsPath: string;
+
+  /**
    * Whether to mount before WordPress installation.
    * When true, the mount happens before WordPress is installed.
    * When false or omitted, the mount happens after WordPress is fully installed and booted.
@@ -137,6 +152,14 @@ export interface JsonReporterOptions {
 export type Reporter = "default" | ["json", JsonReporterOptions];
 
 /**
+ * Environment variables for WordPress Playground.
+ * Key-value pairs of environment variable names and values.
+ * @example { "WP_DEBUG": "1", "WP_DEBUG_LOG": "1" }
+ * @default {}
+ */
+export type EnvironmentVariables = Record<string, string>;
+
+/**
  * Test environment configuration.
  * Defines a WordPress environment with specific versions and setup.
  */
@@ -159,6 +182,13 @@ export interface Environment {
    * @default []
    */
   mounts?: Mount[];
+
+  /**
+   * Environment variables to set when running PHPUnit tests
+   * @example { "WP_TESTS_DIR": "/custom/path" }
+   * @default {}
+   */
+  env?: EnvironmentVariables;
 }
 
 /**
@@ -180,6 +210,22 @@ export interface WPTesterConfig {
    * @example "./my-project"
    */
   projectHostPath?: string;
+
+  /**
+   * Path where your project directory will be mounted in the WordPress environment.
+   *
+   * When not specified, the path is automatically determined based on projectType:
+   * - plugin: /wordpress/wp-content/plugins/{dir-name}
+   * - theme: /wordpress/wp-content/themes/{dir-name}
+   * - wp-content: /wordpress/wp-content
+   * - wordpress: /wordpress
+   * - other: **Required** - You must specify where your project directory should be mounted
+   *
+   * @example "/project" - Mount your project at the root level
+   * @example "/wordpress/wp-content/mu-plugins/my-mu-plugin" - Mount as a must-use plugin
+   * @example "/wordpress/wp-content/plugins/my-custom-plugin" - Mount as a WordPress plugin
+   */
+  projectVFSPath?: string;
 
   /**
    * Detected WordPress project type.

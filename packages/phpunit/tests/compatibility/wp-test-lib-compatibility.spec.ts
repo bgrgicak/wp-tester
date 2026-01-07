@@ -1,70 +1,115 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { runPhpunitTests } from '../../src/runner.js';
-import type { PHPUnitConfig } from '@wp-tester/config';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import * as os from 'node:os';
-import { execSync } from 'node:child_process';
+import type { WPTesterConfig } from "@wp-tester/config";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import * as os from "node:os";
+import { execSync } from "node:child_process";
 
 /**
- * Compatibility tests for wordpress-tests-lib support using external WordPress plugins
+ * Compatibility tests for wordpress-tests-lib support using external WordPress projects.
  *
- * These tests download actual WordPress plugins from GitHub and run their PHPUnit tests
- * to verify that our wordpress-tests-lib implementation works correctly.
+ * These tests download actual WordPress plugins and WordPress core from GitHub
+ * and run their PHPUnit tests to verify that our wordpress-tests-lib implementation
+ * works correctly.
  */
 
-interface PluginTestConfig {
+interface CompatibilityTestCase {
+  /** Display name for the test */
   name: string;
-  repo: string; // GitHub repo in format "owner/repo"
-  branch?: string; // Default: main
-  dirName?: string; // Custom directory name (defaults to repo name with / replaced by -)
-  setupCommands?: string[]; // Commands to run after clone (e.g., composer install)
-  phpunit: PHPUnitConfig; // PHPUnit configuration
-  expectedMinTests?: number; // Minimum number of tests we expect to run
-  allowedFailures?: number; // Number of test failures we tolerate (for known issues)
+  /** GitHub repo in format "owner/repo" */
+  repo: string;
+  /** Branch to clone (default: "main" for plugins, "trunk" for core) */
+  branch?: string;
+  /** Custom directory name (defaults to repo name with / replaced by -) */
+  dirName?: string;
+  /** Commands to run after clone (e.g., composer install) */
+  setupCommands?: string[];
+  /**
+   * WPTesterConfig with relative paths (projectHostPath will be set dynamically).
+   * Note: Mount paths can be relative and will be resolved by resolveConfig.
+   */
+  config: WPTesterConfig;
+  /** Minimum number of tests we expect to run */
+  expectedMinTests?: number;
+  /** Number of test failures we tolerate (for known issues) */
+  allowedFailures?: number;
 }
 
-const PLUGINS_TO_TEST: PluginTestConfig[] = [
-  // Start with Friends plugin as we know it works
+const COMPATIBILITY_TESTS: CompatibilityTestCase[] = [
+  // Friends plugin - WordPress plugin with good test coverage
   {
-    name: "Friends",
+    name: "Friends Plugin",
     repo: "akirk/friends",
     branch: "main",
     setupCommands: [
       "composer install --no-interaction --prefer-dist --ignore-platform-reqs",
     ],
-    phpunit: {
-      phpunitPath: "vendor/bin/phpunit",
-      configPath: "phpunit.xml",
+    config: {
+      projectType: "plugin",
+      tests: {
+        phpunit: {
+          phpunitPath: "vendor/bin/phpunit",
+          configPath: "phpunit.xml",
+        },
+      },
+      environments: [
+        {
+          name: "WordPress Latest + PHP Latest",
+          blueprint: {
+            preferredVersions: {
+              php: "latest",
+              wp: "latest",
+            },
+          },
+        },
+      ],
+      reporters: ["default"],
     },
-    expectedMinTests: 200, // Friends has 227 tests
-    allowedFailures: 5, // We know 5 tests fail due to REST API mocking limitations
+    expectedMinTests: 200,
+    allowedFailures: 5, // REST API mocking limitations
   },
-  // AMP - Automattic's AMP plugin
-  // Using --filter with inverse pattern to exclude the problematic test class
-  // test-amp-image-dimension-extract-download.php requires exec('php -S') which doesn't work in WASM
+
+  // AMP plugin - Large plugin with comprehensive test suite
   {
-    name: "AMP",
+    name: "AMP Plugin",
     repo: "Automattic/amp-wp",
     branch: "develop",
-    dirName: "amp", // Use 'amp' instead of 'Automattic-amp-wp' to match plugin expectations
+    dirName: "amp",
     setupCommands: [
       "composer install --no-interaction --prefer-dist --ignore-platform-reqs",
     ],
-    phpunit: {
-      phpunitPath: "vendor/bin/phpunit",
-      configPath: "phpunit.xml.dist",
-      // Try using --filter to exclude the test class name
-      // PHPUnit 9 doesn't support negative lookahead, so we'll try a simple inversion
-      phpunitArgs: [
-        "--filter",
-        "/^((?!AMP_Image_Dimension_Extract_Download_Test).)*$/",
+    config: {
+      projectType: "plugin",
+      tests: {
+        phpunit: {
+          phpunitPath: "vendor/bin/phpunit",
+          configPath: "phpunit.xml.dist",
+          // Exclude tests that require PHP server (exec('php -S') doesn't work in WASM)
+          phpunitArgs: [
+            "--filter",
+            "/^((?!AMP_Image_Dimension_Extract_Download_Test).)*$/",
+          ],
+        },
+      },
+      environments: [
+        {
+          name: "WordPress Latest + PHP Latest",
+          blueprint: {
+            preferredVersions: {
+              php: "latest",
+              wp: "latest",
+            },
+          },
+        },
       ],
+      reporters: ["default"],
     },
-    expectedMinTests: 2800, // Should run ~2837 tests (2841 - 4 problematic tests)
-    allowedFailures: 900, // Allow up to 900 failures (811 errors + 40 failures) due to environment-specific issues
+    expectedMinTests: 2800,
+    allowedFailures: 900, // Environment-specific issues
   },
-  // SQLite Database Integration
+
+  // SQLite Database Integration plugin
   {
     name: "SQLite Database Integration",
     repo: "WordPress/sqlite-database-integration",
@@ -72,26 +117,106 @@ const PLUGINS_TO_TEST: PluginTestConfig[] = [
     setupCommands: [
       "composer install --no-interaction --prefer-dist --ignore-platform-reqs",
     ],
-    phpunit: {
-      phpunitPath: "vendor/bin/phpunit",
-      configPath: "phpunit.xml.dist",
+    config: {
+      projectType: "plugin",
+      tests: {
+        phpunit: {
+          phpunitPath: "vendor/bin/phpunit",
+          configPath: "phpunit.xml.dist",
+        },
+      },
+      environments: [
+        {
+          name: "WordPress Latest + PHP Latest",
+          blueprint: {
+            preferredVersions: {
+              php: "latest",
+              wp: "latest",
+            },
+          },
+        },
+      ],
+      reporters: ["default"],
     },
-    expectedMinTests: 100, // Conservative estimate
-    allowedFailures: 11, // TBD - we'll see how many pass
+    expectedMinTests: 100,
+    allowedFailures: 11,
+  },
+
+  // WordPress Core - Tests the framework against WordPress's own test suite
+  {
+    name: "WordPress Core",
+    repo: "WordPress/wordpress-develop",
+    branch: "trunk",
+    dirName: "wordpress-develop",
+    setupCommands: [
+      "composer install --no-interaction --prefer-dist --ignore-platform-reqs",
+    ],
+    config: {
+      projectType: "other",
+      projectVFSPath: "/project",
+      tests: {
+        phpunit: {
+          phpunitPath: "vendor/bin/phpunit",
+          configPath: "phpunit.xml.dist",
+          testMode: "unit", // Core tests need wp-tests-config.php like unit tests
+          // Run a subset of core tests for compatibility testing
+          phpunitArgs: [
+            "--testsuite",
+            "default",
+            "--group",
+            "option,meta,query,post,user,term,comment,date,l10n",
+          ],
+        },
+      },
+      environments: [
+        {
+          name: "WordPress Core Tests",
+          blueprint: {
+            preferredVersions: {
+              php: "latest",
+              wp: "latest",
+            },
+            steps: [
+              {
+                step: "defineSiteUrl",
+                siteUrl: "http://example.org",
+              },
+            ],
+          },
+          mounts: [
+            {
+              hostPath: "src",
+              vfsPath: "/wordpress",
+              beforeInstall: true,
+            },
+            {
+              hostPath: ".",
+              vfsPath: "/project",
+            },
+          ],
+          env: {
+            WP_TESTS_DIR: "/project/tests/phpunit",
+          },
+        },
+      ],
+      reporters: ["default"],
+    },
+    expectedMinTests: 5500,
+    allowedFailures: 15,
   },
 ];
 
-describe('External WordPress plugins compatibility', () => {
-  const testDir = path.join(os.tmpdir(), 'wp-tester-plugin-tests');
+describe("WordPress compatibility tests", () => {
+  const testDir = path.join(os.tmpdir(), "wp-tester-compatibility-tests");
   let gitAvailable = false;
 
   beforeAll(() => {
     // Check if git is available
     try {
-      execSync('git --version', { stdio: 'ignore' });
+      execSync("git --version", { stdio: "ignore" });
       gitAvailable = true;
     } catch {
-      console.warn('Git is not available - skipping compatibility tests');
+      console.warn("Git is not available - skipping compatibility tests");
       gitAvailable = false;
     }
 
@@ -108,107 +233,90 @@ describe('External WordPress plugins compatibility', () => {
     }
   });
 
-  // Create a test for each plugin
-  PLUGINS_TO_TEST.forEach((plugin) => {
-    describe(plugin.name, () => {
-      const pluginDir = path.join(testDir, plugin.dirName || plugin.repo.replace('/', '-'));
+  // Create a test for each compatibility test case
+  COMPATIBILITY_TESTS.forEach((testCase) => {
+    describe(testCase.name, () => {
+      const projectDir = path.join(
+        testDir,
+        testCase.dirName || testCase.repo.replace("/", "-")
+      );
       let setupSucceeded = false;
 
       beforeAll(async () => {
         // Skip if directory already exists (from previous run)
-        if (fs.existsSync(pluginDir)) {
-          console.log(`Using existing ${plugin.name} at ${pluginDir}`);
+        if (fs.existsSync(projectDir)) {
+          console.log(`Using existing ${testCase.name} at ${projectDir}`);
           setupSucceeded = true;
           return;
         }
 
         try {
-          console.log(`Cloning ${plugin.name} from ${plugin.repo}...`);
-          const branch = plugin.branch || 'main';
+          console.log(`Cloning ${testCase.name} from ${testCase.repo}...`);
+          const branch = testCase.branch || "main";
           execSync(
-            `git clone --depth 1 --branch ${branch} https://github.com/${plugin.repo}.git ${pluginDir}`,
-            { stdio: 'inherit' }
+            `git clone --depth 1 --branch ${branch} https://github.com/${testCase.repo}.git ${projectDir}`,
+            { stdio: "inherit" }
           );
 
           // Run setup commands
-          if (plugin.setupCommands) {
-            for (const cmd of plugin.setupCommands) {
+          if (testCase.setupCommands) {
+            for (const cmd of testCase.setupCommands) {
               console.log(`Running: ${cmd}`);
-              execSync(cmd, { cwd: pluginDir, stdio: 'inherit' });
+              execSync(cmd, { cwd: projectDir, stdio: "inherit" });
             }
           }
 
           setupSucceeded = true;
         } catch (error) {
-          console.error(`Failed to set up ${plugin.name}:`, error);
+          console.error(`Failed to set up ${testCase.name}:`, error);
           setupSucceeded = false;
         }
-      }); // No timeout - controlled by vitest.config.ts
+      });
 
-      it('should run PHPUnit tests successfully', async () => {
+      it("should run PHPUnit tests successfully", async () => {
         if (!gitAvailable) {
           console.log("Skipping test - git not available");
           return;
         }
 
         if (!setupSucceeded) {
-          throw new Error(`Setup failed for ${plugin.name}`);
+          throw new Error(`Setup failed for ${testCase.name}`);
         }
 
-        const configPath = path.join(pluginDir, plugin.phpunit.configPath);
+        const config: WPTesterConfig = {
+          ...testCase.config,
+          projectHostPath: projectDir,
+        };
 
-        // Verify config exists
-        if (!fs.existsSync(configPath)) {
-          throw new Error(`PHPUnit config not found at ${configPath}`);
-        }
-
-        // Run tests
-        const report = await runPhpunitTests({
-          projectHostPath: pluginDir,
-          projectType: "plugin",
-          tests: {
-            phpunit: plugin.phpunit,
-          },
-          environments: [
-            {
-              name: "WordPress 6.7.0 and PHP 8.2",
-              blueprint: {
-                preferredVersions: {
-                  php: "latest",
-                  wp: "latest",
-                },
-              },
-            },
-          ],
-          reporters: ["default"], // Show output during tests
-        });
+        // Run tests using the config
+        const report = await runPhpunitTests(config);
 
         // Validate results
         expect(report.results.summary.tests).toBeGreaterThan(0);
 
-        if (plugin.expectedMinTests) {
+        if (testCase.expectedMinTests) {
           expect(report.results.summary.tests).toBeGreaterThanOrEqual(
-            plugin.expectedMinTests
+            testCase.expectedMinTests
           );
         }
 
         // Check failure tolerance
         const failures = report.results.summary.failed;
-        if (plugin.allowedFailures !== undefined) {
-          expect(failures).toBeLessThanOrEqual(plugin.allowedFailures);
+        if (testCase.allowedFailures !== undefined) {
+          expect(failures).toBeLessThanOrEqual(testCase.allowedFailures);
         } else {
           expect(failures).toBe(0);
         }
 
         // Log summary
         console.log(`
-${plugin.name} Test Results:
+${testCase.name} Test Results:
   Total: ${report.results.summary.tests}
   Passed: ${report.results.summary.passed}
   Failed: ${report.results.summary.failed}
   Skipped: ${report.results.summary.skipped}
         `);
-      }); // No timeout - controlled by vitest.config.ts
+      });
     });
   });
 });

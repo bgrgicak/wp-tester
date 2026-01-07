@@ -43,7 +43,7 @@
     },
     "ArrayBuffer": {
       "properties": {
-        "__@toStringTag@630": {
+        "__@toStringTag@642": {
           "type": "string"
         },
         "byteLength": {
@@ -51,7 +51,7 @@
         }
       },
       "required": [
-        "__@toStringTag@630",
+        "__@toStringTag@642",
         "byteLength"
       ],
       "type": "object"
@@ -193,7 +193,7 @@
                               "BYTES_PER_ELEMENT": {
                                 "type": "number"
                               },
-                              "__@toStringTag@630": {
+                              "__@toStringTag@642": {
                                 "const": "Uint8Array",
                                 "type": "string"
                               },
@@ -212,7 +212,7 @@
                             },
                             "required": [
                               "BYTES_PER_ELEMENT",
-                              "__@toStringTag@630",
+                              "__@toStringTag@642",
                               "buffer",
                               "byteLength",
                               "byteOffset",
@@ -1276,6 +1276,11 @@
           "$ref": "#/definitions/Blueprint",
           "description": "WordPress Playground Blueprint configuration.\nCan be an inline blueprint object or a file path to a blueprint JSON file."
         },
+        "env": {
+          "$ref": "#/definitions/EnvironmentVariables",
+          "default": {},
+          "description": "Environment variables to set when running PHPUnit tests"
+        },
         "mounts": {
           "default": [],
           "description": "Filesystem mounts to apply to this environment",
@@ -1292,6 +1297,11 @@
       "required": [
         "blueprint"
       ],
+      "type": "object"
+    },
+    "EnvironmentVariables": {
+      "default": {},
+      "description": "Environment variables for WordPress Playground.\nKey-value pairs of environment variable names and values.",
       "type": "object"
     },
     "FileReference": {
@@ -1329,7 +1339,7 @@
                     "BYTES_PER_ELEMENT": {
                       "type": "number"
                     },
-                    "__@toStringTag@630": {
+                    "__@toStringTag@642": {
                       "const": "Uint8Array",
                       "type": "string"
                     },
@@ -1348,7 +1358,7 @@
                   },
                   "required": [
                     "BYTES_PER_ELEMENT",
-                    "__@toStringTag@630",
+                    "__@toStringTag@642",
                     "buffer",
                     "byteLength",
                     "byteOffset",
@@ -1590,7 +1600,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@630": {
+                        "__@toStringTag@642": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -1609,7 +1619,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@630",
+                        "__@toStringTag@642",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -1798,7 +1808,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@630": {
+                        "__@toStringTag@642": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -1817,7 +1827,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@630",
+                        "__@toStringTag@642",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -2011,7 +2021,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@630": {
+                        "__@toStringTag@642": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -2030,7 +2040,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@630",
+                        "__@toStringTag@642",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -2219,7 +2229,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@630": {
+                        "__@toStringTag@642": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -2238,7 +2248,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@630",
+                        "__@toStringTag@642",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -2394,9 +2404,11 @@
           "type": "boolean"
         },
         "hostPath": {
+          "description": "Absolute or relative path on the host filesystem to mount.\nRelative paths are resolved from projectHostPath.",
           "type": "string"
         },
         "vfsPath": {
+          "description": "Virtual filesystem path where the host path should be mounted.",
           "type": "string"
         }
       },
@@ -2447,7 +2459,7 @@
                 "BYTES_PER_ELEMENT": {
                   "type": "number"
                 },
-                "__@toStringTag@630": {
+                "__@toStringTag@642": {
                   "const": "Uint8Array",
                   "type": "string"
                 },
@@ -2466,7 +2478,7 @@
               },
               "required": [
                 "BYTES_PER_ELEMENT",
-                "__@toStringTag@630",
+                "__@toStringTag@642",
                 "buffer",
                 "byteLength",
                 "byteOffset",
@@ -2532,7 +2544,7 @@
                 "BYTES_PER_ELEMENT": {
                   "type": "number"
                 },
-                "__@toStringTag@630": {
+                "__@toStringTag@642": {
                   "const": "Uint8Array",
                   "type": "string"
                 },
@@ -2551,7 +2563,7 @@
               },
               "required": [
                 "BYTES_PER_ELEMENT",
-                "__@toStringTag@630",
+                "__@toStringTag@642",
                 "buffer",
                 "byteLength",
                 "byteOffset",
@@ -2615,6 +2627,13 @@
         "configPath": {
           "description": "Path to PHPUnit configuration file (relative to project root)",
           "type": "string"
+        },
+        "phpunitArgs": {
+          "description": "Additional arguments to pass to PHPUnit",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
         },
         "phpunitPath": {
           "description": "Path to PHPUnit executable (relative to project root)",
@@ -2847,10 +2866,10 @@
     },
     "SharedArrayBuffer": {
       "properties": {
-        "__@species@697": {
+        "__@species@709": {
           "$ref": "#/definitions/SharedArrayBuffer"
         },
-        "__@toStringTag@630": {
+        "__@toStringTag@642": {
           "const": "SharedArrayBuffer",
           "type": "string"
         },
@@ -2859,8 +2878,8 @@
         }
       },
       "required": [
-        "__@species@697",
-        "__@toStringTag@630",
+        "__@species@709",
+        "__@toStringTag@642",
         "byteLength"
       ],
       "type": "object"
@@ -2934,7 +2953,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@630": {
+                        "__@toStringTag@642": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -2953,7 +2972,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@630",
+                        "__@toStringTag@642",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -3157,7 +3176,7 @@
                 "BYTES_PER_ELEMENT": {
                   "type": "number"
                 },
-                "__@toStringTag@630": {
+                "__@toStringTag@642": {
                   "const": "Uint8Array",
                   "type": "string"
                 },
@@ -3176,7 +3195,7 @@
               },
               "required": [
                 "BYTES_PER_ELEMENT",
-                "__@toStringTag@630",
+                "__@toStringTag@642",
                 "buffer",
                 "byteLength",
                 "byteOffset",
@@ -3217,7 +3236,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@630": {
+                        "__@toStringTag@642": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -3236,7 +3255,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@630",
+                        "__@toStringTag@642",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -3411,12 +3430,16 @@
     "projectType": {
       "description": "Detected WordPress project type.\nAutomatically detected during setup based on project structure.",
       "enum": [
+        "other",
         "plugin",
         "theme",
-        "unknown",
-        "wordpress-install",
+        "wordpress",
         "wp-content"
       ],
+      "type": "string"
+    },
+    "projectVFSPath": {
+      "description": "Path where your project directory will be mounted in the WordPress environment.\n\nWhen not specified, the path is automatically determined based on projectType:\n- plugin: /wordpress/wp-content/plugins/{dir-name}\n- theme: /wordpress/wp-content/themes/{dir-name}\n- wp-content: /wordpress/wp-content\n- wordpress: /wordpress\n- other: **Required** - You must specify where your project directory should be mounted",
       "type": "string"
     },
     "reporters": {
@@ -3439,5 +3462,24 @@
     "tests"
   ],
   "type": "object",
-  "$id": "https://raw.githubusercontent.com/bgrgicak/wp-tester/trunk/packages/config/src/schema.json"
+  "$id": "https://raw.githubusercontent.com/bgrgicak/wp-tester/trunk/packages/config/src/schema.json",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "projectType": {
+            "const": "other"
+          }
+        },
+        "required": [
+          "projectType"
+        ]
+      },
+      "then": {
+        "required": [
+          "projectVFSPath"
+        ]
+      }
+    }
+  ]
 }

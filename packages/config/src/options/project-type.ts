@@ -17,7 +17,7 @@ export async function projectTypeOption(
   const detectedType = detectProjectType(projectHostPath);
 
   // Ask for confirmation with the detected type in the question
-  const message = detectedType === 'unknown'
+  const message = detectedType === 'other'
     ? "We couldn't detect your project type. Continue with setup anyway?"
     : `Is this project a ${detectedType}?`;
 
@@ -41,7 +41,7 @@ export async function projectTypeOption(
       options: [
         { value: 'plugin', label: 'plugin' },
         { value: 'theme', label: 'theme' },
-        { value: 'unknown', label: 'other' },
+        { value: 'other', label: 'other' },
       ],
     });
 
@@ -54,9 +54,36 @@ export async function projectTypeOption(
     finalType = selectedType as ProjectType;
   }
 
-  // Return config with project type
+  // If project type is "other", prompt for VFS path
+  let projectVFSPath: string | undefined = config.projectVFSPath;
+  if (finalType === 'other') {
+    const vfsPath = await clack.text({
+      message: "Where should your project directory be mounted?",
+      placeholder: "/wordpress",
+      validate: (value) => {
+        if (!value || value.trim() === '') {
+          return 'Mount path is required for "other" project type';
+        }
+        if (!value.startsWith('/')) {
+          return 'Mount path must start with "/" (e.g., "/wordpress", "/wordpress/wp-content/mu-plugins/my-plugin")';
+        }
+        return undefined;
+      },
+    });
+
+    // Handle cancel
+    if (clack.isCancel(vfsPath)) {
+      clack.cancel("Setup cancelled.");
+      process.exit(0);
+    }
+
+    projectVFSPath = vfsPath;
+  }
+
+  // Return config with project type and VFS path
   return {
     ...config,
     projectType: finalType,
+    ...(projectVFSPath && { projectVFSPath }),
   };
 }

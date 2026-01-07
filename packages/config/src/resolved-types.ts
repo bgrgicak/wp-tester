@@ -27,20 +27,22 @@ export interface ResolvedBlueprint extends Omit<BlueprintV1Declaration, 'preferr
 /**
  * Resolved environment with loaded blueprint and required mounts array.
  */
-export interface ResolvedEnvironment extends Omit<Environment, 'blueprint' | 'mounts'> {
+export interface ResolvedEnvironment extends Omit<Environment, 'blueprint' | 'mounts' | 'env'> {
   /** Blueprint loaded from file (if it was a string path) with guaranteed preferredVersions */
   blueprint: ResolvedBlueprint;
   /** Mounts array (always defined, may be empty) */
   mounts: Mount[];
+  /** Environment variables (always defined, may be empty) */
+  env: Record<string, string>;
 }
 
 /**
  * Resolved config with all paths absolute and optional fields set.
  */
-export interface ResolvedWPTesterConfig extends Omit<WPTesterConfig, 'projectHostPath' | 'projectType' | 'reporters' | 'environments' | 'tests'> {
+export interface ResolvedWPTesterConfig extends Omit<WPTesterConfig, 'projectHostPath' | 'projectVFSPath' | 'projectType' | 'reporters' | 'environments' | 'tests'> {
   /** Absolute path to project on host (always defined after resolution) */
   projectHostPath: string;
-  /** VFS path determined by project type */
+  /** VFS path determined by project type or explicit config (always defined after resolution) */
   projectVFSPath: string;
   /** Project type (always defined after resolution) */
   projectType: ProjectType;

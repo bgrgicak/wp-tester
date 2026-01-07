@@ -1,6 +1,7 @@
 // Types
 export type {
   WPTesterConfig,
+  EnvironmentVariables,
   Environment,
   Tests,
   PHPUnitConfig,
@@ -9,7 +10,7 @@ export type {
   Mount,
   Blueprint,
   JsonReporterOptions,
-} from './types';
+} from "./types";
 
 // Resolved types (after resolveConfig())
 export type {

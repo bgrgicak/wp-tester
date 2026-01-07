@@ -31,8 +31,17 @@ export function getProjectRootMount(
         hostPath: projectDir,
         vfsPath: `/wordpress/wp-content/themes/${dirName}`,
       };
+    case "wp-content":
+      return {
+        hostPath: projectDir,
+        vfsPath: "/wordpress/wp-content",
+      };
+    case "wordpress":
+      return {
+        hostPath: projectDir,
+        vfsPath: "/wordpress",
+      };
     default:
-      // For wp-content, wordpress-install, or unknown types, no mount
       return null;
   }
 }

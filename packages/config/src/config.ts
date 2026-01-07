@@ -261,16 +261,39 @@ export async function resolveConfig(
         name: env.name,
         blueprint: resolvedBlueprint,
         mounts: resolvedMounts,
+        env: env.env || {},
       };
     })
   );
 
   // Resolve PHPUnit paths to absolute paths and ensure testMode has a default
-  const resolvedTests: ResolvedTests = resolveTests(resolvedConfig.tests, projectDir);
+  const resolvedTests: ResolvedTests = resolveTests(
+    resolvedConfig.tests,
+    projectDir
+  );
 
-  // Get project VFS path from the mount
-  const mount = getProjectRootMount(projectDir, projectType);
-  const projectVFSPath = mount?.vfsPath || projectDir;
+  // Determine project VFS path
+  let projectVFSPath: string;
+  if (resolvedConfig.projectVFSPath !== undefined) {
+    // Explicitly specified in config
+    projectVFSPath = resolvedConfig.projectVFSPath;
+  } else {
+    // Auto-detect from projectType
+    const mount = getProjectRootMount(projectDir, projectType);
+    if (mount?.vfsPath) {
+      projectVFSPath = mount.vfsPath;
+    } else {
+      // For "other" project types without explicit projectVFSPath,
+      // fall back to projectDir but validate it looks like a path
+      if (projectType === "other" && !projectDir.startsWith("/")) {
+        throw new Error(
+          `Cannot auto-detect mount path for projectType "other". ` +
+          `Please specify "projectVFSPath" in your config to indicate where your project directory should be mounted (e.g., "/project", "/wordpress/wp-content/mu-plugins/my-plugin").`
+        );
+      }
+      projectVFSPath = projectDir;
+    }
+  }
 
   // Return fully resolved config with all required fields
   return {

@@ -26,5 +26,23 @@ if (schema.properties) {
   };
 }
 
+// Add conditional requirement: if projectType is "other", then projectVFSPath is required
+// This ensures that when projectType is explicitly set to "other", the user must provide a VFS path
+schema.allOf = [
+  {
+    if: {
+      properties: {
+        projectType: {
+          const: 'other'
+        }
+      },
+      required: ['projectType']
+    },
+    then: {
+      required: ['projectVFSPath']
+    }
+  }
+];
+
 // Write back the fixed schema to src
 fs.writeFileSync(srcSchemaPath, JSON.stringify(schema, null, 2));
