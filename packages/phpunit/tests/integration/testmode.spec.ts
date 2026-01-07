@@ -54,6 +54,15 @@ describe("PHPUnit testMode integration", () => {
 		expect(report.results).toBeDefined();
 		expect(report.results.summary).toBeDefined();
 
+		// Debug: Log report details to understand CI failure
+		console.log('Integration mode report summary:', {
+			total: report.results.summary.tests,
+			passed: report.results.summary.passed,
+			failed: report.results.summary.failed,
+		});
+		console.log('Test names:', report.results.tests.map(t => t.name));
+		console.log('Test statuses:', report.results.tests.map(t => t.status));
+
 		// In integration mode, all tests in UnitTest.php should pass
 		const unitTests = report.results.tests.filter(test =>
 			test.name.includes("UnitTest")
