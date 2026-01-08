@@ -196,26 +196,15 @@ export interface Environment {
  */
 export interface WatchConfig {
   /**
-   * Directories to watch for changes (relative to projectHostPath).
-   * If not specified, watches the entire projectHostPath directory.
-   * @example ["src", "tests", "includes"]
+   * Glob patterns for files/directories to watch (relative to projectHostPath).
+   * If not specified, watches all files in the projectHostPath directory.
    */
   include?: string[];
 
   /**
-   * Patterns to exclude from watching.
-   * Supports glob patterns.
-   * @example ["vendor/**", "node_modules/**", "*.log"]
-   * @default ["node_modules/**", "vendor/**", ".git/**", "dist/**", "build/**"]
+   * Glob patterns to exclude from watching.
    */
   exclude?: string[];
-
-  /**
-   * File extensions to watch.
-   * If specified, only files with these extensions trigger re-runs.
-   * @example [".php", ".js", ".css"]
-   */
-  extensions?: string[];
 }
 
 /**
