@@ -44,26 +44,26 @@ export {
   readJsonReport,
   getResultsDir,
   getLatestResultsPath,
-  getBaselinePath,
+  getSnapshotPath,
   runReporters,
   saveLatestResults,
-  saveBaseline,
-  loadBaseline,
+  saveSnapshot,
+  loadSnapshot,
   WP_TESTER_DIR,
   RESULTS_SUBDIR,
   LATEST_RESULTS_FILE,
-  BASELINE_FILE,
+  SNAPSHOT_FILE,
   type Reporter,
   type JsonReporterOptions,
   type TestSignature,
 } from './reporters.js';
 export {
-  compareToBaseline,
+  compareToSnapshot,
   printComparisonReport,
   type ComparisonResult,
   type Regression,
   type Improvement,
-} from './baseline.js';
+} from './snapshot.js';
 
 export const EMPTY_REPORT: Report = {
   results: {

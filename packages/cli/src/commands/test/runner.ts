@@ -7,9 +7,9 @@ import {
   mergeReports,
   runReporters,
   saveLatestResults,
-  saveBaseline,
-  loadBaseline,
-  compareToBaseline,
+  saveSnapshot,
+  loadSnapshot,
+  compareToSnapshot,
   printComparisonReport,
   type Report,
   type TestSignature,
@@ -163,25 +163,25 @@ export const runTests = async (
     process.exit(1);
   }
 
-  // Handle --regression: compare against baseline (auto-capture if none exists)
+  // Handle --regression: compare against snapshot (auto-capture if none exists)
   if (regression) {
-    // If --clear, always capture new baseline
+    // If --clear, always capture new snapshot
     if (clear) {
-      saveBaseline(mergedReport, resolvedConfig.projectHostPath, testSignature);
-      clack.log.success('Baseline cleared and updated with current results.');
+      saveSnapshot(mergedReport, resolvedConfig.projectHostPath, testSignature);
+      clack.log.success('Snapshot cleared and updated with current results.');
       process.exit(0);
     }
 
-    const baseline = loadBaseline(resolvedConfig.projectHostPath, testSignature);
+    const snapshot = loadSnapshot(resolvedConfig.projectHostPath, testSignature);
 
-    if (!baseline) {
-      // No baseline exists - capture one automatically
-      saveBaseline(mergedReport, resolvedConfig.projectHostPath, testSignature);
-      clack.log.info('No baseline found. Current results saved as baseline.');
+    if (!snapshot) {
+      // No snapshot exists - capture one automatically
+      saveSnapshot(mergedReport, resolvedConfig.projectHostPath, testSignature);
+      clack.log.info('No snapshot found. Current results saved as snapshot.');
       process.exit(0);
     }
 
-    const comparison = compareToBaseline(mergedReport, baseline);
+    const comparison = compareToSnapshot(mergedReport, snapshot);
     printComparisonReport(comparison);
 
     // Exit based on regression status (ignore regular test failures)

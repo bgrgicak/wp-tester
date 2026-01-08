@@ -16,6 +16,7 @@
 - Test Types
   - [Smoke Tests](/#smoke-tests)
   - [PHPUnit Tests](/#phpunit-tests)
+  - [Regression Testing](regression-testing.md)
 
 - Use Cases
   - [Plugin Development](/#plugin-development)

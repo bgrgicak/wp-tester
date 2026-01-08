@@ -178,7 +178,15 @@ wp-tester test --test phpunit
 
 # Use custom config file
 wp-tester test --config custom-config.json
+
+# Regression testing (compare against snapshot)
+wp-tester test --regression
+
+# Clear snapshot and capture new one
+wp-tester test --regression --clear
 ```
+
+See [Regression Testing](regression-testing.md) for more details on tracking regressions.
 
 ### `config validate`
 

@@ -52,9 +52,9 @@ export const RESULTS_SUBDIR = 'results';
 export const LATEST_RESULTS_FILE = 'latest.json';
 
 /**
- * Default filename for baseline results
+ * Default filename for snapshot results
  */
-export const BASELINE_FILE = 'baseline.json';
+export const SNAPSHOT_FILE = 'snapshot.json';
 
 /**
  * Create a short hash of a string for directory naming
@@ -146,14 +146,14 @@ export function getLatestResultsPath(projectRoot: string, signature: TestSignatu
 }
 
 /**
- * Get the path to the baseline file
+ * Get the path to the snapshot file
  *
  * @param projectRoot - Absolute path to the project root
  * @param signature - Test signature (test type, args, etc.)
- * @returns Absolute path to baseline.json
+ * @returns Absolute path to snapshot.json
  */
-export function getBaselinePath(projectRoot: string, signature: TestSignature = {}): string {
-  return path.join(getResultsDir(projectRoot, signature), BASELINE_FILE);
+export function getSnapshotPath(projectRoot: string, signature: TestSignature = {}): string {
+  return path.join(getResultsDir(projectRoot, signature), SNAPSHOT_FILE);
 }
 
 /**
@@ -228,25 +228,25 @@ export function saveLatestResults(report: Report, projectRoot: string, signature
 }
 
 /**
- * Save current results as the baseline
+ * Save current results as the snapshot
  *
- * @param report - The CTRF report to save as baseline
+ * @param report - The CTRF report to save as snapshot
  * @param projectRoot - Absolute path to the project root
  * @param signature - Test signature (test type, args, etc.)
  */
-export function saveBaseline(report: Report, projectRoot: string, signature: TestSignature = {}): void {
-  const baselinePath = getBaselinePath(projectRoot, signature);
-  writeJsonReport(report, baselinePath);
+export function saveSnapshot(report: Report, projectRoot: string, signature: TestSignature = {}): void {
+  const snapshotPath = getSnapshotPath(projectRoot, signature);
+  writeJsonReport(report, snapshotPath);
 }
 
 /**
- * Load the baseline results
+ * Load the snapshot results
  *
  * @param projectRoot - Absolute path to the project root
  * @param signature - Test signature (test type, args, etc.)
- * @returns The baseline report, or null if no baseline exists
+ * @returns The snapshot report, or null if no snapshot exists
  */
-export function loadBaseline(projectRoot: string, signature: TestSignature = {}): Report | null {
-  const baselinePath = getBaselinePath(projectRoot, signature);
-  return readJsonReport(baselinePath);
+export function loadSnapshot(projectRoot: string, signature: TestSignature = {}): Report | null {
+  const snapshotPath = getSnapshotPath(projectRoot, signature);
+  return readJsonReport(snapshotPath);
 }

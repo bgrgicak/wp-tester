@@ -64,11 +64,11 @@ void yargs(hideBin(process.argv))
         })
         .option("regression", {
           alias: "r",
-          describe: "Compare results against baseline, fail only on regressions (auto-captures baseline if none exists)",
+          describe: "Compare results against snapshot, fail only on regressions (auto-captures snapshot if none exists)",
           type: "boolean" as const,
         })
         .option("clear", {
-          describe: "Clear existing baseline and capture new one (requires --regression)",
+          describe: "Clear existing snapshot and capture new one (requires --regression)",
           type: "boolean" as const,
         });
     },

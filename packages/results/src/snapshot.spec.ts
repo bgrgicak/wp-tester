@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { compareToBaseline } from './baseline.js';
+import { compareToSnapshot } from './snapshot.js';
 import type { Report } from 'ctrf';
 
 function createReport(tests: { name: string; status: 'passed' | 'failed' | 'skipped' }[]): Report {
@@ -25,10 +25,10 @@ function createReport(tests: { name: string; status: 'passed' | 'failed' | 'skip
   };
 }
 
-describe('compareToBaseline', () => {
+describe('compareToSnapshot', () => {
   describe('when results are identical', () => {
     it('should report no regressions and no improvements', () => {
-      const baseline = createReport([
+      const snapshot = createReport([
         { name: 'test1', status: 'passed' },
         { name: 'test2', status: 'passed' },
       ]);
@@ -37,15 +37,15 @@ describe('compareToBaseline', () => {
         { name: 'test2', status: 'passed' },
       ]);
 
-      const result = compareToBaseline(current, baseline);
+      const result = compareToSnapshot(current, snapshot);
 
       expect(result.regressions).toHaveLength(0);
       expect(result.improvements).toHaveLength(0);
       expect(result.passed).toBe(true);
     });
 
-    it('should handle baseline with existing failures', () => {
-      const baseline = createReport([
+    it('should handle snapshot with existing failures', () => {
+      const snapshot = createReport([
         { name: 'test1', status: 'passed' },
         { name: 'test2', status: 'failed' },
       ]);
@@ -54,7 +54,7 @@ describe('compareToBaseline', () => {
         { name: 'test2', status: 'failed' },
       ]);
 
-      const result = compareToBaseline(current, baseline);
+      const result = compareToSnapshot(current, snapshot);
 
       expect(result.regressions).toHaveLength(0);
       expect(result.improvements).toHaveLength(0);
@@ -64,7 +64,7 @@ describe('compareToBaseline', () => {
 
   describe('regression detection', () => {
     it('should detect when a passing test starts failing', () => {
-      const baseline = createReport([
+      const snapshot = createReport([
         { name: 'test1', status: 'passed' },
         { name: 'test2', status: 'passed' },
       ]);
@@ -73,7 +73,7 @@ describe('compareToBaseline', () => {
         { name: 'test2', status: 'failed' },
       ]);
 
-      const result = compareToBaseline(current, baseline);
+      const result = compareToSnapshot(current, snapshot);
 
       expect(result.regressions).toHaveLength(1);
       expect(result.regressions[0].type).toBe('new_failure');
@@ -82,7 +82,7 @@ describe('compareToBaseline', () => {
     });
 
     it('should detect multiple regressions', () => {
-      const baseline = createReport([
+      const snapshot = createReport([
         { name: 'test1', status: 'passed' },
         { name: 'test2', status: 'passed' },
         { name: 'test3', status: 'passed' },
@@ -93,7 +93,7 @@ describe('compareToBaseline', () => {
         { name: 'test3', status: 'failed' },
       ]);
 
-      const result = compareToBaseline(current, baseline);
+      const result = compareToSnapshot(current, snapshot);
 
       expect(result.regressions).toHaveLength(2);
       expect(result.regressions.map(r => r.test.name)).toContain('test1');
@@ -102,7 +102,7 @@ describe('compareToBaseline', () => {
     });
 
     it('should detect new failing tests as regressions', () => {
-      const baseline = createReport([
+      const snapshot = createReport([
         { name: 'test1', status: 'passed' },
       ]);
       const current = createReport([
@@ -110,7 +110,7 @@ describe('compareToBaseline', () => {
         { name: 'test2', status: 'failed' },
       ]);
 
-      const result = compareToBaseline(current, baseline);
+      const result = compareToSnapshot(current, snapshot);
 
       expect(result.regressions).toHaveLength(1);
       expect(result.regressions[0].type).toBe('new_failure');
@@ -119,7 +119,7 @@ describe('compareToBaseline', () => {
     });
 
     it('should NOT flag new passing tests as regressions', () => {
-      const baseline = createReport([
+      const snapshot = createReport([
         { name: 'test1', status: 'passed' },
       ]);
       const current = createReport([
@@ -127,14 +127,14 @@ describe('compareToBaseline', () => {
         { name: 'test2', status: 'passed' },
       ]);
 
-      const result = compareToBaseline(current, baseline);
+      const result = compareToSnapshot(current, snapshot);
 
       expect(result.regressions).toHaveLength(0);
       expect(result.passed).toBe(true);
     });
 
     it('should NOT flag tests that were already failing as regressions', () => {
-      const baseline = createReport([
+      const snapshot = createReport([
         { name: 'test1', status: 'passed' },
         { name: 'test2', status: 'failed' },
       ]);
@@ -143,7 +143,7 @@ describe('compareToBaseline', () => {
         { name: 'test2', status: 'failed' },
       ]);
 
-      const result = compareToBaseline(current, baseline);
+      const result = compareToSnapshot(current, snapshot);
 
       expect(result.regressions).toHaveLength(0);
       expect(result.passed).toBe(true);
@@ -152,7 +152,7 @@ describe('compareToBaseline', () => {
 
   describe('improvement detection', () => {
     it('should detect when a failing test starts passing', () => {
-      const baseline = createReport([
+      const snapshot = createReport([
         { name: 'test1', status: 'passed' },
         { name: 'test2', status: 'failed' },
       ]);
@@ -161,7 +161,7 @@ describe('compareToBaseline', () => {
         { name: 'test2', status: 'passed' },
       ]);
 
-      const result = compareToBaseline(current, baseline);
+      const result = compareToSnapshot(current, snapshot);
 
       expect(result.improvements).toHaveLength(1);
       expect(result.improvements[0].type).toBe('fixed');
@@ -170,7 +170,7 @@ describe('compareToBaseline', () => {
     });
 
     it('should detect when a failing test is removed', () => {
-      const baseline = createReport([
+      const snapshot = createReport([
         { name: 'test1', status: 'passed' },
         { name: 'test2', status: 'failed' },
       ]);
@@ -178,7 +178,7 @@ describe('compareToBaseline', () => {
         { name: 'test1', status: 'passed' },
       ]);
 
-      const result = compareToBaseline(current, baseline);
+      const result = compareToSnapshot(current, snapshot);
 
       expect(result.improvements).toHaveLength(1);
       expect(result.improvements[0].type).toBe('removed');
@@ -187,7 +187,7 @@ describe('compareToBaseline', () => {
     });
 
     it('should detect multiple improvements', () => {
-      const baseline = createReport([
+      const snapshot = createReport([
         { name: 'test1', status: 'failed' },
         { name: 'test2', status: 'failed' },
         { name: 'test3', status: 'passed' },
@@ -198,7 +198,7 @@ describe('compareToBaseline', () => {
         { name: 'test3', status: 'passed' },
       ]);
 
-      const result = compareToBaseline(current, baseline);
+      const result = compareToSnapshot(current, snapshot);
 
       expect(result.improvements).toHaveLength(2);
       expect(result.improvements.map(i => i.test.name)).toContain('test1');
@@ -209,7 +209,7 @@ describe('compareToBaseline', () => {
 
   describe('mixed scenarios', () => {
     it('should detect both regressions and improvements', () => {
-      const baseline = createReport([
+      const snapshot = createReport([
         { name: 'test1', status: 'passed' },
         { name: 'test2', status: 'failed' },
         { name: 'test3', status: 'passed' },
@@ -220,7 +220,7 @@ describe('compareToBaseline', () => {
         { name: 'test3', status: 'passed' },
       ]);
 
-      const result = compareToBaseline(current, baseline);
+      const result = compareToSnapshot(current, snapshot);
 
       expect(result.regressions).toHaveLength(1);
       expect(result.regressions[0].test.name).toBe('test1');
@@ -230,7 +230,7 @@ describe('compareToBaseline', () => {
     });
 
     it('should handle completely new test suite', () => {
-      const baseline = createReport([
+      const snapshot = createReport([
         { name: 'old1', status: 'passed' },
         { name: 'old2', status: 'failed' },
       ]);
@@ -239,7 +239,7 @@ describe('compareToBaseline', () => {
         { name: 'new2', status: 'passed' },
       ]);
 
-      const result = compareToBaseline(current, baseline);
+      const result = compareToSnapshot(current, snapshot);
 
       // old2 was failing and removed -> improvement
       expect(result.improvements).toHaveLength(1);
@@ -250,7 +250,7 @@ describe('compareToBaseline', () => {
     });
 
     it('should handle skipped tests (neither regression nor improvement)', () => {
-      const baseline = createReport([
+      const snapshot = createReport([
         { name: 'test1', status: 'passed' },
         { name: 'test2', status: 'skipped' },
       ]);
@@ -259,7 +259,7 @@ describe('compareToBaseline', () => {
         { name: 'test2', status: 'skipped' },
       ]);
 
-      const result = compareToBaseline(current, baseline);
+      const result = compareToSnapshot(current, snapshot);
 
       expect(result.regressions).toHaveLength(0);
       expect(result.improvements).toHaveLength(0);
@@ -268,13 +268,13 @@ describe('compareToBaseline', () => {
   });
 
   describe('edge cases', () => {
-    it('should handle empty baseline', () => {
-      const baseline = createReport([]);
+    it('should handle empty snapshot', () => {
+      const snapshot = createReport([]);
       const current = createReport([
         { name: 'test1', status: 'passed' },
       ]);
 
-      const result = compareToBaseline(current, baseline);
+      const result = compareToSnapshot(current, snapshot);
 
       expect(result.regressions).toHaveLength(0);
       expect(result.improvements).toHaveLength(0);
@@ -282,13 +282,13 @@ describe('compareToBaseline', () => {
     });
 
     it('should handle empty current results', () => {
-      const baseline = createReport([
+      const snapshot = createReport([
         { name: 'test1', status: 'passed' },
         { name: 'test2', status: 'failed' },
       ]);
       const current = createReport([]);
 
-      const result = compareToBaseline(current, baseline);
+      const result = compareToSnapshot(current, snapshot);
 
       // Failing test removed -> improvement
       expect(result.improvements).toHaveLength(1);
@@ -298,10 +298,10 @@ describe('compareToBaseline', () => {
     });
 
     it('should handle both empty', () => {
-      const baseline = createReport([]);
+      const snapshot = createReport([]);
       const current = createReport([]);
 
-      const result = compareToBaseline(current, baseline);
+      const result = compareToSnapshot(current, snapshot);
 
       expect(result.regressions).toHaveLength(0);
       expect(result.improvements).toHaveLength(0);
