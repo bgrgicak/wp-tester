@@ -67,9 +67,8 @@ void yargs(hideBin(process.argv))
           describe: "Compare results against baseline, fail only on regressions (auto-captures baseline if none exists)",
           type: "boolean" as const,
         })
-        .option("update-baseline", {
-          alias: "u",
-          describe: "Update the baseline with current test results",
+        .option("clear", {
+          describe: "Clear existing baseline and capture new one (requires --regression)",
           type: "boolean" as const,
         });
     },

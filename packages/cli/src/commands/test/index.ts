@@ -5,14 +5,14 @@ interface TestArgs {
   config: string;
   test?: TestType;
   regression?: boolean;
-  'update-baseline'?: boolean;
+  clear?: boolean;
   '--'?: string[];
 }
 
 export const testHandler = async (argv: TestArgs): Promise<void> => {
-  const { config, test, regression, 'update-baseline': updateBaseline } = argv;
+  const { config, test, regression, clear } = argv;
   const phpunitArgs = argv['--'] || [];
-  await runTests(config, test, phpunitArgs, { regression, updateBaseline });
+  await runTests(config, test, phpunitArgs, { regression, clear });
 };
 
 export default testHandler;

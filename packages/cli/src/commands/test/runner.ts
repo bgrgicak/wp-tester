@@ -18,7 +18,7 @@ import { resolveConfig, type TestType } from "@wp-tester/config";
 
 export interface RegressionOptions {
   regression?: boolean;
-  updateBaseline?: boolean;
+  clear?: boolean;
 }
 
 async function resolveConfigPath(configPath: string): Promise<string> {
@@ -155,17 +155,23 @@ export const runTests = async (
   // Run configured reporters (default prints to console, json writes to file)
   runReporters(mergedReport, resolvedConfig.reporters, resolvedConfig.projectHostPath);
 
-  const { regression, updateBaseline } = options;
+  const { regression, clear } = options;
 
-  // Handle --update-baseline: save current results as new baseline
-  if (updateBaseline) {
-    saveBaseline(mergedReport, resolvedConfig.projectHostPath, testSignature);
-    clack.log.success('Baseline updated successfully');
-    process.exit(0);
+  // --clear requires --regression
+  if (clear && !regression) {
+    clack.log.error('--clear requires --regression');
+    process.exit(1);
   }
 
   // Handle --regression: compare against baseline (auto-capture if none exists)
   if (regression) {
+    // If --clear, always capture new baseline
+    if (clear) {
+      saveBaseline(mergedReport, resolvedConfig.projectHostPath, testSignature);
+      clack.log.success('Baseline cleared and updated with current results.');
+      process.exit(0);
+    }
+
     const baseline = loadBaseline(resolvedConfig.projectHostPath, testSignature);
 
     if (!baseline) {
