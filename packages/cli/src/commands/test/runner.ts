@@ -14,7 +14,11 @@ import {
   type Report,
 } from "@wp-tester/results";
 import { resolveConfig, type TestType } from "@wp-tester/config";
-import type { BaselineMode } from "./index";
+
+export interface RegressionOptions {
+  regression?: boolean;
+  updateBaseline?: boolean;
+}
 
 async function resolveConfigPath(configPath: string): Promise<string> {
   const resolvedPath = path.resolve(process.cwd(), configPath);
@@ -73,7 +77,7 @@ export const runTests = async (
   configPath: string,
   testType?: TestType,
   phpunitArgs?: string[],
-  baselineMode?: BaselineMode
+  options: RegressionOptions = {}
 ): Promise<void> => {
   let finalConfigPath = await resolveConfigPath(configPath);
 
@@ -144,20 +148,24 @@ export const runTests = async (
   // Run configured reporters (default prints to console, json writes to file)
   runReporters(mergedReport, resolvedConfig.reporters, resolvedConfig.projectHostPath);
 
-  // Handle baseline mode
-  if (baselineMode === 'capture') {
-    // Save current results as baseline
+  const { regression, updateBaseline } = options;
+
+  // Handle --update-baseline: save current results as new baseline
+  if (updateBaseline) {
     saveBaseline(mergedReport, resolvedConfig.projectHostPath);
-    clack.log.success('Baseline captured successfully');
+    clack.log.success('Baseline updated successfully');
     process.exit(0);
   }
 
-  if (baselineMode === 'compare') {
-    // Load baseline and compare
+  // Handle --regression: compare against baseline (auto-capture if none exists)
+  if (regression) {
     const baseline = loadBaseline(resolvedConfig.projectHostPath);
+
     if (!baseline) {
-      clack.log.error('No baseline found. Run with --baseline capture first.');
-      process.exit(1);
+      // No baseline exists - capture one automatically
+      saveBaseline(mergedReport, resolvedConfig.projectHostPath);
+      clack.log.info('No baseline found. Current results saved as baseline.');
+      process.exit(0);
     }
 
     const comparison = compareToBaseline(mergedReport, baseline);

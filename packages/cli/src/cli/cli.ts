@@ -62,11 +62,15 @@ void yargs(hideBin(process.argv))
           type: "string" as const,
           choices: ["wp", "plugin", "theme", "phpunit"] as const,
         })
-        .option("baseline", {
-          alias: "b",
-          describe: "Baseline mode: 'capture' saves current results as baseline, 'compare' fails on regressions",
-          type: "string" as const,
-          choices: ["capture", "compare"] as const,
+        .option("regression", {
+          alias: "r",
+          describe: "Compare results against baseline, fail only on regressions (auto-captures baseline if none exists)",
+          type: "boolean" as const,
+        })
+        .option("update-baseline", {
+          alias: "u",
+          describe: "Update the baseline with current test results",
+          type: "boolean" as const,
         });
     },
     async (argv) => {

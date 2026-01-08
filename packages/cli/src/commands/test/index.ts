@@ -1,19 +1,18 @@
 import { runTests } from './runner';
 import type { TestType } from '@wp-tester/config';
 
-export type BaselineMode = 'capture' | 'compare';
-
 interface TestArgs {
   config: string;
   test?: TestType;
-  baseline?: BaselineMode;
+  regression?: boolean;
+  'update-baseline'?: boolean;
   '--'?: string[];
 }
 
 export const testHandler = async (argv: TestArgs): Promise<void> => {
-  const { config, test, baseline } = argv;
+  const { config, test, regression, 'update-baseline': updateBaseline } = argv;
   const phpunitArgs = argv['--'] || [];
-  await runTests(config, test, phpunitArgs, baseline);
+  await runTests(config, test, phpunitArgs, { regression, updateBaseline });
 };
 
 export default testHandler;
