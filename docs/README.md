@@ -178,7 +178,37 @@ wp-tester test --test phpunit
 
 # Use custom config file
 wp-tester test --config custom-config.json
+
+# Watch mode - re-run tests on file changes
+wp-tester test --watch
 ```
+
+#### Watch Mode
+
+Use `--watch` (or `-w`) to automatically re-run tests when files change:
+
+```bash
+wp-tester test --watch
+```
+
+In watch mode:
+- Tests run immediately on startup
+- File changes trigger automatic re-runs (with 300ms debounce)
+- Press **Enter** to manually re-run tests
+- Press **q** to quit
+
+Configure which files to watch in `wp-tester.json`:
+
+```json
+{
+  "watch": {
+    "include": ["src/**/*.php", "tests/**/*.php"],
+    "exclude": ["vendor/**", "node_modules/**"]
+  }
+}
+```
+
+See [Watch Configuration](configuration.md#watch) for details.
 
 ### `config validate`
 

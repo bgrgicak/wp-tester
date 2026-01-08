@@ -11,6 +11,7 @@
     - [PHPUnit Test Modes](configuration.md#phpunit-test-modes)
     - [WordPress Tests Library](configuration.md#wordpress-tests-library-support)
   - [Reporters](configuration.md#reporters)
+  - [Watch Mode](configuration.md#watch)
   - [Complete Examples](configuration.md#complete-examples)
 
 - Test Types

@@ -506,6 +506,81 @@ You can use multiple reporters simultaneously:
 }
 ```
 
+### `watch`
+
+**Type:** `Object`
+**Required:** No
+**Description:** Configures watch mode behavior when using `wp-tester test --watch`. Controls which files trigger test re-runs.
+
+**Properties:**
+
+#### `watch.include`
+
+**Type:** `Array<string>`
+**Required:** No
+**Description:** Glob patterns for files/directories to watch. If not specified, watches all files in the project directory.
+
+**Examples:**
+```json
+{
+  "watch": {
+    "include": ["src/**/*.php", "tests/**/*.php"]
+  }
+}
+```
+
+```json
+{
+  "watch": {
+    "include": ["**/*.php", "**/*.js"]
+  }
+}
+```
+
+#### `watch.exclude`
+
+**Type:** `Array<string>`
+**Required:** No
+**Default:** `["**/node_modules/**", "**/vendor/**", "**/.git/**"]`
+**Description:** Glob patterns to exclude from watching. These patterns are checked before include patterns.
+
+**Example:**
+```json
+{
+  "watch": {
+    "exclude": ["vendor/**", "node_modules/**", "*.log", "coverage/**"]
+  }
+}
+```
+
+**Complete Example:**
+
+```json
+{
+  "watch": {
+    "include": ["src/**/*.php", "tests/**/*.php", "includes/**/*.php"],
+    "exclude": ["vendor/**", "node_modules/**", "*.log"]
+  }
+}
+```
+
+**Behavior:**
+
+1. If `include` is specified, only files matching those patterns trigger re-runs
+2. Files matching `exclude` patterns are always ignored
+3. If `include` is not specified, all files (except excluded ones) trigger re-runs
+4. Default excludes cover common directories that shouldn't trigger tests (node_modules, vendor, .git)
+
+**Usage:**
+
+```bash
+# Start watch mode
+wp-tester test --watch
+
+# Watch mode with specific test type
+wp-tester test --watch --test phpunit
+```
+
 ## Complete Examples
 
 ### Minimal Configuration
