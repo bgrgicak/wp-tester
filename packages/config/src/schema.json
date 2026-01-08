@@ -3455,6 +3455,34 @@
     "tests": {
       "$ref": "#/definitions/Tests",
       "description": "Test suites to execute"
+    },
+    "watch": {
+      "description": "Watch mode configuration.\nControls which files are watched when using --watch flag.",
+      "properties": {
+        "include": {
+          "description": "Directories to watch for changes (relative to projectHostPath).\nIf not specified, watches the entire projectHostPath directory.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "exclude": {
+          "description": "Patterns to exclude from watching.\nSupports glob patterns.",
+          "default": ["node_modules/**", "vendor/**", ".git/**", "dist/**", "build/**"],
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "extensions": {
+          "description": "File extensions to watch.\nIf specified, only files with these extensions trigger re-runs.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
     }
   },
   "required": [

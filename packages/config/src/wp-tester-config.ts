@@ -192,6 +192,33 @@ export interface Environment {
 }
 
 /**
+ * Watch mode configuration for automatic test re-runs.
+ */
+export interface WatchConfig {
+  /**
+   * Directories to watch for changes (relative to projectHostPath).
+   * If not specified, watches the entire projectHostPath directory.
+   * @example ["src", "tests", "includes"]
+   */
+  include?: string[];
+
+  /**
+   * Patterns to exclude from watching.
+   * Supports glob patterns.
+   * @example ["vendor/**", "node_modules/**", "*.log"]
+   * @default ["node_modules/**", "vendor/**", ".git/**", "dist/**", "build/**"]
+   */
+  exclude?: string[];
+
+  /**
+   * File extensions to watch.
+   * If specified, only files with these extensions trigger re-runs.
+   * @example [".php", ".js", ".css"]
+   */
+  extensions?: string[];
+}
+
+/**
  * Complete wp-tester configuration.
  * This is the root configuration object for wp-tester.json files.
  */
@@ -251,4 +278,10 @@ export interface WPTesterConfig {
    * @default ["default"]
    */
   reporters?: Reporter[];
+
+  /**
+   * Watch mode configuration.
+   * Controls which files are watched when using --watch flag.
+   */
+  watch?: WatchConfig;
 }

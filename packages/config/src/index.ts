@@ -10,6 +10,7 @@ export type {
   Mount,
   Blueprint,
   JsonReporterOptions,
+  WatchConfig,
 } from "./types";
 
 // Resolved types (after resolveConfig())
