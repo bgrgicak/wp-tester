@@ -142,6 +142,56 @@ const COMPATIBILITY_TESTS: CompatibilityTestCase[] = [
     allowedFailures: 11,
   },
 
+  // Performance plugin
+  {
+    name: "Performance Plugin",
+    repo: "WordPress/performance",
+    branch: "trunk",
+    setupCommands: [
+      "composer install --no-interaction --prefer-dist --ignore-platform-reqs",
+    ],
+    config: {
+      projectType: "plugin",
+      tests: {
+        wp: false,
+        plugin: "performance",
+        phpunit: {
+          phpunitPath: "vendor/bin/phpunit",
+          configPath: "phpunit.xml.dist",
+          testMode: "unit",
+        },
+      },
+      environments: [
+        {
+          name: "Latest WordPress and PHP",
+          blueprint: {
+            preferredVersions: {
+              php: "latest",
+              wp: "latest",
+            },
+            steps: [
+              {
+                step: "defineWpConfigConsts",
+                consts: {
+                  WP_ENVIRONMENT_TYPE: "development",
+                },
+              },
+            ],
+          },
+          mounts: [
+            {
+              hostPath: "plugins",
+              vfsPath: "/wordpress/wp-content/plugins",
+            },
+          ],
+        },
+      ],
+      reporters: ["default"],
+    },
+    expectedMinTests: 50,
+    allowedFailures: 0,
+  },
+
   // WordPress Core - Tests the framework against WordPress's own test suite
   {
     name: "WordPress Core",
