@@ -3468,7 +3468,7 @@
         },
         "exclude": {
           "description": "Glob patterns to exclude from watching.",
-          "default": ["node_modules/**", "vendor/**", ".git/**", "dist/**", "build/**"],
+          "default": ["**/node_modules/**", "**/vendor/**", "**/.git/**"],
           "items": {
             "type": "string"
           },

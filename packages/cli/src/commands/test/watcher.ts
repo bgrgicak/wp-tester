@@ -10,22 +10,13 @@ export interface WatchOptions {
 
 // Default patterns to exclude when watching for changes
 const DEFAULT_EXCLUDE_PATTERNS = [
-  'node_modules/**',
-  'vendor/**',
-  '.git/**',
-  '.svn/**',
-  '.hg/**',
-  'dist/**',
-  'build/**',
-  'coverage/**',
-  '.cache/**',
-  '.idea/**',
-  '.vscode/**',
+  '**/node_modules/**',
+  '**/vendor/**',
+  '**/.git/**',
+  '**/.svn/**',
+  '**/.hg/**',
   '**/.DS_Store',
   '**/Thumbs.db',
-  '**/*.log',
-  '**/*.tmp',
-  '**/*.temp',
 ];
 
 interface WatchMatcher {
