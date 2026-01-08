@@ -7,6 +7,8 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import * as os from 'node:os';
+import * as crypto from 'node:crypto';
 import type { Report } from 'ctrf';
 import { printSummary } from './summary.js';
 
@@ -25,9 +27,14 @@ export interface JsonReporterOptions {
 export type Reporter = "default" | ["json", JsonReporterOptions];
 
 /**
- * Default directory for wp-tester results relative to project root
+ * Base directory for wp-tester data in user's home directory
  */
-export const RESULTS_DIR = '.wp-tester/results';
+export const WP_TESTER_DIR = '.wp-tester';
+
+/**
+ * Subdirectory for test results
+ */
+export const RESULTS_SUBDIR = 'results';
 
 /**
  * Default filename for latest test results
@@ -38,6 +45,13 @@ export const LATEST_RESULTS_FILE = 'latest.json';
  * Default filename for baseline results
  */
 export const BASELINE_FILE = 'baseline.json';
+
+/**
+ * Create a short hash of a string for directory naming
+ */
+function hashString(str: string): string {
+  return crypto.createHash('sha256').update(str).digest('hex').substring(0, 12);
+}
 
 /**
  * Ensure directory exists, creating it recursively if needed
@@ -74,13 +88,17 @@ export function readJsonReport(inputPath: string): Report | null {
 }
 
 /**
- * Get the default results directory for a project
+ * Get the results directory for a project in the global wp-tester directory
+ *
+ * Results are stored in ~/.wp-tester/results/<project-hash>/
+ * where project-hash is a short hash of the project path for uniqueness.
  *
  * @param projectRoot - Absolute path to the project root
  * @returns Absolute path to the results directory
  */
 export function getResultsDir(projectRoot: string): string {
-  return path.join(projectRoot, RESULTS_DIR);
+  const projectHash = hashString(projectRoot);
+  return path.join(os.homedir(), WP_TESTER_DIR, RESULTS_SUBDIR, projectHash);
 }
 
 /**
