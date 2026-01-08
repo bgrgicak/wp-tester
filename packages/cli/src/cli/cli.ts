@@ -61,6 +61,12 @@ void yargs(hideBin(process.argv))
           describe: "Type of test to run (wp, plugin, theme, or phpunit)",
           type: "string" as const,
           choices: ["wp", "plugin", "theme", "phpunit"] as const,
+        })
+        .option("watch", {
+          alias: "w",
+          describe: "Watch for file changes and re-run tests automatically",
+          type: "boolean" as const,
+          default: false,
         });
     },
     async (argv) => {
