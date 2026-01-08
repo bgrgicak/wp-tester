@@ -61,6 +61,12 @@ void yargs(hideBin(process.argv))
           describe: "Type of test to run (wp, plugin, theme, or phpunit)",
           type: "string" as const,
           choices: ["wp", "plugin", "theme", "phpunit"] as const,
+        })
+        .option("baseline", {
+          alias: "b",
+          describe: "Baseline mode: 'capture' saves current results as baseline, 'compare' fails on regressions",
+          type: "string" as const,
+          choices: ["capture", "compare"] as const,
         });
     },
     async (argv) => {

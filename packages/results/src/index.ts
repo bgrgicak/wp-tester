@@ -39,6 +39,29 @@ export {
   parseTeamCityOutput,
 } from './teamcity-parser.js';
 export { printSummary } from './summary.js';
+export {
+  writeJsonReport,
+  readJsonReport,
+  getResultsDir,
+  getLatestResultsPath,
+  getBaselinePath,
+  runReporters,
+  saveLatestResults,
+  saveBaseline,
+  loadBaseline,
+  RESULTS_DIR,
+  LATEST_RESULTS_FILE,
+  BASELINE_FILE,
+  type Reporter,
+  type JsonReporterOptions,
+} from './reporters.js';
+export {
+  compareToBaseline,
+  printComparisonReport,
+  type ComparisonResult,
+  type Regression,
+  type Improvement,
+} from './baseline.js';
 
 export const EMPTY_REPORT: Report = {
   results: {

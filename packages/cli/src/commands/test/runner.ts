@@ -3,8 +3,18 @@ import path from 'path';
 import * as clack from '../../cli/theme';
 import { runSmokeTests } from "@wp-tester/smoke-tests";
 import { runPhpunitTests } from "@wp-tester/phpunit";
-import { mergeReports, printSummary, type Report } from "@wp-tester/results";
-import type { TestType } from "@wp-tester/config";
+import {
+  mergeReports,
+  runReporters,
+  saveLatestResults,
+  saveBaseline,
+  loadBaseline,
+  compareToBaseline,
+  printComparisonReport,
+  type Report,
+} from "@wp-tester/results";
+import { resolveConfig, type TestType } from "@wp-tester/config";
+import type { BaselineMode } from "./index";
 
 async function resolveConfigPath(configPath: string): Promise<string> {
   const resolvedPath = path.resolve(process.cwd(), configPath);
@@ -62,7 +72,8 @@ function getSmokeTestFilter(testType?: TestType): TestType | undefined | false {
 export const runTests = async (
   configPath: string,
   testType?: TestType,
-  phpunitArgs?: string[]
+  phpunitArgs?: string[],
+  baselineMode?: BaselineMode
 ): Promise<void> => {
   let finalConfigPath = await resolveConfigPath(configPath);
 
@@ -88,6 +99,9 @@ export const runTests = async (
   }
 
   const absoluteConfigPath = path.resolve(process.cwd(), finalConfigPath);
+
+  // Resolve config to get reporters and project root
+  const resolvedConfig = await resolveConfig(absoluteConfigPath);
 
   // Run all test suites and collect results
   const reports: Report[] = [];
@@ -124,22 +138,36 @@ export const runTests = async (
   // Merge results from all test suites
   const mergedReport = mergeReports(reports);
 
-  // Display unified summary
-  const { summary, tests } = mergedReport.results;
-  const success = summary.failed === 0;
+  // Save results to .wp-tester/results/latest.json
+  saveLatestResults(mergedReport, resolvedConfig.projectHostPath);
 
-  // Print failed test details
-  const failedTests = tests.filter(test => test.status === 'failed');
-  if (failedTests.length > 0) {
-    for (const test of failedTests) {
-      if (test.trace) {
-        console.error(`\n${test.name}:\n${test.trace}`);
-      }
-    }
+  // Run configured reporters (default prints to console, json writes to file)
+  runReporters(mergedReport, resolvedConfig.reporters, resolvedConfig.projectHostPath);
+
+  // Handle baseline mode
+  if (baselineMode === 'capture') {
+    // Save current results as baseline
+    saveBaseline(mergedReport, resolvedConfig.projectHostPath);
+    clack.log.success('Baseline captured successfully');
+    process.exit(0);
   }
 
-  // Print final combined summary
-  printSummary(summary);
+  if (baselineMode === 'compare') {
+    // Load baseline and compare
+    const baseline = loadBaseline(resolvedConfig.projectHostPath);
+    if (!baseline) {
+      clack.log.error('No baseline found. Run with --baseline capture first.');
+      process.exit(1);
+    }
 
+    const comparison = compareToBaseline(mergedReport, baseline);
+    printComparisonReport(comparison);
+
+    // Exit based on regression status (ignore regular test failures)
+    process.exit(comparison.passed ? 0 : 1);
+  }
+
+  // Normal mode: exit based on test results
+  const success = mergedReport.results.summary.failed === 0;
   process.exit(success ? 0 : 1);
 };
