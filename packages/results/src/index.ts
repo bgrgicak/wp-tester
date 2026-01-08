@@ -55,6 +55,7 @@ export {
   BASELINE_FILE,
   type Reporter,
   type JsonReporterOptions,
+  type TestSignature,
 } from './reporters.js';
 export {
   compareToBaseline,

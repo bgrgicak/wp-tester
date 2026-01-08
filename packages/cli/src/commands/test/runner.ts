@@ -12,6 +12,7 @@ import {
   compareToBaseline,
   printComparisonReport,
   type Report,
+  type TestSignature,
 } from "@wp-tester/results";
 import { resolveConfig, type TestType } from "@wp-tester/config";
 
@@ -142,8 +143,14 @@ export const runTests = async (
   // Merge results from all test suites
   const mergedReport = mergeReports(reports);
 
-  // Save results to .wp-tester/results/latest.json
-  saveLatestResults(mergedReport, resolvedConfig.projectHostPath);
+  // Build test signature for unique baseline identification
+  const testSignature: TestSignature = {
+    testType,
+    args: phpunitArgs,
+  };
+
+  // Save results to ~/.wp-tester/results/<project>/<signature>/latest.json
+  saveLatestResults(mergedReport, resolvedConfig.projectHostPath, testSignature);
 
   // Run configured reporters (default prints to console, json writes to file)
   runReporters(mergedReport, resolvedConfig.reporters, resolvedConfig.projectHostPath);
@@ -152,18 +159,18 @@ export const runTests = async (
 
   // Handle --update-baseline: save current results as new baseline
   if (updateBaseline) {
-    saveBaseline(mergedReport, resolvedConfig.projectHostPath);
+    saveBaseline(mergedReport, resolvedConfig.projectHostPath, testSignature);
     clack.log.success('Baseline updated successfully');
     process.exit(0);
   }
 
   // Handle --regression: compare against baseline (auto-capture if none exists)
   if (regression) {
-    const baseline = loadBaseline(resolvedConfig.projectHostPath);
+    const baseline = loadBaseline(resolvedConfig.projectHostPath, testSignature);
 
     if (!baseline) {
       // No baseline exists - capture one automatically
-      saveBaseline(mergedReport, resolvedConfig.projectHostPath);
+      saveBaseline(mergedReport, resolvedConfig.projectHostPath, testSignature);
       clack.log.info('No baseline found. Current results saved as baseline.');
       process.exit(0);
     }

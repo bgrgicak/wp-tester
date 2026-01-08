@@ -27,6 +27,16 @@ export interface JsonReporterOptions {
 export type Reporter = "default" | ["json", JsonReporterOptions];
 
 /**
+ * Options that define a unique test run signature
+ */
+export interface TestSignature {
+  /** Test type filter (e.g., "wp", "phpunit", "plugin", "theme") */
+  testType?: string;
+  /** Additional arguments (e.g., PHPUnit args) */
+  args?: string[];
+}
+
+/**
  * Base directory for wp-tester data in user's home directory
  */
 export const WP_TESTER_DIR = '.wp-tester';
@@ -51,6 +61,24 @@ export const BASELINE_FILE = 'baseline.json';
  */
 function hashString(str: string): string {
   return crypto.createHash('sha256').update(str).digest('hex').substring(0, 12);
+}
+
+/**
+ * Create a canonical string from test signature for hashing
+ */
+function buildSignatureString(signature: TestSignature): string {
+  const parts: string[] = [];
+
+  // Test type (default to "all")
+  parts.push(`type:${signature.testType || 'all'}`);
+
+  // Args (sorted for consistency)
+  if (signature.args && signature.args.length > 0) {
+    const sortedArgs = [...signature.args].sort();
+    parts.push(`args:${sortedArgs.join(',')}`);
+  }
+
+  return parts.join('|');
 }
 
 /**
@@ -88,37 +116,44 @@ export function readJsonReport(inputPath: string): Report | null {
 }
 
 /**
- * Get the results directory for a project in the global wp-tester directory
+ * Get the results directory for a project and test signature
  *
- * Results are stored in ~/.wp-tester/results/<project-hash>/
- * where project-hash is a short hash of the project path for uniqueness.
+ * Results are stored in ~/.wp-tester/results/<project-hash>/<signature-hash>/
+ * where:
+ * - project-hash is a short hash of the project path
+ * - signature-hash is a short hash of the test signature (type + args)
  *
  * @param projectRoot - Absolute path to the project root
+ * @param signature - Test signature (test type, args, etc.)
  * @returns Absolute path to the results directory
  */
-export function getResultsDir(projectRoot: string): string {
+export function getResultsDir(projectRoot: string, signature: TestSignature = {}): string {
   const projectHash = hashString(projectRoot);
-  return path.join(os.homedir(), WP_TESTER_DIR, RESULTS_SUBDIR, projectHash);
+  const signatureString = buildSignatureString(signature);
+  const signatureHash = hashString(signatureString);
+  return path.join(os.homedir(), WP_TESTER_DIR, RESULTS_SUBDIR, projectHash, signatureHash);
 }
 
 /**
  * Get the path to the latest results file
  *
  * @param projectRoot - Absolute path to the project root
+ * @param signature - Test signature (test type, args, etc.)
  * @returns Absolute path to latest.json
  */
-export function getLatestResultsPath(projectRoot: string): string {
-  return path.join(getResultsDir(projectRoot), LATEST_RESULTS_FILE);
+export function getLatestResultsPath(projectRoot: string, signature: TestSignature = {}): string {
+  return path.join(getResultsDir(projectRoot, signature), LATEST_RESULTS_FILE);
 }
 
 /**
  * Get the path to the baseline file
  *
  * @param projectRoot - Absolute path to the project root
+ * @param signature - Test signature (test type, args, etc.)
  * @returns Absolute path to baseline.json
  */
-export function getBaselinePath(projectRoot: string): string {
-  return path.join(getResultsDir(projectRoot), BASELINE_FILE);
+export function getBaselinePath(projectRoot: string, signature: TestSignature = {}): string {
+  return path.join(getResultsDir(projectRoot, signature), BASELINE_FILE);
 }
 
 /**
@@ -185,9 +220,10 @@ function runJsonReporter(
  *
  * @param report - The CTRF report to save
  * @param projectRoot - Absolute path to the project root
+ * @param signature - Test signature (test type, args, etc.)
  */
-export function saveLatestResults(report: Report, projectRoot: string): void {
-  const latestPath = getLatestResultsPath(projectRoot);
+export function saveLatestResults(report: Report, projectRoot: string, signature: TestSignature = {}): void {
+  const latestPath = getLatestResultsPath(projectRoot, signature);
   writeJsonReport(report, latestPath);
 }
 
@@ -196,9 +232,10 @@ export function saveLatestResults(report: Report, projectRoot: string): void {
  *
  * @param report - The CTRF report to save as baseline
  * @param projectRoot - Absolute path to the project root
+ * @param signature - Test signature (test type, args, etc.)
  */
-export function saveBaseline(report: Report, projectRoot: string): void {
-  const baselinePath = getBaselinePath(projectRoot);
+export function saveBaseline(report: Report, projectRoot: string, signature: TestSignature = {}): void {
+  const baselinePath = getBaselinePath(projectRoot, signature);
   writeJsonReport(report, baselinePath);
 }
 
@@ -206,9 +243,10 @@ export function saveBaseline(report: Report, projectRoot: string): void {
  * Load the baseline results
  *
  * @param projectRoot - Absolute path to the project root
+ * @param signature - Test signature (test type, args, etc.)
  * @returns The baseline report, or null if no baseline exists
  */
-export function loadBaseline(projectRoot: string): Report | null {
-  const baselinePath = getBaselinePath(projectRoot);
+export function loadBaseline(projectRoot: string, signature: TestSignature = {}): Report | null {
+  const baselinePath = getBaselinePath(projectRoot, signature);
   return readJsonReport(baselinePath);
 }
