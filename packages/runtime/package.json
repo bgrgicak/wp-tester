@@ -1,6 +1,6 @@
 {
   "name": "@wp-tester/runtime",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "WordPress Playground testing environment library",
   "type": "module",
   "private": false,
