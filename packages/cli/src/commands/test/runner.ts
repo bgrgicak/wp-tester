@@ -108,10 +108,18 @@ export const runTests = async (
   // Run PHPUnit tests
   if (shouldRunPhpUnit) {
     const phpunitReport = await runPhpunitTests(absoluteConfigPath, phpunitArgs);
-    // Always include report if PHPUnit was configured to run
-    // This ensures bootstrap failures are visible
-    if (phpunitReport.results.summary.tests > 0) {
+    // Include report if it has tests OR if it has warnings (for "no tests executed" scenarios)
+    const hasWarning = phpunitReport.results.extra?.warning !== undefined;
+    if (phpunitReport.results.summary.tests > 0 || hasWarning) {
       reports.push(phpunitReport);
+    }
+  }
+
+  // Collect warnings from all reports before merging
+  const warnings: string[] = [];
+  for (const report of reports) {
+    if (report.results.extra?.warning) {
+      warnings.push(String(report.results.extra.warning));
     }
   }
 
@@ -126,7 +134,6 @@ export const runTests = async (
 
   // Display unified summary
   const { summary, tests } = mergedReport.results;
-  const success = summary.failed === 0;
 
   // Print failed test details
   const failedTests = tests.filter(test => test.status === 'failed');
@@ -138,8 +145,12 @@ export const runTests = async (
     }
   }
 
-  // Print final combined summary
-  printSummary(summary);
+  // Print final combined summary with any warnings
+  printSummary(summary, { warnings });
 
+  // Exit with success (0) if no failures, even if there are warnings
+  // Warnings indicate informational conditions (like "no tests executed")
+  // that shouldn't fail CI/CD pipelines
+  const success = summary.failed === 0;
   process.exit(success ? 0 : 1);
 };

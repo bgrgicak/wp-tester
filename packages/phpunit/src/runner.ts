@@ -251,16 +251,32 @@ async function runPhpunitTestsForEnvironment(
     // Add error output to CTRF results if present and no tests ran
     // This handles both bad exit codes (from above) and acceptable exit codes with errors
     if (errorOutput && report.results.tests.length === 0) {
-      // Bootstrap failure - create a synthetic test with the error
-      report.results.tests.push({
-        name: 'PHPUnit Bootstrap',
-        status: 'failed',
-        duration: 0,
-        message: 'Bootstrap failed - see trace for details',
-        trace: errorOutput,
-      });
-      report.results.summary.tests = 1;
-      report.results.summary.failed = 1;
+      // Check if this is a "no tests executed" scenario vs an actual error
+      // PHPUnit outputs "No tests executed!" when no tests match the filter
+      const noTestsPattern = /No tests executed!?/i;
+      const isNoTestsWarning = noTestsPattern.test(errorOutput) && exitCode === 0;
+
+      if (isNoTestsWarning) {
+        // No tests found - treat as a warning, not a failure
+        // Store the warning in the report's extra field
+        report.results.extra = {
+          ...report.results.extra,
+          warning: 'No tests were executed. This may indicate that no tests matched the current filter or configuration.',
+          warningDetails: errorOutput,
+        };
+        // Keep summary at 0 tests - don't create a synthetic failed test
+      } else {
+        // Bootstrap failure - create a synthetic test with the error
+        report.results.tests.push({
+          name: 'PHPUnit Bootstrap',
+          status: 'failed',
+          duration: 0,
+          message: 'Bootstrap failed - see trace for details',
+          trace: errorOutput,
+        });
+        report.results.summary.tests = 1;
+        report.results.summary.failed = 1;
+      }
     } else if (stderrCapture.trim()) {
       // Tests ran but there's stderr - add it to extra field
       report.results.extra = {
@@ -346,7 +362,9 @@ export async function runPhpunitTests(
       environment,
       hostPhpunitConfigPath
     );
-    if (report.results.summary.tests > 0) {
+    // Include reports if they have tests OR if they have warnings (for "no tests executed" scenarios)
+    const hasWarning = report.results.extra?.warning !== undefined;
+    if (report.results.summary.tests > 0 || hasWarning) {
       reports.push(report);
     }
   }
