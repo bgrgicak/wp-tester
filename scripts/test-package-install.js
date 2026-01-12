@@ -57,33 +57,16 @@ function packPackage(packagePath, packageName) {
 }
 
 /**
- * Install package from tarball in a temp directory, using local tarballs for monorepo dependencies
+ * Install package from tarball in a temp directory
  * @param {string} tarballPath - Path to package tarball
  * @param {string} packageName - Package name for error messages
- * @param {Map<string, string>} packageTarballs - Map of package names to their tarball paths
- * @param {object} packageJson - Package.json to check for local dependencies
  * @returns {string} - Path to temp directory
  */
-function installPackage(tarballPath, packageName, packageTarballs, packageJson) {
+function installPackage(tarballPath, packageName) {
   const tempDir = mkdtempSync(join(tmpdir(), 'wp-tester-pkg-test-'));
 
   try {
-    // Find local dependencies that need to be installed from tarballs
-    const allDeps = {
-      ...packageJson.dependencies,
-      ...packageJson.peerDependencies,
-    };
-
-    const localDepTarballs = [];
-    for (const depName of Object.keys(allDeps || {})) {
-      if (packageTarballs.has(depName)) {
-        localDepTarballs.push(packageTarballs.get(depName));
-      }
-    }
-
-    // Install local dependencies first, then the package itself
-    const allTarballs = [...localDepTarballs, tarballPath].join(' ');
-    execSync(`npm install --production --silent ${allTarballs}`, {
+    execSync(`npm install --production --silent ${tarballPath}`, {
       cwd: tempDir,
       stdio: 'pipe',
     });
@@ -148,16 +131,18 @@ function testImport(tempDir, packageName, packageJson) {
 /**
  * Test a single package
  * @param {object} pkg - Package info
- * @param {Map<string, string>} packageTarballs - Map of package names to their tarball paths
  * @returns {Promise<{success: boolean, error?: Error}>}
  */
-async function testPackage(pkg, packageTarballs) {
+async function testPackage(pkg) {
   let tempDir = null;
-  const tarballPath = packageTarballs.get(pkg.name);
+  let tarballPath = null;
 
   try {
-    // Install in temp directory with local dependencies
-    tempDir = installPackage(tarballPath, pkg.name, packageTarballs, pkg.packageJson);
+    // Pack the package
+    tarballPath = packPackage(pkg.path, pkg.name);
+
+    // Install in temp directory
+    tempDir = installPackage(tarballPath, pkg.name);
 
     // Try to import it
     testImport(tempDir, pkg.name, pkg.packageJson);
@@ -166,9 +151,12 @@ async function testPackage(pkg, packageTarballs) {
   } catch (err) {
     return { success: false, error: err };
   } finally {
-    // Cleanup temp directory
+    // Cleanup
     if (tempDir) {
       rmSync(tempDir, { recursive: true, force: true });
+    }
+    if (tarballPath) {
+      rmSync(tarballPath, { force: true });
     }
   }
 }
@@ -188,28 +176,11 @@ async function main() {
     return;
   }
 
-  // Pack all packages first so we can use local tarballs for dependencies
-  const packageTarballs = new Map();
-  for (const pkg of publicPackages) {
-    try {
-      const tarballPath = packPackage(pkg.path, pkg.name);
-      packageTarballs.set(pkg.name, tarballPath);
-    } catch (err) {
-      console.log(`✗ ${pkg.name.padEnd(25)} - failed to pack`);
-      console.log(`  ${err.message}\n`);
-    }
-  }
-
   const results = [];
 
   // Test each package
   for (const pkg of publicPackages) {
-    if (!packageTarballs.has(pkg.name)) {
-      results.push({ pkg, success: false, error: new Error('Failed to pack') });
-      continue;
-    }
-
-    const result = await testPackage(pkg, packageTarballs);
+    const result = await testPackage(pkg);
     results.push({ pkg, ...result });
 
     if (result.success) {
@@ -218,11 +189,6 @@ async function main() {
       console.log(`✗ ${pkg.name.padEnd(25)} - failed to import`);
       console.log(`  ${result.error.message}\n`);
     }
-  }
-
-  // Cleanup all tarballs
-  for (const tarballPath of packageTarballs.values()) {
-    rmSync(tarballPath, { force: true });
   }
 
   // Summary
