@@ -1,5 +1,4 @@
 import { readFile, access, constants } from "fs/promises";
-import path from "path";
 import Ajv, { ErrorObject } from "ajv";
 import pc from "picocolors";
 import { getSchemaPath } from "@wp-tester/config";
@@ -30,7 +29,7 @@ function getSuggestion(error: ErrorObject): string | undefined {
 
   // Provide contextual suggestions based on error type and keyword
   if (error.keyword === "required") {
-    const missingProp = error.params?.missingProperty;
+    const missingProp = error.params?.missingProperty as string | undefined;
     if (missingProp === "environments") {
       return "Add an 'environments' array with at least one environment configuration. Example:\n" +
         '  "environments": [{ "blueprint": { "preferredVersions": { "php": "latest", "wp": "latest" } } }]';
@@ -61,7 +60,7 @@ function getSuggestion(error: ErrorObject): string | undefined {
   }
 
   if (error.keyword === "type") {
-    const expectedType = error.params?.type;
+    const expectedType = error.params?.type as string | undefined;
     if (error.instancePath.includes("/environments")) {
       return `Expected ${expectedType}. Environments must be an array of environment objects.`;
     }
@@ -69,14 +68,14 @@ function getSuggestion(error: ErrorObject): string | undefined {
   }
 
   if (error.keyword === "enum") {
-    const allowedValues = error.params?.allowedValues;
+    const allowedValues = error.params?.allowedValues as string[] | undefined;
     if (allowedValues) {
       return `Allowed values: ${allowedValues.join(", ")}`;
     }
   }
 
   if (error.keyword === "additionalProperties") {
-    const extraProp = error.params?.additionalProperty;
+    const extraProp = error.params?.additionalProperty as string | undefined;
     return `Unknown property '${extraProp}'. Check for typos or remove this property.`;
   }
 
