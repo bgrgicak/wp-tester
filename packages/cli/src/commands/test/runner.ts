@@ -4,7 +4,15 @@ import * as clack from '../../cli/theme';
 import { runSmokeTests } from "@wp-tester/smoke-tests";
 import { runPhpunitTests } from "@wp-tester/phpunit";
 import { mergeReports, printSummary, type Report } from "@wp-tester/results";
-import type { TestType } from "@wp-tester/config";
+import { resolveConfig, type TestType } from "@wp-tester/config";
+
+/**
+ * Options for the test runner
+ */
+export interface RunTestsOptions {
+  /** Allow the test suite to pass when no tests are executed (CLI override) */
+  passWithNoTests?: boolean;
+}
 
 async function resolveConfigPath(configPath: string): Promise<string> {
   const resolvedPath = path.resolve(process.cwd(), configPath);
@@ -62,7 +70,8 @@ function getSmokeTestFilter(testType?: TestType): TestType | undefined | false {
 export const runTests = async (
   configPath: string,
   testType?: TestType,
-  phpunitArgs?: string[]
+  phpunitArgs?: string[],
+  options?: RunTestsOptions
 ): Promise<void> => {
   let finalConfigPath = await resolveConfigPath(configPath);
 
@@ -88,6 +97,11 @@ export const runTests = async (
   }
 
   const absoluteConfigPath = path.resolve(process.cwd(), finalConfigPath);
+
+  // Load config to check for passWithNoTests setting
+  const config = await resolveConfig(absoluteConfigPath);
+  // CLI option takes precedence, then config option, default is false
+  const passWithNoTests = options?.passWithNoTests ?? config.tests.passWithNoTests ?? false;
 
   // Run all test suites and collect results
   const reports: Report[] = [];
@@ -149,9 +163,21 @@ export const runTests = async (
   // Print final combined summary with any warnings
   printSummary(summary, { warnings });
 
-  // Exit with success (0) if no failures, even if there are warnings
-  // Warnings indicate informational conditions (like "no tests executed")
-  // that shouldn't fail CI/CD pipelines
-  const success = summary.failed === 0;
-  process.exit(success ? 0 : 1);
+  // Determine exit code
+  // - Failed tests always cause exit code 1
+  // - Warnings (like "no tests executed") cause exit code 1 by default
+  // - Use --passWithNoTests or config tests.passWithNoTests to allow warnings to pass
+  const hasFailures = summary.failed > 0;
+  const hasWarnings = warnings.length > 0;
+
+  if (hasFailures) {
+    process.exit(1);
+  }
+
+  if (hasWarnings && !passWithNoTests) {
+    clack.log.warn("No tests were executed. Use --passWithNoTests to allow this to pass.");
+    process.exit(1);
+  }
+
+  process.exit(0);
 };

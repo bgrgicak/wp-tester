@@ -4,13 +4,14 @@ import type { TestType } from '@wp-tester/config';
 interface TestArgs {
   config: string;
   test?: TestType;
+  passWithNoTests?: boolean;
   '--'?: string[];
 }
 
 export const testHandler = async (argv: TestArgs): Promise<void> => {
-  const { config, test } = argv;
+  const { config, test, passWithNoTests } = argv;
   const phpunitArgs = argv['--'] || [];
-  await runTests(config, test, phpunitArgs);
+  await runTests(config, test, phpunitArgs, { passWithNoTests });
 };
 
 export default testHandler;
