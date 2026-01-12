@@ -166,4 +166,52 @@ describe('cacheFetch', () => {
     const secondMtime = fs.statSync(cachePath).mtimeMs;
     expect(secondMtime).toBeGreaterThan(firstMtime); // File was re-downloaded
   }, 30000);
+
+  it('should detect and replace corrupted zip files', async () => {
+    // Create a corrupted zip file in the cache
+    const cacheDir = path.join(testCacheDir, 'test-corrupted-zip');
+    fs.mkdirSync(cacheDir, { recursive: true });
+    const cachePath = path.join(cacheDir, 'download');
+    fs.writeFileSync(cachePath, 'This is not a valid zip file');
+
+    // Verify the corrupted file exists
+    expect(fs.existsSync(cachePath)).toBe(true);
+    const corruptedSize = fs.statSync(cachePath).size;
+    expect(corruptedSize).toBeLessThan(100); // Small corrupted file
+
+    // Try to fetch a real zip file - should detect corruption and re-download
+    // Using a smaller test zip file to speed up the test
+    const result = await cacheFetch({
+      baseCacheDir: testCacheDir,
+      cacheKey: 'test-corrupted-zip',
+      url: 'https://github.com/WordPress/wordpress-develop/archive/refs/tags/5.0.0.zip',
+      maxRetries: 1,
+    });
+
+    // Verify the file was replaced with a valid zip
+    expect(fs.existsSync(result)).toBe(true);
+    const validSize = fs.statSync(result).size;
+    expect(validSize).toBeGreaterThan(100000); // Real WordPress zip is much larger than corrupted file
+
+    // Verify it's a valid zip by checking for EOCD signature
+    const fd = fs.openSync(result, 'r');
+    try {
+      const stats = fs.fstatSync(fd);
+      const fileSize = stats.size;
+      const searchSize = Math.min(fileSize, 65535 + 22);
+      const buffer = Buffer.alloc(searchSize);
+      fs.readSync(fd, buffer, 0, searchSize, fileSize - searchSize);
+
+      let found = false;
+      for (let i = searchSize - 22; i >= 0; i--) {
+        if (buffer[i] === 0x50 && buffer[i + 1] === 0x4b && buffer[i + 2] === 0x05 && buffer[i + 3] === 0x06) {
+          found = true;
+          break;
+        }
+      }
+      expect(found).toBe(true); // Should find valid EOCD signature
+    } finally {
+      fs.closeSync(fd);
+    }
+  }, 90000);
 });
