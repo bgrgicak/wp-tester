@@ -118,8 +118,9 @@ export const runTests = async (
   // Collect warnings from all reports before merging
   const warnings: string[] = [];
   for (const report of reports) {
-    if (report.results.extra?.warning) {
-      warnings.push(String(report.results.extra.warning));
+    const warning = report.results.extra?.warning;
+    if (typeof warning === 'string') {
+      warnings.push(warning);
     }
   }
 
