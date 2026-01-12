@@ -138,19 +138,9 @@ export const runTests = async (
   // Run PHPUnit tests
   if (shouldRunPhpUnit) {
     const phpunitReport = await runPhpunitTests(absoluteConfigPath, phpunitArgs);
-    // Include report if it has tests OR if it has warnings (for "no tests executed" scenarios)
-    const hasWarning = phpunitReport.results.extra?.warning !== undefined;
-    if (phpunitReport.results.summary.tests > 0 || hasWarning) {
+    // Include report only if it has tests
+    if (phpunitReport.results.summary.tests > 0) {
       reports.push(phpunitReport);
-    }
-  }
-
-  // Collect warnings from all reports before merging
-  const warnings: string[] = [];
-  for (const report of reports) {
-    const warning = report.results.extra?.warning;
-    if (typeof warning === 'string') {
-      warnings.push(warning);
     }
   }
 
@@ -176,21 +166,19 @@ export const runTests = async (
     }
   }
 
-  // Print final combined summary with any warnings
-  printSummary(summary, { warnings });
+  // Print final combined summary
+  printSummary(summary);
 
-  // Determine exit code
-  // - Failed tests always cause exit code 1
-  // - Warnings (like "no tests executed") cause exit code 1 by default
-  // - Use --passWithNoTests or config tests.passWithNoTests to allow warnings to pass
+  // Determine exit code based on test results
   const hasFailures = summary.failed > 0;
-  const hasWarnings = warnings.length > 0;
+  const noTestsExecuted = summary.tests === 0;
 
   if (hasFailures) {
     process.exit(1);
   }
 
-  if (hasWarnings && !passWithNoTests) {
+  // If no tests were executed, exit with code 1 unless passWithNoTests is enabled
+  if (noTestsExecuted && !passWithNoTests) {
     clack.log.warn("No tests were executed. Use --passWithNoTests to allow this to pass.");
     process.exit(1);
   }

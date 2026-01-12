@@ -254,17 +254,11 @@ async function runPhpunitTestsForEnvironment(
       // Check if this is a "no tests executed" scenario vs an actual error
       // PHPUnit outputs "No tests executed!" when no tests match the filter
       const noTestsPattern = /No tests executed!?/i;
-      const isNoTestsWarning = noTestsPattern.test(errorOutput) && exitCode === 0;
+      const isNoTestsExecuted = noTestsPattern.test(errorOutput) && exitCode === 0;
 
-      if (isNoTestsWarning) {
-        // No tests found - treat as a warning, not a failure
-        // Store the warning in the report's extra field
-        report.results.extra = {
-          ...report.results.extra,
-          warning: 'No tests were executed. This may indicate that no tests matched the current filter or configuration.',
-          warningDetails: errorOutput,
-        };
-        // Keep summary at 0 tests - don't create a synthetic failed test
+      if (isNoTestsExecuted) {
+        // No tests found - return empty report with 0 tests
+        // The runner will handle this based on passWithNoTests option
       } else {
         // Bootstrap failure - create a synthetic test with the error
         report.results.tests.push({
@@ -362,9 +356,8 @@ export async function runPhpunitTests(
       environment,
       hostPhpunitConfigPath
     );
-    // Include reports if they have tests OR if they have warnings (for "no tests executed" scenarios)
-    const hasWarning = report.results.extra?.warning !== undefined;
-    if (report.results.summary.tests > 0 || hasWarning) {
+    // Include report only if it has tests
+    if (report.results.summary.tests > 0) {
       reports.push(report);
     }
   }
