@@ -1,8 +1,6 @@
 - Getting Started
   - [Overview](/)
   - [Installation](/#installation)
-    - [Project Dependency](/#option-1-install-as-a-project-dependency-recommended)
-    - [Using npx](/#option-2-run-directly-with-npx)
   - [Quick Start](/#quick-start)
   - [CLI Commands](/#cli-commands)
 

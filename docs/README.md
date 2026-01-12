@@ -16,58 +16,27 @@ WP Tester simplifies testing for WordPress plugins and themes by leveraging Word
 
 ## Installation
 
-There are two ways to use WP Tester:
-
-### Option 1: Install as a Project Dependency (Recommended)
-
-Install the CLI as a dev dependency in your project:
-
 ```bash
 npm install --save-dev @wp-tester/cli
 ```
 
-This approach is recommended because:
-
-- **Version consistency**: Everyone on your team uses the same version
-- **Reproducible CI/CD**: Your CI environment uses the exact same version as local development
-- **npm scripts integration**: Easy to add commands to your `package.json`
-
-#### Adding npm Scripts
-
-Add test commands to your `package.json` for convenience:
+Add a script to your `package.json`:
 
 ```json
 {
   "scripts": {
-    "wp-test": "wp-tester test",
-    "wp-test:wp": "wp-tester test --test wp",
-    "wp-test:plugin": "wp-tester test --test plugin",
-    "wp-test:phpunit": "wp-tester test --test phpunit"
+    "test:wp": "wp-tester test"
   }
 }
 ```
 
-Then run tests with:
+Then run with `npm run test:wp`.
+
+Alternatively, run directly without installing:
 
 ```bash
-npm run wp-test
+npx @wp-tester/cli@latest test
 ```
-
-### Option 2: Run Directly with npx
-
-For one-time use or quick testing, run directly without installing:
-
-```bash
-npx @wp-tester/cli@latest <command>
-```
-
-This is useful for:
-
-- Trying out WP Tester before committing to it
-- Running one-off tests on projects without adding dependencies
-- Always using the latest version
-
-Note: Using `@latest` ensures you get the most recent version, but downloads occur on each run.
 
 ## Quick Start
 
