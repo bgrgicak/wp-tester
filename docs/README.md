@@ -26,12 +26,6 @@ Install the CLI as a dev dependency in your project:
 npm install --save-dev @wp-tester/cli
 ```
 
-Then run commands using:
-
-```bash
-npx wp-tester <command>
-```
-
 This approach is recommended because:
 
 - **Version consistency**: Everyone on your team uses the same version
