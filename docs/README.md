@@ -179,6 +179,9 @@ wp-tester test --test phpunit
 # Use custom config file
 wp-tester test --config custom-config.json
 
+# Use config from a directory (looks for wp-tester.json in the directory)
+wp-tester test --config /path/to/project
+
 # Watch mode - re-run tests on file changes
 wp-tester test --watch
 ```
@@ -201,9 +204,11 @@ Configure which files to watch in `wp-tester.json`:
 
 ```json
 {
-  "watch": {
-    "include": ["src/**/*.php", "tests/**/*.php"],
-    "exclude": ["vendor/**", "node_modules/**"]
+  "tests": {
+    "watch": {
+      "include": ["src/**/*.php", "tests/**/*.php"],
+      "exclude": ["vendor/**", "node_modules/**"]
+    }
   }
 }
 ```
@@ -218,8 +223,11 @@ Validate your configuration file:
 # Validate default config
 wp-tester config validate
 
-# Validate custom config
+# Validate custom config file
 wp-tester config validate --config custom-config.json
+
+# Validate config in a directory (looks for wp-tester.json)
+wp-tester config validate --config /path/to/project
 ```
 
 ### `config <option>`

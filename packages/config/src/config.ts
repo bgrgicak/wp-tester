@@ -2,7 +2,7 @@ import type { WPTesterConfig, Tests } from "./wp-tester-config";
 import type { ResolvedWPTesterConfig, ResolvedEnvironment, ResolvedTests, ResolvedPHPUnitConfig } from "./resolved-types";
 import type { BlueprintV1Declaration } from "@wp-playground/blueprints";
 import { readFile, writeFile, access, constants as fsConstants } from "fs/promises";
-import { existsSync } from "fs";
+import { existsSync, statSync } from "fs";
 import { join, dirname, resolve, isAbsolute } from "path";
 import { fileURLToPath } from "url";
 import { getProjectRootMount } from "./auto-mount";
@@ -91,6 +91,10 @@ export async function readConfigFile(path?: string): Promise<WPTesterConfig> {
   if (!path) {
     path = configPath();
   }
+
+  // Normalize the path (handles directory paths)
+  path = normalizeConfigPath(path);
+
   const content = await readFile(path, "utf8");
   return JSON.parse(content) as WPTesterConfig;
 }
@@ -113,6 +117,31 @@ export async function writeConfigFile(
  */
 export function getConfigPath(config: string): string {
   return isAbsolute(config) ? config : resolve(process.cwd(), config);
+}
+
+/**
+ * Normalize a config path to ensure it points to a file, not a directory.
+ * If the path is a directory, appends 'wp-tester.json' to it.
+ * Used by readConfigFile, resolveConfig, and the test watcher to handle
+ * directory paths passed via --config flag.
+ *
+ * @param configPath - Path to config file or directory (relative or absolute)
+ * @returns Absolute path to the config file
+ */
+export function normalizeConfigPath(configPath: string): string {
+  const absolutePath = getConfigPath(configPath);
+
+  // Check if path is a directory (synchronous)
+  try {
+    const stats = statSync(absolutePath);
+    if (stats.isDirectory()) {
+      return join(absolutePath, 'wp-tester.json');
+    }
+  } catch {
+    // If stat fails, assume it's a file path
+  }
+
+  return absolutePath;
 }
 
 /**
@@ -202,7 +231,9 @@ export async function resolveConfig(
   let configPath: string | undefined;
 
   if (typeof config === "string") {
-    configPath = getConfigPath(config);
+    // Normalize the path (handles directory paths)
+    configPath = normalizeConfigPath(config);
+
     const content = await readFile(configPath, "utf8");
     resolvedConfig = JSON.parse(content) as WPTesterConfig;
   } else {

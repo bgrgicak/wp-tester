@@ -40,7 +40,9 @@ This command validates your `wp-tester.json` file against the JSON schema to ens
 
 ### Validation Options
 
-- `--config` or `-c`: Specify a custom path to your configuration file (default: `./wp-tester.json`)
+- `--config` or `-c`: Specify a custom path to your configuration file or directory (default: `./wp-tester.json`)
+  - When a directory path is provided, wp-tester will look for `wp-tester.json` within that directory
+  - When a file path is provided, wp-tester will use that specific file
 
 **Examples:**
 
@@ -50,6 +52,9 @@ wp-tester config validate
 
 # Validate a configuration file at a custom location
 wp-tester config validate --config ./configs/prod-config.json
+
+# Validate using a directory path (looks for wp-tester.json in the directory)
+wp-tester config validate --config /path/to/project
 ```
 
 The validation will check for:
@@ -506,15 +511,20 @@ You can use multiple reporters simultaneously:
 }
 ```
 
-### `watch`
+#### `tests.watch`
 
 **Type:** `Object`
 **Required:** No
 **Description:** Configures watch mode behavior when using `wp-tester test --watch`. Controls which files trigger test re-runs.
 
+Watch mode monitors the project directory for file changes. The project directory is determined by:
+- The directory containing `wp-tester.json` if no `projectHostPath` is specified
+- The `projectHostPath` configuration option if specified
+- When using `--config` with a directory path, the directory itself is used as the project directory
+
 **Properties:**
 
-#### `watch.include`
+##### `tests.watch.include`
 
 **Type:** `Array<string>`
 **Required:** No
@@ -523,21 +533,25 @@ You can use multiple reporters simultaneously:
 **Examples:**
 ```json
 {
-  "watch": {
-    "include": ["src/**/*.php", "tests/**/*.php"]
+  "tests": {
+    "watch": {
+      "include": ["src/**/*.php", "tests/**/*.php"]
+    }
   }
 }
 ```
 
 ```json
 {
-  "watch": {
-    "include": ["**/*.php", "**/*.js"]
+  "tests": {
+    "watch": {
+      "include": ["**/*.php", "**/*.js"]
+    }
   }
 }
 ```
 
-#### `watch.exclude`
+##### `tests.watch.exclude`
 
 **Type:** `Array<string>`
 **Required:** No
@@ -547,8 +561,10 @@ You can use multiple reporters simultaneously:
 **Example:**
 ```json
 {
-  "watch": {
-    "exclude": ["vendor/**", "node_modules/**", "*.log", "coverage/**"]
+  "tests": {
+    "watch": {
+      "exclude": ["vendor/**", "node_modules/**", "*.log", "coverage/**"]
+    }
   }
 }
 ```
@@ -557,9 +573,16 @@ You can use multiple reporters simultaneously:
 
 ```json
 {
-  "watch": {
-    "include": ["src/**/*.php", "tests/**/*.php", "includes/**/*.php"],
-    "exclude": ["vendor/**", "node_modules/**", "*.log"]
+  "tests": {
+    "plugin": "my-plugin",
+    "phpunit": {
+      "phpunitPath": "vendor/bin/phpunit",
+      "configPath": "phpunit.xml.dist"
+    },
+    "watch": {
+      "include": ["src/**/*.php", "tests/**/*.php", "includes/**/*.php"],
+      "exclude": ["vendor/**", "node_modules/**", "*.log"]
+    }
   }
 }
 ```

@@ -34,6 +34,7 @@ export {
   getProjectDir,
   getConfigDir,
   getConfigPath,
+  normalizeConfigPath,
   resolveAbsolute,
 } from "./config";
 

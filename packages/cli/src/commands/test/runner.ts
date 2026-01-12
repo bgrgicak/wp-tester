@@ -83,12 +83,14 @@ export const executeTests = async (
 
   // Run smoke tests (wp, plugin, theme) - smoke tests package handles whether to run
   const smokeTestFilter = getSmokeTestFilter(testType);
-  const smokeTestReport = await runSmokeTests(
-    absoluteConfigPath,
-    smokeTestFilter
-  );
-  if (smokeTestReport.results.summary.tests > 0) {
-    reports.push(smokeTestReport);
+  if (smokeTestFilter !== false) {
+    const smokeTestReport = await runSmokeTests(
+      absoluteConfigPath,
+      smokeTestFilter
+    );
+    if (smokeTestReport.results.summary.tests > 0) {
+      reports.push(smokeTestReport);
+    }
   }
 
   // Run PHPUnit tests

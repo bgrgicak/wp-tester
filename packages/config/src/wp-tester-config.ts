@@ -127,6 +127,12 @@ export interface Tests {
    * When undefined, PHPUnit tests are disabled.
    */
   phpunit?: PHPUnitConfig;
+
+  /**
+   * Watch mode configuration.
+   * Controls which files are watched when using --watch flag.
+   */
+  watch?: WatchConfig;
 }
 
 /**
@@ -267,10 +273,4 @@ export interface WPTesterConfig {
    * @default ["default"]
    */
   reporters?: Reporter[];
-
-  /**
-   * Watch mode configuration.
-   * Controls which files are watched when using --watch flag.
-   */
-  watch?: WatchConfig;
 }

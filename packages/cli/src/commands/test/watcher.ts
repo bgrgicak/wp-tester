@@ -1,7 +1,7 @@
 import { watch, type FSWatcher } from 'fs';
 import picomatch from 'picomatch';
 import * as clack from '../../cli/theme';
-import { getProjectDir, readConfigFile, type WatchConfig } from '@wp-tester/config';
+import { getProjectDir, normalizeConfigPath, readConfigFile, type WatchConfig } from '@wp-tester/config';
 
 export interface WatchOptions {
   configPath: string;
@@ -60,8 +60,10 @@ export async function runWatchMode(options: WatchOptions): Promise<void> {
 
   // Resolve config to get the project directory and watch settings
   const config = await readConfigFile(configPath);
-  const projectDir = getProjectDir(config, configPath);
-  const watchConfig = config.watch;
+  // Normalize config path to handle directory paths (appends wp-tester.json if needed)
+  const normalizedConfigPath = normalizeConfigPath(configPath);
+  const projectDir = getProjectDir(config, normalizedConfigPath);
+  const watchConfig = config.tests.watch;
 
   // Create the file matcher
   const matcher = createWatchMatcher(watchConfig);
@@ -70,13 +72,13 @@ export async function runWatchMode(options: WatchOptions): Promise<void> {
   clack.log.info(`Watching for changes in: ${projectDir}`);
 
   if (watchConfig?.include) {
-    clack.log.step(`Include patterns: ${watchConfig.include.join(', ')}`);
+    clack.log.step(`Include patterns: ${watchConfig.include.join(", ")}`);
   }
   if (watchConfig?.exclude) {
-    clack.log.step(`Exclude patterns: ${watchConfig.exclude.join(', ')}`);
+    clack.log.step(`Exclude patterns: ${watchConfig.exclude.join(", ")}`);
   }
 
-  clack.log.info('Press Enter to re-run tests, or q to quit.\n');
+  clack.log.info("Press Enter to re-run tests, or q to quit.\n");
 
   let isRunning = false;
   let pendingRun = false;
@@ -91,18 +93,18 @@ export async function runWatchMode(options: WatchOptions): Promise<void> {
 
     isRunning = true;
     console.clear();
-    clack.log.info('Running tests...\n');
+    clack.log.info("Running tests...\n");
 
     try {
       await onRunTests();
     } catch (error) {
       // Tests may exit with non-zero code, which is expected
-      if (error instanceof Error && !error.message.includes('process.exit')) {
+      if (error instanceof Error && !error.message.includes("process.exit")) {
         clack.log.error(`Error running tests: ${error.message}`);
       }
     } finally {
       isRunning = false;
-      clack.log.info('\nWatching for changes... (Enter to re-run, q to quit)');
+      clack.log.info("\nWatching for changes... (Enter to re-run, q to quit)");
 
       if (pendingRun) {
         pendingRun = false;
@@ -130,7 +132,7 @@ export async function runWatchMode(options: WatchOptions): Promise<void> {
       }
     });
 
-    watcher.on('error', (error) => {
+    watcher.on("error", (error) => {
       clack.log.error(`Watcher error: ${error.message}`);
     });
   } catch (error) {
@@ -144,25 +146,35 @@ export async function runWatchMode(options: WatchOptions): Promise<void> {
   if (process.stdin.isTTY) {
     process.stdin.setRawMode(true);
     process.stdin.resume();
-    process.stdin.setEncoding('utf8');
+    process.stdin.setEncoding("utf8");
 
-    process.stdin.on('data', (key: string) => {
+    process.stdin.on("data", (key: string) => {
       // Handle Ctrl+C
-      if (key === '\u0003') {
+      if (key === "\u0003") {
         cleanup();
         process.exit(0);
       }
       // Handle 'q' or 'Q' to quit
-      if (key === 'q' || key === 'Q') {
+      if (key === "q" || key === "Q") {
         cleanup();
         process.exit(0);
       }
       // Handle Enter to re-run tests
-      if (key === '\r' || key === '\n') {
+      if (key === "\r" || key === "\n") {
         scheduleRun();
       }
     });
   }
+
+  const onSigint = () => {
+    cleanup();
+    process.exit(0);
+  };
+
+  const onSigterm = () => {
+    cleanup();
+    process.exit(0);
+  };
 
   const cleanup = () => {
     if (debounceTimer) {
@@ -174,19 +186,15 @@ export async function runWatchMode(options: WatchOptions): Promise<void> {
     if (process.stdin.isTTY) {
       process.stdin.setRawMode(false);
     }
+    process.off("SIGINT", onSigint);
+    process.off("SIGTERM", onSigterm);
     clack.log.info('\nWatch mode stopped.');
   };
 
   // Handle process termination
-  process.on('SIGINT', () => {
-    cleanup();
-    process.exit(0);
-  });
+  process.on("SIGINT", onSigint);
 
-  process.on('SIGTERM', () => {
-    cleanup();
-    process.exit(0);
-  });
+  process.on("SIGTERM", onSigterm);
 
   // Run tests initially
   await runTests();
