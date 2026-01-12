@@ -1,5 +1,5 @@
 import { optionNames, type OptionName } from '@wp-tester/config';
-import { validateConfig } from './validate';
+import { validateConfigCommand } from './validate';
 import { updateConfigOption } from './option';
 import * as clack from '../../cli/theme';
 
@@ -12,7 +12,7 @@ export const configHandler = async (argv: ConfigArgs): Promise<void> => {
   const { action, config } = argv;
 
   if (action === "validate") {
-    await validateConfig(config);
+    await validateConfigCommand(config);
   } else if (action && optionNames.includes(action as OptionName)) {
     await updateConfigOption(action as OptionName);
   } else {

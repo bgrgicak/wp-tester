@@ -4,7 +4,11 @@ import Ajv from "ajv";
 import pc from "picocolors";
 import { getSchemaPath } from "@wp-tester/config";
 
-export async function validateConfig(configPath: string): Promise<void> {
+/**
+ * Validates config and prints errors if invalid.
+ * Returns true if valid, false otherwise.
+ */
+export async function validateConfig(configPath: string): Promise<boolean> {
   try {
     // Resolve config path relative to cwd
     const resolvedConfigPath = path.resolve(process.cwd(), configPath);
@@ -36,15 +40,27 @@ export async function validateConfig(configPath: string): Promise<void> {
       }
 
       console.error("");
-      process.exit(1);
+      return false;
     }
 
-    console.log(pc.green(pc.bold("✓ Configuration is valid")));
+    return true;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error(pc.red(pc.bold("Validation error:")));
     console.error(pc.red(`  ${message}`));
     console.error("");
+    return false;
+  }
+}
+
+/**
+ * CLI handler for the validate command.
+ * Validates config and exits with appropriate code.
+ */
+export async function validateConfigCommand(configPath: string): Promise<void> {
+  const isValid = await validateConfig(configPath);
+  if (!isValid) {
     process.exit(1);
   }
+  console.log(pc.green(pc.bold("✓ Configuration is valid")));
 }

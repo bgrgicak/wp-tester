@@ -5,7 +5,7 @@ import { runSmokeTests } from "@wp-tester/smoke-tests";
 import { runPhpunitTests } from "@wp-tester/phpunit";
 import { mergeReports, printSummary, type Report } from "@wp-tester/results";
 import type { TestType } from "@wp-tester/config";
-import { validateConfig } from './validate';
+import { validateConfig } from '../config/validate';
 
 async function resolveConfigPath(configPath: string): Promise<string> {
   const resolvedPath = path.resolve(process.cwd(), configPath);
