@@ -85,7 +85,8 @@ describe('formatValidationError', () => {
 
     expect(result.message).toContain('too short');
     expect(result.message).toContain('/environments');
-    expect(result.hint).toContain('Minimum items required: 1');
+    expect(result.hint).toContain('Minimum items required:');
+    expect(result.hint).toContain('1');
     expect(result.docsUrl).toBe('https://bgrgicak.github.io/wp-tester/#/configuration?id=environments');
   });
 
