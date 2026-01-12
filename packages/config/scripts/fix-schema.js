@@ -18,6 +18,9 @@ if (schema.properties) {
 schema.$schema = 'http://json-schema.org/draft-07/schema#';
 schema.$id = 'https://raw.githubusercontent.com/bgrgicak/wp-tester/trunk/packages/config/src/schema.json';
 
+// Disallow additional properties to catch typos in config files
+schema.additionalProperties = false;
+
 // Allow $schema property in config files
 if (schema.properties) {
   schema.properties.$schema = {
