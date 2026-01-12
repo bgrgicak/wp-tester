@@ -11,6 +11,15 @@ interface ValidationErrorDisplay {
   docsUrl: string;
 }
 
+interface Environment {
+  name?: string;
+  disabled?: boolean;
+}
+
+interface WPTesterConfig {
+  environments: Environment[];
+}
+
 /**
  * Known top-level configuration properties that have their own documentation sections.
  * These correspond to the main headings in the configuration.md file.
@@ -157,6 +166,20 @@ export async function validateConfig(configPath: string): Promise<boolean> {
       }
 
       return false;
+    }
+
+    // Check for disabled environments and display info
+    const typedConfig = config as WPTesterConfig;
+    if (typedConfig.environments) {
+      const disabledEnvs = typedConfig.environments.filter(env => env.disabled === true);
+      if (disabledEnvs.length > 0) {
+        const envNames = disabledEnvs
+          .map((env, index) => env.name || `Environment ${index + 1}`)
+          .join(', ');
+        clack.log.warn(
+          `${disabledEnvs.length} disabled environment(s) will be skipped: ${pc.dim(envNames)}`
+        );
+      }
     }
 
     return true;

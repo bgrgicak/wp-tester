@@ -1276,6 +1276,11 @@
           "$ref": "#/definitions/Blueprint",
           "description": "WordPress Playground Blueprint configuration.\nCan be an inline blueprint object or a file path to a blueprint JSON file."
         },
+        "disabled": {
+          "default": false,
+          "description": "Whether this environment is disabled.\nDisabled environments are skipped during test execution.\nUseful for temporarily excluding environments without removing them from configuration.",
+          "type": "boolean"
+        },
         "env": {
           "$ref": "#/definitions/EnvironmentVariables",
           "default": {},

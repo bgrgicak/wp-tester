@@ -189,6 +189,14 @@ export interface Environment {
    * @default {}
    */
   env?: EnvironmentVariables;
+
+  /**
+   * Whether this environment is disabled.
+   * Disabled environments are skipped during test execution.
+   * Useful for temporarily excluding environments without removing them from configuration.
+   * @default false
+   */
+  disabled?: boolean;
 }
 
 /**

@@ -4,7 +4,8 @@ import { startPlayground, stopPlayground, wpCli, type RunCLIServer } from '@wp-t
 
 // Get config from Vitest's provide/inject
 const config = inject('config') as ResolvedWPTesterConfig;
-const environments = config.environments;
+// Filter out disabled environments
+const environments = config.environments.filter(env => !env.disabled);
 const pluginSlug = config.tests.plugin;
 
 // Test each environment

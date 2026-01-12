@@ -300,6 +300,7 @@ export async function resolveConfig(
         blueprint: resolvedBlueprint,
         mounts: resolvedMounts,
         env: env.env || {},
+        disabled: env.disabled ?? false,
       };
     })
   );

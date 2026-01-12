@@ -4,7 +4,8 @@ import { startPlayground, stopPlayground, wpCli, type RunCLIServer } from '@wp-t
 
 // Get config from Vitest's provide/inject
 const config = inject('config') as ResolvedWPTesterConfig;
-const environments = config.environments;
+// Filter out disabled environments
+const environments = config.environments.filter(env => !env.disabled);
 const themeSlug = config.tests.theme;
 
 // Skip all tests if no theme is configured

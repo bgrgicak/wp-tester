@@ -27,13 +27,15 @@ export interface ResolvedBlueprint extends Omit<BlueprintV1Declaration, 'preferr
 /**
  * Resolved environment with loaded blueprint and required mounts array.
  */
-export interface ResolvedEnvironment extends Omit<Environment, 'blueprint' | 'mounts' | 'env'> {
+export interface ResolvedEnvironment extends Omit<Environment, 'blueprint' | 'mounts' | 'env' | 'disabled'> {
   /** Blueprint loaded from file (if it was a string path) with guaranteed preferredVersions */
   blueprint: ResolvedBlueprint;
   /** Mounts array (always defined, may be empty) */
   mounts: Mount[];
   /** Environment variables (always defined, may be empty) */
   env: Record<string, string>;
+  /** Whether this environment is disabled (always defined after resolution, defaults to false) */
+  disabled: boolean;
 }
 
 /**

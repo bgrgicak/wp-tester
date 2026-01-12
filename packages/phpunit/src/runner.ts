@@ -338,9 +338,10 @@ export async function runPhpunitTests(
     return Promise.resolve(EMPTY_REPORT);
   }
 
-  // Run tests for all environments
+  // Run tests for all enabled environments (skip disabled ones)
   const reports: Report[] = [];
-  for (const environment of resolvedConfig.environments) {
+  const enabledEnvironments = resolvedConfig.environments.filter(env => !env.disabled);
+  for (const environment of enabledEnvironments) {
     const report = await runPhpunitTestsForEnvironment(
       resolvedConfig,
       environment,
