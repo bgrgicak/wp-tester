@@ -48,7 +48,7 @@ export interface CacheFetchOptions {
  * Validate that a file is a valid zip file by checking for the end of central directory signature
  * The EOCD can have a variable-length comment, so we search backwards from the end
  */
-async function validateZipFile(filePath: string): Promise<void> {
+function validateZipFile(filePath: string): void {
   const fd = fs.openSync(filePath, 'r');
   try {
     const stats = fs.fstatSync(fd);
@@ -111,10 +111,10 @@ export async function cacheFetch(options: CacheFetchOptions): Promise<string> {
       // Validate cached file before returning
       try {
         if (url.endsWith('.zip')) {
-          await validateZipFile(cacheFilePath);
+          validateZipFile(cacheFilePath);
         }
         return cacheFilePath;
-      } catch (error) {
+      } catch {
         // Cached file is corrupted, delete and re-download
         fs.unlinkSync(cacheFilePath);
       }
@@ -129,10 +129,10 @@ export async function cacheFetch(options: CacheFetchOptions): Promise<string> {
         // Cache exists and hasn't expired, validate before returning
         try {
           if (url.endsWith('.zip')) {
-            await validateZipFile(cacheFilePath);
+            validateZipFile(cacheFilePath);
           }
           return cacheFilePath;
-        } catch (error) {
+        } catch {
           // Cached file is corrupted, delete and re-download
           fs.unlinkSync(cacheFilePath);
         }
@@ -151,7 +151,7 @@ export async function cacheFetch(options: CacheFetchOptions): Promise<string> {
 
     // Validate the downloaded file if it's a zip
     if (url.endsWith('.zip')) {
-      await validateZipFile(cacheFilePath);
+      validateZipFile(cacheFilePath);
     }
 
     return cacheFilePath;
