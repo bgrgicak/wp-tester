@@ -5,6 +5,7 @@ import { runSmokeTests } from "@wp-tester/smoke-tests";
 import { runPhpunitTests } from "@wp-tester/phpunit";
 import { mergeReports, printSummary, type Report } from "@wp-tester/results";
 import { resolveConfig, type TestType } from "@wp-tester/config";
+import { validateConfig } from '../config/validate';
 import { setupHandler } from "../setup";
 
 /**
@@ -116,8 +117,11 @@ export const runTests = async (
 
   // Load config to check for passWithNoTests setting
   const config = await resolveConfig(absoluteConfigPath);
-  // CLI option takes precedence, then config option, default is false
-  const passWithNoTests = options?.passWithNoTests ?? config.tests.passWithNoTests ?? false;
+  // Validate configuration before running tests
+  const isValid = await validateConfig(absoluteConfigPath);
+  if (!isValid) {
+    process.exit(1);
+  }
 
   // Run all test suites and collect results
   const reports: Report[] = [];

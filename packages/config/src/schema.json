@@ -3468,6 +3468,7 @@
   ],
   "type": "object",
   "$id": "https://raw.githubusercontent.com/bgrgicak/wp-tester/trunk/packages/config/src/schema.json",
+  "additionalProperties": false,
   "allOf": [
     {
       "if": {
