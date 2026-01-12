@@ -160,6 +160,22 @@ export type Reporter = "default" | ["json", JsonReporterOptions];
 export type EnvironmentVariables = Record<string, string>;
 
 /**
+ * PHP version specification for matrix testing.
+ * Can be a single version string or an array of versions for matrix expansion.
+ * @example "8.2"
+ * @example ["8.1", "8.2", "8.3"]
+ */
+export type PHPVersionSpec = string | string[];
+
+/**
+ * WordPress version specification for matrix testing.
+ * Can be a single version string or an array of versions for matrix expansion.
+ * @example "6.7"
+ * @example ["6.6", "6.7"]
+ */
+export type WPVersionSpec = string | string[];
+
+/**
  * Test environment configuration.
  * Defines a WordPress environment with specific versions and setup.
  */
@@ -170,6 +186,28 @@ export interface Environment {
    * @example "WooCommerce Environment"
    */
   name?: string;
+
+  /**
+   * PHP version(s) for this environment.
+   * Can be a single version string or an array of versions for matrix testing.
+   * When an array is provided, tests will run for each PHP version combined with each WP version.
+   * If blueprint.preferredVersions.php is also set, the blueprint value takes precedence
+   * and only that single version will be used.
+   * @example "8.2"
+   * @example ["8.1", "8.2", "8.3"]
+   */
+  php?: PHPVersionSpec;
+
+  /**
+   * WordPress version(s) for this environment.
+   * Can be a single version string or an array of versions for matrix testing.
+   * When an array is provided, tests will run for each WP version combined with each PHP version.
+   * If blueprint.preferredVersions.wp is also set, the blueprint value takes precedence
+   * and only that single version will be used.
+   * @example "6.7"
+   * @example ["6.6", "6.7"]
+   */
+  wp?: WPVersionSpec;
 
   /**
    * WordPress Playground Blueprint configuration.

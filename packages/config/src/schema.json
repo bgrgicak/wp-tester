@@ -1292,6 +1292,14 @@
         "name": {
           "description": "Optional descriptive name for this environment",
           "type": "string"
+        },
+        "php": {
+          "$ref": "#/definitions/PHPVersionSpec",
+          "description": "PHP version(s) for this environment. Can be a single version string or an array of versions for matrix testing. When an array is provided, tests will run for each PHP version combined with each WP version. If blueprint.preferredVersions.php is also set, the blueprint value takes precedence."
+        },
+        "wp": {
+          "$ref": "#/definitions/WPVersionSpec",
+          "description": "WordPress version(s) for this environment. Can be a single version string or an array of versions for matrix testing. When an array is provided, tests will run for each WP version combined with each PHP version. If blueprint.preferredVersions.wp is also set, the blueprint value takes precedence."
         }
       },
       "required": [
@@ -1303,6 +1311,42 @@
       "default": {},
       "description": "Environment variables for WordPress Playground.\nKey-value pairs of environment variable names and values.",
       "type": "object"
+    },
+    "PHPVersionSpec": {
+      "description": "PHP version specification for matrix testing. Can be a single version string or an array of versions for matrix expansion.",
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Single PHP version",
+          "examples": ["8.2", "8.1", "latest"]
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Array of PHP versions for matrix testing",
+          "examples": [["8.1", "8.2", "8.3"]]
+        }
+      ]
+    },
+    "WPVersionSpec": {
+      "description": "WordPress version specification for matrix testing. Can be a single version string or an array of versions for matrix expansion.",
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Single WordPress version",
+          "examples": ["6.7", "6.6", "latest"]
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Array of WordPress versions for matrix testing",
+          "examples": [["6.6", "6.7"]]
+        }
+      ]
     },
     "FileReference": {
       "anyOf": [
