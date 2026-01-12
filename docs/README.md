@@ -14,26 +14,75 @@ WP Tester simplifies testing for WordPress plugins and themes by leveraging Word
 - **Flexible Configuration**: JSON-based configuration with IDE autocomplete support
 - **Multiple Output Formats**: Console output and JSON (CTRF) reporting
 
+## Installation
+
+There are two ways to use WP Tester:
+
+### Option 1: Install as a Project Dependency (Recommended)
+
+Install the CLI as a dev dependency in your project:
+
+```bash
+npm install --save-dev @wp-tester/cli
+```
+
+Then run commands using:
+
+```bash
+npx wp-tester <command>
+```
+
+This approach is recommended because:
+
+- **Version consistency**: Everyone on your team uses the same version
+- **Reproducible CI/CD**: Your CI environment uses the exact same version as local development
+- **npm scripts integration**: Easy to add commands to your `package.json`
+
+#### Adding npm Scripts
+
+Add test commands to your `package.json` for convenience:
+
+```json
+{
+  "scripts": {
+    "wp-test": "wp-tester test",
+    "wp-test:wp": "wp-tester test --test wp",
+    "wp-test:plugin": "wp-tester test --test plugin",
+    "wp-test:phpunit": "wp-tester test --test phpunit"
+  }
+}
+```
+
+Then run tests with:
+
+```bash
+npm run wp-test
+```
+
+### Option 2: Run Directly with npx
+
+For one-time use or quick testing, run directly without installing:
+
+```bash
+npx @wp-tester/cli@latest <command>
+```
+
+This is useful for:
+
+- Trying out WP Tester before committing to it
+- Running one-off tests on projects without adding dependencies
+- Always using the latest version
+
+Note: Using `@latest` ensures you get the most recent version, but downloads occur on each run.
+
 ## Quick Start
-
-### Installation
-
-```bash
-npm install @wp-tester/cli
-```
-
-Or use directly with npx:
-
-```bash
-npx @wp-tester/cli --help
-```
 
 ### Setup
 
 Generate a configuration file:
 
 ```bash
-npx @wp-tester/cli setup
+wp-tester setup
 ```
 
 This interactive setup will guide you through:
@@ -44,23 +93,23 @@ This interactive setup will guide you through:
 ### Run Tests
 
 ```bash
-npx @wp-tester/cli test
+wp-tester test
 ```
 
 Run specific test types:
 
 ```bash
 # Run only WordPress smoke tests
-npx @wp-tester/cli test --test wp
+wp-tester test --test wp
 
 # Run only plugin tests
-npx @wp-tester/cli test --test plugin
+wp-tester test --test plugin
 
 # Run only theme tests
-npx @wp-tester/cli test --test theme
+wp-tester test --test theme
 
 # Run only PHPUnit tests
-npx @wp-tester/cli test --test phpunit
+wp-tester test --test phpunit
 ```
 
 ## Test Types
