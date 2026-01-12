@@ -20,15 +20,12 @@ WP Tester simplifies testing for WordPress plugins and themes by leveraging Word
 npm install --save-dev @wp-tester/cli
 ```
 
-Add a script to your `package.json`:
-
 ```json
 {
   "scripts": {
     "test:wp": "wp-tester test"
   }
 }
-```
 
 Then run with `npm run test:wp`.
 
