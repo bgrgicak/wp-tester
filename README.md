@@ -7,13 +7,21 @@ A CLI tool for testing WordPress plugins and themes using WordPress Playground.
 ## Quick Start
 
 ```bash
-# Install
-npm install @wp-tester/cli
+# Install as dev dependency (recommended)
+npm install --save-dev @wp-tester/cli
 
-# Or use with npx
-npx @wp-tester/cli setup
-npx @wp-tester/cli test
+# Setup and run tests
+wp-tester setup
+wp-tester test
 ```
+
+Or run directly without installing:
+
+```bash
+npx @wp-tester/cli@latest setup
+```
+
+See the [Installation Guide](docs/README.md#installation) for details on when to use each approach.
 
 ## Features
 
