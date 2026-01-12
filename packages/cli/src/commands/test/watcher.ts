@@ -1,30 +1,11 @@
-import { watch, type FSWatcher, statSync } from 'fs';
-import { join, resolve } from 'path';
+import { watch, type FSWatcher } from 'fs';
 import picomatch from 'picomatch';
 import * as clack from '../../cli/theme';
-import { getProjectDir, readConfigFile, type WatchConfig } from '@wp-tester/config';
+import { getProjectDir, normalizeConfigPath, readConfigFile, type WatchConfig } from '@wp-tester/config';
 
 export interface WatchOptions {
   configPath: string;
   onRunTests: () => Promise<void>;
-}
-
-/**
- * Normalize a config path - if it's a directory, append wp-tester.json
- */
-function normalizeConfigPath(configPath: string): string {
-  const absolutePath = resolve(process.cwd(), configPath);
-
-  try {
-    const stats = statSync(absolutePath);
-    if (stats.isDirectory()) {
-      return join(absolutePath, 'wp-tester.json');
-    }
-  } catch {
-    // If stat fails, assume it's a file path
-  }
-
-  return absolutePath;
 }
 
 // Default patterns to exclude when watching for changes
