@@ -45,6 +45,43 @@ export interface CacheFetchOptions {
 }
 
 /**
+ * Validate that a file is a valid zip file by checking for the end of central directory signature
+ * The EOCD can have a variable-length comment, so we search backwards from the end
+ */
+function validateZipFile(filePath: string): void {
+  const fd = fs.openSync(filePath, 'r');
+  try {
+    const stats = fs.fstatSync(fd);
+    const fileSize = stats.size;
+
+    // ZIP files must have at least 22 bytes (minimum EOCD size)
+    if (fileSize < 22) {
+      throw new Error('File too small to be a valid zip file');
+    }
+
+    // Maximum comment length is 65535 bytes, so search last 65KB + 22 bytes
+    const searchSize = Math.min(fileSize, 65535 + 22);
+    const buffer = Buffer.alloc(searchSize);
+    fs.readSync(fd, buffer, 0, searchSize, fileSize - searchSize);
+
+    // Search backwards for EOCD signature (0x50, 0x4b, 0x05, 0x06 in little-endian)
+    let found = false;
+    for (let i = searchSize - 22; i >= 0; i--) {
+      if (buffer[i] === 0x50 && buffer[i + 1] === 0x4b && buffer[i + 2] === 0x05 && buffer[i + 3] === 0x06) {
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) {
+      throw new Error('End of central directory record signature not found. Either not a zip file, or file is truncated.');
+    }
+  } finally {
+    fs.closeSync(fd);
+  }
+}
+
+/**
  * Download a file and cache it locally, with retry logic
  *
  * @param options - Configuration options for cache fetch
@@ -71,7 +108,16 @@ export async function cacheFetch(options: CacheFetchOptions): Promise<string> {
     }
     // If cacheExpiration is 0 (CACHE_FOREVER), cache never expires
     else if (cacheExpiration === 0) {
-      return cacheFilePath;
+      // Validate cached file before returning
+      try {
+        if (url.endsWith('.zip')) {
+          validateZipFile(cacheFilePath);
+        }
+        return cacheFilePath;
+      } catch {
+        // Cached file is corrupted, delete and re-download
+        fs.unlinkSync(cacheFilePath);
+      }
     }
     // For positive values, check if cache has expired
     else {
@@ -80,12 +126,20 @@ export async function cacheFetch(options: CacheFetchOptions): Promise<string> {
       const fileAge = now - stats.mtimeMs;
 
       if (fileAge < cacheExpiration) {
-        // Cache is still valid
-        return cacheFilePath;
+        // Cache exists and hasn't expired, validate before returning
+        try {
+          if (url.endsWith('.zip')) {
+            validateZipFile(cacheFilePath);
+          }
+          return cacheFilePath;
+        } catch {
+          // Cached file is corrupted, delete and re-download
+          fs.unlinkSync(cacheFilePath);
+        }
+      } else {
+        // Cache has expired, delete it
+        fs.unlinkSync(cacheFilePath);
       }
-
-      // Cache has expired, delete it
-      fs.unlinkSync(cacheFilePath);
     }
   }
 
@@ -94,6 +148,12 @@ export async function cacheFetch(options: CacheFetchOptions): Promise<string> {
 
   try {
     await downloadFileWithRetry(url, cacheFilePath, maxRetries);
+
+    // Validate the downloaded file if it's a zip
+    if (url.endsWith('.zip')) {
+      validateZipFile(cacheFilePath);
+    }
+
     return cacheFilePath;
   } catch (error) {
     // Clean up partial download and cache directory

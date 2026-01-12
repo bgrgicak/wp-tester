@@ -5,6 +5,29 @@ import { runSmokeTests } from "@wp-tester/smoke-tests";
 import { runPhpunitTests } from "@wp-tester/phpunit";
 import { mergeReports, printSummary, type Report } from "@wp-tester/results";
 import type { TestType } from "@wp-tester/config";
+import { validateConfig } from '../config/validate';
+import { setupHandler } from "../setup";
+
+/**
+ * Prompt the user to run setup when no configuration file is found.
+ * Returns the path to the config file after setup, or exits if the user cancels.
+ */
+async function promptSetupOnMissingConfig(): Promise<string> {
+  clack.log.error("No configuration found. Run `wp-tester setup` to create one.");
+
+  const runSetup = await clack.confirm({
+    message: "Would you like to run setup now?",
+  });
+
+  if (clack.isCancel(runSetup) || !runSetup) {
+    clack.cancel("Test cancelled.");
+    process.exit(0);
+  }
+
+  await setupHandler();
+
+  return path.resolve(process.cwd(), "wp-tester.json");
+}
 
 async function resolveConfigPath(configPath: string): Promise<string> {
   const resolvedPath = path.resolve(process.cwd(), configPath);
@@ -19,17 +42,11 @@ async function resolveConfigPath(configPath: string): Promise<string> {
         await access(configFile, constants.F_OK);
         return configFile;
       } catch {
-        clack.log.error(`Config file not found in directory: ${resolvedPath}`);
-        clack.log.error(
-          "Please provide a path to a valid WP Tester config file."
-        );
-        process.exit(1);
+        return promptSetupOnMissingConfig();
       }
     }
   } catch {
-    clack.log.error(`Path not found: ${resolvedPath}`);
-    clack.log.error("Please provide a path to a valid WP Tester config file.");
-    process.exit(1);
+    return promptSetupOnMissingConfig();
   }
 
   return resolvedPath;
@@ -74,6 +91,12 @@ export const executeTests = async (
   phpunitArgs?: string[]
 ): Promise<TestResult> => {
   const absoluteConfigPath = path.resolve(process.cwd(), configPath);
+
+  // Validate configuration before running tests
+  const isValid = await validateConfig(absoluteConfigPath);
+  if (!isValid) {
+    process.exit(1);
+  }
 
   // Run all test suites and collect results
   const reports: Report[] = [];

@@ -62,6 +62,8 @@ export function getSchemaPath(importMetaUrl?: string): string {
 
 export function getDefaultConfig(): WPTesterConfig {
   return {
+    $schema:
+      "https://raw.githubusercontent.com/bgrgicak/wp-tester/trunk/packages/config/src/schema.json",
     environments: [
       {
         name: "Latest WordPress and PHP",
