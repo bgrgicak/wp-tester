@@ -155,7 +155,6 @@ describe("StreamingReporter", () => {
     const output = writer.getOutput();
     expect(output).toContain("skipped test");
     expect(output).toContain("○");
-    expect(output).toContain("[SKIPPED]");
     expect(output).toContain("Not implemented yet");
 
     const counts = reporter.getCounts();
@@ -245,7 +244,6 @@ describe("StreamingReporter", () => {
     const output = writer.getCurrentOutput();
     expect(output).toContain("hanging test");
     expect(output).toContain("○"); // pending status
-    expect(output).toContain("[PENDING]"); // pending label
   });
 
   it("should clean up all running tests when run ends", () => {
@@ -260,6 +258,5 @@ describe("StreamingReporter", () => {
     const output = writer.getCurrentOutput();
     expect(output).toContain("hanging test");
     expect(output).toContain("○"); // marked as pending, not running
-    expect(output).toContain("[PENDING]"); // pending label
   });
 });

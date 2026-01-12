@@ -389,11 +389,11 @@ export class StreamingReporter {
       }
       case "skipped": {
         const reasonStr = test.message ? ` ${pc.dim(`(${test.message})`)}` : "";
-        lines.push(`${indent}${pc.yellow("○ [SKIPPED]")} ${pc.dim(test.name)}${reasonStr}`);
+        lines.push(`${indent}${pc.yellow("○")} ${pc.strikethrough(pc.dim(test.name))}${reasonStr}`);
         break;
       }
       case "pending": {
-        lines.push(`${indent}${pc.yellow("○ [PENDING]")} ${pc.dim(test.name)}`);
+        lines.push(`${indent}${pc.yellow("○")} ${pc.strikethrough(pc.dim(test.name))}`);
         break;
       }
     }
