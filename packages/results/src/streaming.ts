@@ -389,11 +389,11 @@ export class StreamingReporter {
       }
       case "skipped": {
         const reasonStr = test.message ? ` ${pc.dim(`(${test.message})`)}` : "";
-        lines.push(`${indent}${pc.yellow("○")} ${pc.dim(test.name)}${reasonStr}`);
+        lines.push(`${indent}${pc.yellow("○ [SKIPPED]")} ${pc.dim(test.name)}${reasonStr}`);
         break;
       }
       case "pending": {
-        lines.push(`${indent}${pc.yellow("○")} ${pc.dim(test.name)}`);
+        lines.push(`${indent}${pc.yellow("○ [PENDING]")} ${pc.dim(test.name)}`);
         break;
       }
     }
@@ -731,6 +731,10 @@ export class StreamingReporter {
 
     this.writer.writeLine("");
     this.writer.writeLine(pc.dim(`  ${this.state.totalTests} tests in ${formatDuration(duration)}`));
+    this.writer.writeLine("");
+
+    // Print icon legend
+    this.writer.writeLine(pc.dim("  Legend: ✓ passed  ✗ failed  ○ skipped/pending"));
     this.writer.writeLine("");
   }
 
