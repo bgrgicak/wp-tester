@@ -396,7 +396,7 @@ describe('mergeReports', () => {
             start: 1000,
             stop: 1500,
             extra: {
-              warnings: 'not an array' as any,
+              warnings: 'not an array' as unknown,
             },
           },
           tool: { name: 'tool1' },

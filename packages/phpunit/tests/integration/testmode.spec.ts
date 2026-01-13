@@ -83,7 +83,7 @@ describe("PHPUnit testMode integration", () => {
 		if (config.tests.phpunit) {
 			// Remove testMode to test default behavior
 			const { testMode: _testMode, ...rest } = config.tests.phpunit;
-			config.tests.phpunit = rest as any;
+			config.tests.phpunit = rest as unknown as typeof config.tests.phpunit;
 		}
 
 		const report = await runPhpunitTests(config);

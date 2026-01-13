@@ -4,7 +4,7 @@ import * as clack from '../../cli/theme';
 import { runSmokeTests } from "@wp-tester/smoke-tests";
 import { runPhpunitTests } from "@wp-tester/phpunit";
 import { mergeReports, printSummary, type Report } from "@wp-tester/results";
-import { resolveConfig, type TestType } from "@wp-tester/config";
+import type { TestType } from "@wp-tester/config";
 import { validateConfig } from '../config/validate';
 import { setupHandler } from "../setup";
 
@@ -118,8 +118,6 @@ export const runTests = async (
 
   const absoluteConfigPath = path.resolve(process.cwd(), finalConfigPath);
 
-  // Load config to check for passWithNoTests setting
-  const config = await resolveConfig(absoluteConfigPath);
   // Validate configuration before running tests
   const isValid = await validateConfig(absoluteConfigPath);
   if (!isValid) {
