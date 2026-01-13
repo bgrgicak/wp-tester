@@ -243,7 +243,7 @@ describe("StreamingReporter", () => {
     // Test should be marked as pending (not running)
     const output = writer.getCurrentOutput();
     expect(output).toContain("hanging test");
-    expect(output).toContain("○"); // pending status
+    expect(output).toContain("◔"); // pending status
   });
 
   it("should clean up all running tests when run ends", () => {
@@ -257,6 +257,6 @@ describe("StreamingReporter", () => {
     // Final output should not have any running tests
     const output = writer.getCurrentOutput();
     expect(output).toContain("hanging test");
-    expect(output).toContain("○"); // marked as pending, not running
+    expect(output).toContain("◔"); // marked as pending, not running
   });
 });
