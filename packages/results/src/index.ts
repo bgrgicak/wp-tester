@@ -14,7 +14,7 @@ export type {
   Test,
   TestStatus,
   Tool,
-} from 'ctrf';
+} from "ctrf";
 
 export { vitestToCTRF } from './parsers/vitest.js';
 export { mergeReports } from './merge.js';
@@ -38,7 +38,7 @@ export {
   createTeamCityParserStream,
   parseTeamCityOutput,
 } from './teamcity-parser.js';
-export { printSummary, type PrintSummaryOptions } from './summary.js';
+export { printSummary } from './summary.js';
 
 export const EMPTY_REPORT: Report = {
   results: {

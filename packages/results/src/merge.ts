@@ -10,7 +10,13 @@ export function mergeReports(reports: Report[]): Report {
     const original = reports[0];
     return {
       results: {
-        summary: { ...original.results.summary },
+        summary: {
+          ...original.results.summary,
+          // Preserve extra field including warnings
+          ...(original.results.summary.extra && {
+            extra: { ...original.results.summary.extra },
+          }),
+        },
         tool: { ...original.results.tool },
         tests: [...original.results.tests],
       },
@@ -32,6 +38,7 @@ export function mergeReports(reports: Report[]): Report {
   };
 
   const allTests: Report['results']['tests'] = [];
+  const allWarnings: string[] = [];
 
   for (const report of reports) {
     // Sum counts
@@ -46,6 +53,12 @@ export function mergeReports(reports: Report[]): Report {
     summary.start = Math.min(summary.start, report.results.summary.start);
     summary.stop = Math.max(summary.stop, report.results.summary.stop);
 
+    // Collect warnings from extra field
+    const warnings = report.results.summary.extra?.warnings;
+    if (Array.isArray(warnings)) {
+      allWarnings.push(...warnings as string[]);
+    }
+
     // Concatenate tests
     allTests.push(...report.results.tests);
   }
@@ -53,7 +66,14 @@ export function mergeReports(reports: Report[]): Report {
   return {
     ...EMPTY_REPORT,
     results: {
-      summary,
+      summary: {
+        ...summary,
+        ...(allWarnings.length > 0 && {
+          extra: {
+            warnings: allWarnings,
+          },
+        }),
+      },
       tool: { name: 'wp-tester' },
       tests: allTests,
     },

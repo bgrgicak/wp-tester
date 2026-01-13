@@ -11,7 +11,7 @@ interface TestArgs {
 export const testHandler = async (argv: TestArgs): Promise<void> => {
   const { config, test, passWithNoTests } = argv;
   const phpunitArgs = argv['--'] || [];
-  await runTests(config, test, phpunitArgs, { passWithNoTests });
+  await runTests(config, { testType: test, phpunitArgs, passWithNoTests });
 };
 
 export default testHandler;

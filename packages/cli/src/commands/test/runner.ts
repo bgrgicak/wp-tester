@@ -12,6 +12,10 @@ import { setupHandler } from "../setup";
  * Options for the test runner
  */
 export interface RunTestsOptions {
+  /** Type of test to run (phpunit, wp, plugin, theme) */
+  testType?: TestType;
+  /** Additional arguments to pass to PHPUnit */
+  phpunitArgs?: string[];
   /** Allow the test suite to pass when no tests are executed (CLI override) */
   passWithNoTests?: boolean;
 }
@@ -86,10 +90,9 @@ function getSmokeTestFilter(testType?: TestType): TestType | undefined | false {
 
 export const runTests = async (
   configPath: string,
-  testType?: TestType,
-  phpunitArgs?: string[],
   options?: RunTestsOptions
 ): Promise<void> => {
+  const { testType, phpunitArgs, passWithNoTests } = options || {};
   let finalConfigPath = await resolveConfigPath(configPath);
 
   // Check if config file exists
@@ -150,6 +153,11 @@ export const runTests = async (
 
   // Merge all reports
   if (reports.length === 0) {
+    // If passWithNoTests is enabled, treat no tests as success
+    if (passWithNoTests) {
+      clack.log.info("No tests were run. Check your configuration.");
+      process.exit(0);
+    }
     clack.log.error("No tests were run. Check your configuration.");
     process.exit(1);
   }

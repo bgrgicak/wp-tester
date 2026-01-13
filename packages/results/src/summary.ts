@@ -8,14 +8,6 @@ import type { Summary } from "ctrf";
 import pc from "picocolors";
 
 /**
- * Options for printSummary
- */
-export interface PrintSummaryOptions {
-  /** Warning messages to display */
-  warnings?: string[];
-}
-
-/**
  * Format duration in human-readable format
  */
 function formatDuration(ms: number): string {
@@ -29,9 +21,8 @@ function formatDuration(ms: number): string {
  * Print test summary to console
  *
  * @param summary - The test summary from a CTRF report
- * @param options - Optional configuration including warnings
  */
-export function printSummary(summary: Summary, options?: PrintSummaryOptions): void {
+export function printSummary(summary: Summary): void {
   const duration = summary.stop - summary.start;
 
   console.log("");
@@ -49,9 +40,10 @@ export function printSummary(summary: Summary, options?: PrintSummaryOptions): v
     console.log(pc.yellow(`  ○ ${summary.pending} pending`));
   }
 
-  // Display warnings
-  if (options?.warnings && options.warnings.length > 0) {
-    for (const warning of options.warnings) {
+  // Display warnings from summary.extra
+  const warnings = summary.extra?.warnings;
+  if (Array.isArray(warnings) && warnings.length > 0) {
+    for (const warning of warnings) {
       console.log(pc.yellow(`  ⚠ ${warning}`));
     }
   }

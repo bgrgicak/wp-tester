@@ -256,10 +256,7 @@ async function runPhpunitTestsForEnvironment(
       const noTestsPattern = /No tests executed!?/i;
       const isNoTestsExecuted = noTestsPattern.test(errorOutput) && exitCode === 0;
 
-      if (isNoTestsExecuted) {
-        // No tests found - return empty report with 0 tests
-        // The runner will handle this based on passWithNoTests option
-      } else {
+      if (false === isNoTestsExecuted) {
         // Bootstrap failure - create a synthetic test with the error
         report.results.tests.push({
           name: 'PHPUnit Bootstrap',
@@ -271,6 +268,8 @@ async function runPhpunitTestsForEnvironment(
         report.results.summary.tests = 1;
         report.results.summary.failed = 1;
       }
+      // If no tests executed (isNoTestsExecuted === true), return empty report
+      // The runner will handle this based on passWithNoTests option
     } else if (stderrCapture.trim()) {
       // Tests ran but there's stderr - add it to extra field
       report.results.extra = {
