@@ -2,22 +2,13 @@ import { readFile } from 'fs/promises';
 import path from 'path';
 import Ajv, { type ErrorObject } from "ajv";
 import pc from "picocolors";
-import { getSchemaPath } from "@wp-tester/config";
+import { getSchemaPath, type WPTesterConfig } from "@wp-tester/config";
 import * as clack from "../../cli/theme";
 
 interface ValidationErrorDisplay {
   message: string;
   hint: string;
   docsUrl: string;
-}
-
-interface Environment {
-  name?: string;
-  skip?: boolean;
-}
-
-interface WPTesterConfig {
-  environments: Environment[];
 }
 
 /**
