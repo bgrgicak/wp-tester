@@ -127,6 +127,14 @@ export interface Tests {
    * When undefined, PHPUnit tests are disabled.
    */
   phpunit?: PHPUnitConfig;
+
+  /**
+   * Allow the test suite to pass when no tests are executed.
+   * By default, wp-tester exits with code 1 when no tests are found.
+   * Set to true to exit with code 0 instead (similar to Jest's --passWithNoTests).
+   * @default false
+   */
+  passWithNoTests?: boolean;
 }
 
 /**

@@ -61,6 +61,11 @@ void yargs(hideBin(process.argv))
           describe: "Type of test to run (wp, plugin, theme, or phpunit)",
           type: "string" as const,
           choices: ["wp", "plugin", "theme", "phpunit"] as const,
+        })
+        .option("passWithNoTests", {
+          describe: "Allow the test suite to pass when no tests are executed",
+          type: "boolean" as const,
+          default: false,
         });
     },
     async (argv) => {

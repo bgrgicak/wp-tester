@@ -14,7 +14,7 @@ export type {
   Test,
   TestStatus,
   Tool,
-} from 'ctrf';
+} from "ctrf";
 
 export { vitestToCTRF } from './parsers/vitest.js';
 export { mergeReports } from './merge.js';

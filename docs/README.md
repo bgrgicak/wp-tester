@@ -14,26 +14,27 @@ WP Tester simplifies testing for WordPress plugins and themes by leveraging Word
 - **Flexible Configuration**: JSON-based configuration with IDE autocomplete support
 - **Multiple Output Formats**: Console output and JSON (CTRF) reporting
 
+## Installation
+
+```bash
+npm install --save-dev @wp-tester/cli
+```
+
+
+Alternatively, run directly without installing:
+
+```bash
+npx @wp-tester/cli@latest test
+```
+
 ## Quick Start
-
-### Installation
-
-```bash
-npm install @wp-tester/cli
-```
-
-Or use directly with npx:
-
-```bash
-npx @wp-tester/cli --help
-```
 
 ### Setup
 
 Generate a configuration file:
 
 ```bash
-npx @wp-tester/cli setup
+wp-tester setup
 ```
 
 This interactive setup will guide you through:
@@ -44,23 +45,23 @@ This interactive setup will guide you through:
 ### Run Tests
 
 ```bash
-npx @wp-tester/cli test
+wp-tester test
 ```
 
 Run specific test types:
 
 ```bash
 # Run only WordPress smoke tests
-npx @wp-tester/cli test --test wp
+wp-tester test --test wp
 
 # Run only plugin tests
-npx @wp-tester/cli test --test plugin
+wp-tester test --test plugin
 
 # Run only theme tests
-npx @wp-tester/cli test --test theme
+wp-tester test --test theme
 
 # Run only PHPUnit tests
-npx @wp-tester/cli test --test phpunit
+wp-tester test --test phpunit
 ```
 
 ## Test Types

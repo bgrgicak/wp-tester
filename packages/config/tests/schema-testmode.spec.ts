@@ -5,7 +5,7 @@ import Ajv from 'ajv';
 
 describe('Schema - testMode validation', () => {
   let ajv: Ajv;
-  let schema: any;
+  let schema: unknown;
 
   beforeAll(() => {
     // Load the schema

@@ -183,4 +183,254 @@ describe('mergeReports', () => {
     expect(report1).toEqual(originalReport1);
     expect(report2).toEqual(originalReport2);
   });
+
+  describe('warnings support', () => {
+    it('should preserve warnings from single report', () => {
+      const report: Report = {
+        results: {
+          summary: {
+            tests: 2,
+            passed: 2,
+            failed: 0,
+            skipped: 0,
+            pending: 0,
+            other: 0,
+            start: 1000,
+            stop: 1500,
+            extra: {
+              warnings: ['Warning 1', 'Warning 2'],
+            },
+          },
+          tool: { name: 'tool1' },
+          tests: [{ name: 'test1', status: 'passed', duration: 100 }],
+        },
+        reportFormat: 'CTRF',
+        specVersion: '0.0.4',
+      };
+
+      const result = mergeReports([report]);
+
+      expect(result.results.summary.extra?.warnings).toEqual(['Warning 1', 'Warning 2']);
+    });
+
+    it('should merge warnings from multiple reports', () => {
+      const report1: Report = {
+        results: {
+          summary: {
+            tests: 2,
+            passed: 2,
+            failed: 0,
+            skipped: 0,
+            pending: 0,
+            other: 0,
+            start: 1000,
+            stop: 1500,
+            extra: {
+              warnings: ['Warning from report 1'],
+            },
+          },
+          tool: { name: 'tool1' },
+          tests: [{ name: 'test1', status: 'passed', duration: 100 }],
+        },
+        reportFormat: 'CTRF',
+        specVersion: '0.0.4',
+      };
+
+      const report2: Report = {
+        results: {
+          summary: {
+            tests: 3,
+            passed: 3,
+            failed: 0,
+            skipped: 0,
+            pending: 0,
+            other: 0,
+            start: 1200,
+            stop: 1800,
+            extra: {
+              warnings: ['Warning from report 2', 'Another warning'],
+            },
+          },
+          tool: { name: 'tool2' },
+          tests: [{ name: 'test2', status: 'passed', duration: 200 }],
+        },
+        reportFormat: 'CTRF',
+        specVersion: '0.0.4',
+      };
+
+      const result = mergeReports([report1, report2]);
+
+      expect(result.results.summary.extra?.warnings).toEqual([
+        'Warning from report 1',
+        'Warning from report 2',
+        'Another warning',
+      ]);
+    });
+
+    it('should handle reports with no warnings', () => {
+      const report1: Report = {
+        results: {
+          summary: {
+            tests: 2,
+            passed: 2,
+            failed: 0,
+            skipped: 0,
+            pending: 0,
+            other: 0,
+            start: 1000,
+            stop: 1500,
+          },
+          tool: { name: 'tool1' },
+          tests: [{ name: 'test1', status: 'passed', duration: 100 }],
+        },
+        reportFormat: 'CTRF',
+        specVersion: '0.0.4',
+      };
+
+      const report2: Report = {
+        results: {
+          summary: {
+            tests: 3,
+            passed: 3,
+            failed: 0,
+            skipped: 0,
+            pending: 0,
+            other: 0,
+            start: 1200,
+            stop: 1800,
+          },
+          tool: { name: 'tool2' },
+          tests: [{ name: 'test2', status: 'passed', duration: 200 }],
+        },
+        reportFormat: 'CTRF',
+        specVersion: '0.0.4',
+      };
+
+      const result = mergeReports([report1, report2]);
+
+      expect(result.results.summary.extra).toBeUndefined();
+    });
+
+    it('should handle mix of reports with and without warnings', () => {
+      const report1: Report = {
+        results: {
+          summary: {
+            tests: 2,
+            passed: 2,
+            failed: 0,
+            skipped: 0,
+            pending: 0,
+            other: 0,
+            start: 1000,
+            stop: 1500,
+            extra: {
+              warnings: ['Warning from report 1'],
+            },
+          },
+          tool: { name: 'tool1' },
+          tests: [{ name: 'test1', status: 'passed', duration: 100 }],
+        },
+        reportFormat: 'CTRF',
+        specVersion: '0.0.4',
+      };
+
+      const report2: Report = {
+        results: {
+          summary: {
+            tests: 3,
+            passed: 3,
+            failed: 0,
+            skipped: 0,
+            pending: 0,
+            other: 0,
+            start: 1200,
+            stop: 1800,
+          },
+          tool: { name: 'tool2' },
+          tests: [{ name: 'test2', status: 'passed', duration: 200 }],
+        },
+        reportFormat: 'CTRF',
+        specVersion: '0.0.4',
+      };
+
+      const report3: Report = {
+        results: {
+          summary: {
+            tests: 1,
+            passed: 1,
+            failed: 0,
+            skipped: 0,
+            pending: 0,
+            other: 0,
+            start: 1100,
+            stop: 2000,
+            extra: {
+              warnings: ['Warning from report 3'],
+            },
+          },
+          tool: { name: 'tool3' },
+          tests: [{ name: 'test3', status: 'passed', duration: 50 }],
+        },
+        reportFormat: 'CTRF',
+        specVersion: '0.0.4',
+      };
+
+      const result = mergeReports([report1, report2, report3]);
+
+      expect(result.results.summary.extra?.warnings).toEqual([
+        'Warning from report 1',
+        'Warning from report 3',
+      ]);
+    });
+
+    it('should ignore invalid warnings that are not arrays', () => {
+      const report1: Report = {
+        results: {
+          summary: {
+            tests: 2,
+            passed: 2,
+            failed: 0,
+            skipped: 0,
+            pending: 0,
+            other: 0,
+            start: 1000,
+            stop: 1500,
+            extra: {
+              warnings: 'not an array' as unknown,
+            },
+          },
+          tool: { name: 'tool1' },
+          tests: [{ name: 'test1', status: 'passed', duration: 100 }],
+        },
+        reportFormat: 'CTRF',
+        specVersion: '0.0.4',
+      };
+
+      const report2: Report = {
+        results: {
+          summary: {
+            tests: 3,
+            passed: 3,
+            failed: 0,
+            skipped: 0,
+            pending: 0,
+            other: 0,
+            start: 1200,
+            stop: 1800,
+            extra: {
+              warnings: ['Valid warning'],
+            },
+          },
+          tool: { name: 'tool2' },
+          tests: [{ name: 'test2', status: 'passed', duration: 200 }],
+        },
+        reportFormat: 'CTRF',
+        specVersion: '0.0.4',
+      };
+
+      const result = mergeReports([report1, report2]);
+
+      expect(result.results.summary.extra?.warnings).toEqual(['Valid warning']);
+    });
+  });
 });

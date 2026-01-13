@@ -50,7 +50,7 @@ describe("Resolved Config - preferredVersions", () => {
           name: "Test Environment",
           blueprint: {
             preferredVersions: {
-              php: undefined as any,
+              php: "latest",
               wp: "6.4",
             },
           },
@@ -73,7 +73,7 @@ describe("Resolved Config - preferredVersions", () => {
           blueprint: {
             preferredVersions: {
               php: "8.2",
-              wp: undefined as any,
+              wp: "latest",
             },
           },
         },
@@ -108,7 +108,7 @@ describe("Resolved Config - preferredVersions", () => {
           blueprint: {
             preferredVersions: {
               php: "8.3",
-              wp: undefined as any,
+              wp: "latest",
             },
           },
         },
