@@ -168,17 +168,15 @@ export async function validateConfig(configPath: string): Promise<boolean> {
       return false;
     }
 
-    // Check for disabled environments and display info
+    // Check for skipped environments and display info
     const typedConfig = config as WPTesterConfig;
     if (typedConfig.environments) {
-      const disabledEnvs = typedConfig.environments.filter(env => env.disabled === true);
-      if (disabledEnvs.length > 0) {
-        const envNames = disabledEnvs
-          .map((env, index) => env.name || `Environment ${index + 1}`)
-          .join(', ');
-        clack.log.warn(
-          `${disabledEnvs.length} disabled environment(s) will be skipped: ${pc.dim(envNames)}`
-        );
+      const skippedEnvs = typedConfig.environments.filter(env => env.disabled === true);
+      if (skippedEnvs.length > 0) {
+        for (const env of skippedEnvs) {
+          const envName = env.name || 'Unnamed environment';
+          clack.log.warn(pc.yellow(` ${envName} (Skipped)`));
+        }
       }
     }
 

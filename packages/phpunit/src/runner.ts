@@ -146,7 +146,7 @@ async function runPhpunitTestsForEnvironment(
 
     reporter.onEvent({
       type: "suite:start",
-      name: `PHPUnit ${testMode} tests - '${environment.name}'`,
+      name: `${environment.name} - PHPUnit ${testMode} tests`,
     });
 
     // Create TeamCity parser connected to the reporter
@@ -205,7 +205,7 @@ async function runPhpunitTestsForEnvironment(
     // Close the outer suite that was started earlier
     reporter.onEvent({
       type: "suite:end",
-      name: `PHPUnit ${testMode} tests - '${environment.name}'`,
+      name: `${environment.name} - PHPUnit ${testMode} tests`,
     });
 
     // Signal test run end to finalize timing
