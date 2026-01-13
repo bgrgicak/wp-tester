@@ -14,6 +14,8 @@ export interface ResolvedPHPUnitConfig extends Omit<PHPUnitConfig, 'testMode'> {
  */
 export interface ResolvedTests extends Omit<Tests, 'phpunit'> {
   phpunit?: ResolvedPHPUnitConfig;
+  /** Allow the test suite to pass when no tests are executed */
+  passWithNoTests?: boolean;
 }
 
 /**

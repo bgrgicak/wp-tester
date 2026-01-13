@@ -9,6 +9,18 @@ import { validateConfig } from '../config/validate';
 import { setupHandler } from "../setup";
 
 /**
+ * Options for the test runner
+ */
+export interface RunTestsOptions {
+  /** Type of test to run (phpunit, wp, plugin, theme) */
+  testType?: TestType;
+  /** Additional arguments to pass to PHPUnit */
+  phpunitArgs?: string[];
+  /** Allow the test suite to pass when no tests are executed (CLI override) */
+  passWithNoTests?: boolean;
+}
+
+/**
  * Prompt the user to run setup when no configuration file is found.
  * Returns the path to the config file after setup, or exits if the user cancels.
  */
@@ -78,9 +90,9 @@ function getSmokeTestFilter(testType?: TestType): TestType | undefined | false {
 
 export const runTests = async (
   configPath: string,
-  testType?: TestType,
-  phpunitArgs?: string[]
+  options?: RunTestsOptions
 ): Promise<void> => {
+  const { testType, phpunitArgs, passWithNoTests } = options || {};
   let finalConfigPath = await resolveConfigPath(configPath);
 
   // Check if config file exists
@@ -131,8 +143,7 @@ export const runTests = async (
   // Run PHPUnit tests
   if (shouldRunPhpUnit) {
     const phpunitReport = await runPhpunitTests(absoluteConfigPath, phpunitArgs);
-    // Always include report if PHPUnit was configured to run
-    // This ensures bootstrap failures are visible
+    // Include report only if it has tests
     if (phpunitReport.results.summary.tests > 0) {
       reports.push(phpunitReport);
     }
@@ -140,6 +151,11 @@ export const runTests = async (
 
   // Merge all reports
   if (reports.length === 0) {
+    // If passWithNoTests is enabled, treat no tests as success
+    if (passWithNoTests) {
+      clack.log.info("No tests were run. Check your configuration.");
+      process.exit(0);
+    }
     clack.log.error("No tests were run. Check your configuration.");
     process.exit(1);
   }
@@ -149,7 +165,6 @@ export const runTests = async (
 
   // Display unified summary
   const { summary, tests } = mergedReport.results;
-  const success = summary.failed === 0;
 
   // Print failed test details
   const failedTests = tests.filter(test => test.status === 'failed');
@@ -164,5 +179,19 @@ export const runTests = async (
   // Print final combined summary
   printSummary(summary);
 
-  process.exit(success ? 0 : 1);
+  // Determine exit code based on test results
+  const hasFailures = summary.failed > 0;
+  const noTestsExecuted = summary.tests === 0;
+
+  if (hasFailures) {
+    process.exit(1);
+  }
+
+  // If no tests were executed, exit with code 1 unless passWithNoTests is enabled
+  if (noTestsExecuted && !passWithNoTests) {
+    clack.log.warn("No tests were executed. Use --passWithNoTests to allow this to pass.");
+    process.exit(1);
+  }
+
+  process.exit(0);
 };

@@ -28,5 +28,5 @@ export default mergeConfig(
         } as WPTesterConfig,
       },
     },
-  }) as any
+  })
 );

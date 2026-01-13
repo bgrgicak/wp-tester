@@ -40,6 +40,14 @@ export function printSummary(summary: Summary): void {
     console.log(pc.yellow(`  ○ ${summary.pending} pending`));
   }
 
+  // Display warnings from summary.extra
+  const warnings = summary.extra?.warnings;
+  if (Array.isArray(warnings) && warnings.length > 0) {
+    for (const warning of warnings) {
+      console.log(pc.yellow(`  ⚠ ${warning}`));
+    }
+  }
+
   console.log("");
   console.log(pc.dim(`  ${summary.tests} tests in ${formatDuration(duration)}`));
   console.log("");

@@ -2887,6 +2887,11 @@
     "Tests": {
       "description": "Test configuration specifying which test suites to run.",
       "properties": {
+        "passWithNoTests": {
+          "default": false,
+          "description": "Allow the test suite to pass when no tests are executed.\nBy default, wp-tester exits with code 1 when no tests are found.\nSet to true to exit with code 0 instead (similar to Jest's --passWithNoTests).",
+          "type": "boolean"
+        },
         "phpunit": {
           "$ref": "#/definitions/PHPUnitConfig",
           "description": "PHPUnit test configuration.\nWhen provided, runs PHPUnit tests with the specified paths.\nWhen undefined, PHPUnit tests are disabled."

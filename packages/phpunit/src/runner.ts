@@ -251,16 +251,25 @@ async function runPhpunitTestsForEnvironment(
     // Add error output to CTRF results if present and no tests ran
     // This handles both bad exit codes (from above) and acceptable exit codes with errors
     if (errorOutput && report.results.tests.length === 0) {
-      // Bootstrap failure - create a synthetic test with the error
-      report.results.tests.push({
-        name: 'PHPUnit Bootstrap',
-        status: 'failed',
-        duration: 0,
-        message: 'Bootstrap failed - see trace for details',
-        trace: errorOutput,
-      });
-      report.results.summary.tests = 1;
-      report.results.summary.failed = 1;
+      // Check if this is a "no tests executed" scenario vs an actual error
+      // PHPUnit outputs "No tests executed!" when no tests match the filter
+      const noTestsPattern = /No tests executed!?/i;
+      const isNoTestsExecuted = noTestsPattern.test(errorOutput) && exitCode === 0;
+
+      if (false === isNoTestsExecuted) {
+        // Bootstrap failure - create a synthetic test with the error
+        report.results.tests.push({
+          name: 'PHPUnit Bootstrap',
+          status: 'failed',
+          duration: 0,
+          message: 'Bootstrap failed - see trace for details',
+          trace: errorOutput,
+        });
+        report.results.summary.tests = 1;
+        report.results.summary.failed = 1;
+      }
+      // If no tests executed (isNoTestsExecuted === true), return empty report
+      // The runner will handle this based on passWithNoTests option
     } else if (stderrCapture.trim()) {
       // Tests ran but there's stderr - add it to extra field
       report.results.extra = {
@@ -346,6 +355,7 @@ export async function runPhpunitTests(
       environment,
       hostPhpunitConfigPath
     );
+    // Include report only if it has tests
     if (report.results.summary.tests > 0) {
       reports.push(report);
     }

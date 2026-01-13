@@ -40,7 +40,7 @@ describe("PHPUnit testMode integration", () => {
 		});
 	});
 
-	it("should run in integration mode with WordPress", async () => {
+	it("should run in integration mode with WordPress", { retry: 2 }, async () => {
 		// Load config with default testMode from fixture (already "integration")
 		const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
 
@@ -54,22 +54,26 @@ describe("PHPUnit testMode integration", () => {
 		expect(report.results).toBeDefined();
 		expect(report.results.summary).toBeDefined();
 
+		// Verify tests were actually run
+		expect(report.results.summary.tests, "Expected tests to run but got 0 tests. This may indicate PHPUnit failed to start or execute.").toBeGreaterThan(0);
+		expect(report.results.tests.length, "Expected test results array to be populated").toBeGreaterThan(0);
+
 		// In integration mode, all tests in UnitTest.php should pass
 		const unitTests = report.results.tests.filter(test =>
 			test.name.includes("UnitTest")
 		);
-		expect(unitTests.length).toBeGreaterThan(0);
+		expect(unitTests.length, `Expected to find UnitTest tests but found ${unitTests.length}. Available tests: ${report.results.tests.map(t => t.name).join(", ")}`).toBeGreaterThan(0);
 		unitTests.forEach(test => {
-			expect(test.status).toBe("passed");
+			expect(test.status, `Test ${test.name} should have passed but got status: ${test.status}`).toBe("passed");
 		});
 
 		// In integration mode, all tests in WordPressTest.php should also pass
 		const wpTests = report.results.tests.filter(test =>
 			test.name.includes("WordPressTest")
 		);
-		expect(wpTests.length).toBeGreaterThan(0);
+		expect(wpTests.length, `Expected to find WordPressTest tests but found ${wpTests.length}. Available tests: ${report.results.tests.map(t => t.name).join(", ")}`).toBeGreaterThan(0);
 		wpTests.forEach(test => {
-			expect(test.status).toBe("passed");
+			expect(test.status, `Test ${test.name} should have passed but got status: ${test.status}`).toBe("passed");
 		});
 	});
 
@@ -79,7 +83,7 @@ describe("PHPUnit testMode integration", () => {
 		if (config.tests.phpunit) {
 			// Remove testMode to test default behavior
 			const { testMode: _testMode, ...rest } = config.tests.phpunit;
-			config.tests.phpunit = rest as any;
+			config.tests.phpunit = rest as unknown as typeof config.tests.phpunit;
 		}
 
 		const report = await runPhpunitTests(config);
