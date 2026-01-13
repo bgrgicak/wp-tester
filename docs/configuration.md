@@ -82,7 +82,7 @@ Each environment is an object with:
 - `name` (optional string): A descriptive name for the environment
 - `blueprint` (required): Either an inline WordPress Playground Blueprint object or a string path to a Blueprint JSON file
 - `mounts` (optional): Array of mount configurations to map local filesystem paths into the WordPress Playground virtual filesystem
-- `disabled` (optional boolean, default: false): When set to `true`, this environment will be skipped during test execution. Useful for temporarily excluding environments without removing them from the configuration file. Since JSON doesn't support comments, this provides a way to "comment out" environments.
+- `skip` (optional boolean, default: false): When set to `true`, this environment will be skipped during test execution. Useful for temporarily excluding environments without removing them from the configuration file. Since JSON doesn't support comments, this provides a way to "comment out" environments.
 
 **Example:**
 
@@ -129,9 +129,9 @@ Each environment is an object with:
 }
 ```
 
-**Example with disabled environment:**
+**Example with skipped environment:**
 
-Use the `disabled` property to temporarily skip an environment without removing it from your configuration:
+Use the `skip` property to temporarily skip an environment without removing it from your configuration:
 
 ```json
 {
@@ -146,8 +146,8 @@ Use the `disabled` property to temporarily skip an environment without removing 
       }
     },
     {
-      "name": "PHP 7.4 + WP 6.5 (temporarily disabled)",
-      "disabled": true,
+      "name": "PHP 7.4 + WP 6.5 (temporarily skipped)",
+      "skip": true,
       "blueprint": {
         "preferredVersions": {
           "php": "7.4",

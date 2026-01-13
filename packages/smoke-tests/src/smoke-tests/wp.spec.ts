@@ -6,8 +6,8 @@ import { login } from '@wp-playground/blueprints';
 
 // Get config from Vitest's provide/inject
 const config = inject('config') as ResolvedWPTesterConfig;
-// Filter out disabled environments
-const environments = config.environments.filter(env => !env.disabled);
+// Filter out skipped environments
+const environments = config.environments.filter(env => !env.skip);
 
 // Test each environment
 for (const environment of environments) {

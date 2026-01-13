@@ -162,7 +162,7 @@ describe("shouldRunPhpunitTests", () => {
 		expect(result).toBe(true);
 	});
 
-	it("should return false when phpunit is disabled", async () => {
+	it("should return false when phpunit is undefined", async () => {
 		const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
 		config.tests.phpunit = undefined;
 

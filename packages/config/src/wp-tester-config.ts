@@ -124,7 +124,7 @@ export interface Tests {
   /**
    * PHPUnit test configuration.
    * When provided, runs PHPUnit tests with the specified paths.
-   * When undefined, PHPUnit tests are disabled.
+   * When undefined, PHPUnit tests are not run.
    */
   phpunit?: PHPUnitConfig;
 
@@ -199,12 +199,12 @@ export interface Environment {
   env?: EnvironmentVariables;
 
   /**
-   * Whether this environment is disabled.
-   * Disabled environments are skipped during test execution.
+   * Whether this environment should be skipped.
+   * Skipped environments are excluded from test execution.
    * Useful for temporarily excluding environments without removing them from configuration.
    * @default false
    */
-  disabled?: boolean;
+  skip?: boolean;
 }
 
 /**

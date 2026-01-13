@@ -13,7 +13,7 @@ interface ValidationErrorDisplay {
 
 interface Environment {
   name?: string;
-  disabled?: boolean;
+  skip?: boolean;
 }
 
 interface WPTesterConfig {
@@ -171,7 +171,7 @@ export async function validateConfig(configPath: string): Promise<boolean> {
     // Check for skipped environments and display info
     const typedConfig = config as WPTesterConfig;
     if (typedConfig.environments) {
-      const skippedEnvs = typedConfig.environments.filter(env => env.disabled === true);
+      const skippedEnvs = typedConfig.environments.filter(env => env.skip === true);
       if (skippedEnvs.length > 0) {
         for (const env of skippedEnvs) {
           const envName = env.name || 'Unnamed environment';

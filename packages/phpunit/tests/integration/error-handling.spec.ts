@@ -53,7 +53,7 @@ describe("PHPUnit error handling", () => {
 		const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
 		config.tests.phpunit = undefined;
 
-		// When phpunit is disabled, the runner should skip execution
+		// When phpunit is undefined, the runner should skip execution
 		// This test validates the shouldRunPhpUnitTests check
 		const result = await runPhpunitTests(config);
 

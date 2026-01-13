@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { resolveConfig } from '../src/config';
 import type { WPTesterConfig } from '../src/wp-tester-config';
 
-describe('Resolved config - disabled environments', () => {
-  it('should default disabled to false when not specified', async () => {
+describe('Resolved config - skip environments', () => {
+  it('should default skip to false when not specified', async () => {
     const config: WPTesterConfig = {
       projectType: 'plugin',
       environments: [
@@ -25,16 +25,16 @@ describe('Resolved config - disabled environments', () => {
     const resolvedConfig = await resolveConfig(config);
 
     expect(resolvedConfig.environments).toHaveLength(1);
-    expect(resolvedConfig.environments[0].disabled).toBe(false);
+    expect(resolvedConfig.environments[0].skip).toBe(false);
   });
 
-  it('should preserve disabled: true in resolved config', async () => {
+  it('should preserve skip: true in resolved config', async () => {
     const config: WPTesterConfig = {
       projectType: 'plugin',
       environments: [
         {
-          name: 'Disabled Environment',
-          disabled: true,
+          name: 'Skipped Environment',
+          skip: true,
           blueprint: {
             preferredVersions: {
               php: '8.0',
@@ -51,16 +51,16 @@ describe('Resolved config - disabled environments', () => {
     const resolvedConfig = await resolveConfig(config);
 
     expect(resolvedConfig.environments).toHaveLength(1);
-    expect(resolvedConfig.environments[0].disabled).toBe(true);
+    expect(resolvedConfig.environments[0].skip).toBe(true);
   });
 
-  it('should preserve disabled: false in resolved config', async () => {
+  it('should preserve skip: false in resolved config', async () => {
     const config: WPTesterConfig = {
       projectType: 'plugin',
       environments: [
         {
           name: 'Enabled Environment',
-          disabled: false,
+          skip: false,
           blueprint: {
             preferredVersions: {
               php: '8.0',
@@ -77,10 +77,10 @@ describe('Resolved config - disabled environments', () => {
     const resolvedConfig = await resolveConfig(config);
 
     expect(resolvedConfig.environments).toHaveLength(1);
-    expect(resolvedConfig.environments[0].disabled).toBe(false);
+    expect(resolvedConfig.environments[0].skip).toBe(false);
   });
 
-  it('should handle mixed disabled states across multiple environments', async () => {
+  it('should handle mixed skip states across multiple environments', async () => {
     const config: WPTesterConfig = {
       projectType: 'plugin',
       environments: [
@@ -94,8 +94,8 @@ describe('Resolved config - disabled environments', () => {
           }
         },
         {
-          name: 'Disabled Environment',
-          disabled: true,
+          name: 'Skipped Environment',
+          skip: true,
           blueprint: {
             preferredVersions: {
               php: '7.4',
@@ -105,7 +105,7 @@ describe('Resolved config - disabled environments', () => {
         },
         {
           name: 'Enabled Environment 2',
-          disabled: false,
+          skip: false,
           blueprint: {
             preferredVersions: {
               php: '8.1',
@@ -122,8 +122,8 @@ describe('Resolved config - disabled environments', () => {
     const resolvedConfig = await resolveConfig(config);
 
     expect(resolvedConfig.environments).toHaveLength(3);
-    expect(resolvedConfig.environments[0].disabled).toBe(false);
-    expect(resolvedConfig.environments[1].disabled).toBe(true);
-    expect(resolvedConfig.environments[2].disabled).toBe(false);
+    expect(resolvedConfig.environments[0].skip).toBe(false);
+    expect(resolvedConfig.environments[1].skip).toBe(true);
+    expect(resolvedConfig.environments[2].skip).toBe(false);
   });
 });
