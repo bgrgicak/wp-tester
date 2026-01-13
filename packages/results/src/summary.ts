@@ -37,7 +37,7 @@ export function printSummary(summary: Summary): void {
     console.log(pc.yellow(`  ○ ${summary.skipped} skipped`));
   }
   if (summary.pending > 0) {
-    console.log(pc.yellow(`  ○ ${summary.pending} pending`));
+    console.log(pc.yellow(`  ◔ ${summary.pending} pending`));
   }
 
   console.log("");
@@ -45,6 +45,6 @@ export function printSummary(summary: Summary): void {
   console.log("");
 
   // Print icon legend
-  console.log(pc.dim("  Legend: ✓ passed  ✗ failed  ○ skipped/pending"));
+  console.log(pc.dim("  Legend: ✓ passed  ✗ failed  ○ skipped  ◔ pending"));
   console.log("");
 }

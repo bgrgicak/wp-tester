@@ -388,12 +388,16 @@ export class StreamingReporter {
         break;
       }
       case "skipped": {
-        const reasonStr = test.message ? ` ${pc.dim(`(${test.message})`)}` : "";
-        lines.push(`${indent}${pc.yellow("○")} ${pc.strikethrough(pc.dim(test.name))}${reasonStr}`);
+        const reasonStr = test.message
+          ? ` ${pc.dim(`(${test.message})`)}`
+          : ` ${pc.dim("(Skipped)")}`;
+        lines.push(
+          `${indent}${pc.yellow("○")} ${pc.dim(test.name)}${reasonStr}`
+        );
         break;
       }
       case "pending": {
-        lines.push(`${indent}${pc.yellow("○")} ${pc.strikethrough(pc.dim(test.name))}`);
+        lines.push(`${indent}${pc.yellow("◔")} ${pc.dim(test.name)}`);
         break;
       }
     }
@@ -726,7 +730,9 @@ export class StreamingReporter {
       this.writer.writeLine(pc.red(`  ✗ ${this.state.failedTests} failed`));
     }
     if (this.state.skippedTests > 0) {
-      this.writer.writeLine(pc.yellow(`  ○ ${this.state.skippedTests} skipped`));
+      this.writer.writeLine(
+        pc.yellow(`  ○ ${this.state.skippedTests} skipped`)
+      );
     }
 
     this.writer.writeLine("");
@@ -734,7 +740,9 @@ export class StreamingReporter {
     this.writer.writeLine("");
 
     // Print icon legend
-    this.writer.writeLine(pc.dim("  Legend: ✓ passed  ✗ failed  ○ skipped/pending"));
+    this.writer.writeLine(
+      pc.dim("  Legend: ✓ passed  ✗ failed  ○ skipped  ◔ pending")
+    );
     this.writer.writeLine("");
   }
 
