@@ -7,7 +7,7 @@
 import { startVitest, type Reporter } from "vitest/node";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { WPTesterConfig, Tests, TestType } from "@wp-tester/config";
+import type { WPTesterConfig, Tests, TestType, ResolvedWPTesterConfig } from "@wp-tester/config";
 import { resolveConfig } from "@wp-tester/config";
 import {
   EMPTY_REPORT,
@@ -65,28 +65,22 @@ export function selectTestFiles(
 }
 
 /**
- * Options for running smoke tests
- */
-export interface RunSmokeTestsOptions {
-  /** Only display failed tests in output */
-  failedOnly?: boolean;
-}
-
-/**
  * Run WordPress smoke tests
  *
- * @param config - Test configuration or path to config file
+ * @param config - Resolved test configuration, unresolved config, or path to config file
  * @param test - Optional filter to run only specific test type (wp, plugin, or theme)
- * @param options - Additional options for the test run
  * @returns CTRF report with test results
  */
 export async function runSmokeTests(
-  config: WPTesterConfig | string,
-  test?: TestType | false,
-  options?: RunSmokeTestsOptions
+  config: ResolvedWPTesterConfig | WPTesterConfig | string,
+  test?: TestType | false
 ): Promise<Report> {
-  // Resolve config (loads from path if string, resolves paths)
-  const resolvedConfig = await resolveConfig(config);
+  // Resolve config if needed (only if string path provided)
+  const resolvedConfig = typeof config === "string"
+    ? await resolveConfig(config)
+    : "projectHostPath" in config && typeof config.projectHostPath === "string"
+      ? config as ResolvedWPTesterConfig
+      : await resolveConfig(config);
 
   // Check if any tests are configured
   if (!shouldRunSmokeTests(resolvedConfig)) {
@@ -107,11 +101,8 @@ export async function runSmokeTests(
   // Determine if streaming should be enabled (default reporter is configured)
   const useStreaming = resolvedConfig.reporters?.default !== undefined;
 
-  // Get filter options from config or CLI override
-  const defaultReporterOptions = resolvedConfig.reporters?.default;
-  const filter = options?.failedOnly
-    ? { passed: false, failed: true, skipped: false, pending: false, other: false }
-    : defaultReporterOptions;
+  // Get filter options from config reporters
+  const filter = resolvedConfig.reporters?.default;
 
   // Create Vitest streaming reporter with streaming configured
   // Disable summary since the CLI will print a combined summary

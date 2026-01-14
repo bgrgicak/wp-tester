@@ -25,14 +25,12 @@ export function shouldRunPhpunitTests(config: WPTesterConfig): boolean {
  * @param config - Resolved test configuration
  * @param environment - Environment configuration
  * @param hostPhpunitConfigPath - Absolute path to PHPUnit config on host
- * @param options - Additional options for the test run
  * @returns CTRF report with test results
  */
 async function runPhpunitTestsForEnvironment(
   config: ResolvedWPTesterConfig,
   environment: ResolvedEnvironment,
-  hostPhpunitConfigPath: string,
-  options?: { failedOnly?: boolean }
+  hostPhpunitConfigPath: string
 ): Promise<Report> {
   const testMode = config.tests.phpunit!.testMode;
   let environmentWithMount: ResolvedEnvironment = {
@@ -136,11 +134,8 @@ async function runPhpunitTestsForEnvironment(
     // Disable summary since the CLI will print a combined summary
     const useStreaming = config.reporters?.default !== undefined;
 
-    // Get filter options from config or CLI override
-    const defaultReporterOptions = config.reporters?.default;
-    const filter = options?.failedOnly
-      ? { passed: false, failed: true, skipped: false, pending: false, other: false }
-      : defaultReporterOptions;
+    // Get filter options from config reporters
+    const filter = config.reporters?.default;
 
     const reporter = new StreamingReporter({
       enabled: useStreaming,
@@ -316,28 +311,34 @@ async function runPhpunitTestsForEnvironment(
 export interface RunPhpunitTestsOptions {
   /** Additional PHPUnit arguments to append */
   phpunitArgs?: string[];
-  /** Only display failed tests in output */
-  failedOnly?: boolean;
 }
 
 /**
  * Run PHPUnit tests in WordPress Playground environment
  *
- * @param config - Test configuration or path to config file
+ * @param config - Resolved test configuration, unresolved config, or path to config file
  * @param phpunitArgsOrOptions - Additional PHPUnit arguments or options object
  * @returns CTRF report with test results
  */
 export async function runPhpunitTests(
-  config: WPTesterConfig | string,
+  config: ResolvedWPTesterConfig | WPTesterConfig | string,
   phpunitArgsOrOptions?: string[] | RunPhpunitTestsOptions
 ): Promise<Report> {
   // Support both old signature (string[]) and new signature (options object)
   const options: RunPhpunitTestsOptions = Array.isArray(phpunitArgsOrOptions)
     ? { phpunitArgs: phpunitArgsOrOptions }
     : phpunitArgsOrOptions || {};
-  const { phpunitArgs, failedOnly } = options;
-  // Resolve config (loads from path if string, resolves paths)
-  let resolvedConfig = await resolveConfig(config);
+  const { phpunitArgs } = options;
+
+  // Resolve config if needed (only if string path or unresolved config provided)
+  let resolvedConfig: ResolvedWPTesterConfig;
+  if (typeof config === "string") {
+    resolvedConfig = await resolveConfig(config);
+  } else if ("projectHostPath" in config && typeof config.projectHostPath === "string") {
+    resolvedConfig = config as ResolvedWPTesterConfig;
+  } else {
+    resolvedConfig = await resolveConfig(config);
+  }
 
   // Merge additional PHPUnit args if provided
   if (phpunitArgs && phpunitArgs.length > 0) {
@@ -379,8 +380,7 @@ export async function runPhpunitTests(
     const report = await runPhpunitTestsForEnvironment(
       resolvedConfig,
       environment,
-      hostPhpunitConfigPath,
-      { failedOnly }
+      hostPhpunitConfigPath
     );
     // Include report only if it has tests
     if (report.results.summary.tests > 0) {

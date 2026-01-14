@@ -4,7 +4,8 @@ import * as clack from '../../cli/theme';
 import { runSmokeTests } from "@wp-tester/smoke-tests";
 import { runPhpunitTests } from "@wp-tester/phpunit";
 import { mergeReports, printSummary, type Report } from "@wp-tester/results";
-import type { TestType } from "@wp-tester/config";
+import type { TestType, ResolvedWPTesterConfig } from "@wp-tester/config";
+import { resolveConfig } from "@wp-tester/config";
 import { validateConfig } from '../config/validate';
 import { setupHandler } from "../setup";
 
@@ -20,6 +21,30 @@ export interface RunTestsOptions {
   passWithNoTests?: boolean;
   /** Only display failed tests in output (CLI override) */
   failedOnly?: boolean;
+}
+
+/**
+ * Apply --failed-only CLI override to config reporters.
+ * Sets all filter options to false except failed: true.
+ */
+function applyFailedOnlyOverride(config: ResolvedWPTesterConfig): ResolvedWPTesterConfig {
+  const failedOnlyFilter = {
+    passed: false,
+    failed: true,
+    skipped: false,
+    pending: false,
+    other: false,
+  };
+
+  return {
+    ...config,
+    reporters: {
+      ...config.reporters,
+      default: config.reporters?.default !== undefined
+        ? { ...config.reporters.default, ...failedOnlyFilter }
+        : failedOnlyFilter,
+    },
+  };
 }
 
 /**
@@ -112,6 +137,12 @@ export const executeTests = async (
     process.exit(1);
   }
 
+  // Resolve config and apply CLI overrides
+  let resolvedConfig = await resolveConfig(finalConfigPath);
+  if (failedOnly) {
+    resolvedConfig = applyFailedOnlyOverride(resolvedConfig);
+  }
+
   // Run all test suites and collect results
   const reports: Report[] = [];
 
@@ -121,11 +152,7 @@ export const executeTests = async (
   // Run smoke tests (wp, plugin, theme) - smoke tests package handles whether to run
   const smokeTestFilter = getSmokeTestFilter(testType);
   if (smokeTestFilter !== false) {
-    const smokeTestReport = await runSmokeTests(
-      finalConfigPath,
-      smokeTestFilter,
-      { failedOnly }
-    );
+    const smokeTestReport = await runSmokeTests(resolvedConfig, smokeTestFilter);
     if (smokeTestReport.results.summary.tests > 0) {
       reports.push(smokeTestReport);
     }
@@ -133,7 +160,7 @@ export const executeTests = async (
 
   // Run PHPUnit tests
   if (shouldRunPhpUnit) {
-    const phpunitReport = await runPhpunitTests(finalConfigPath, { phpunitArgs, failedOnly });
+    const phpunitReport = await runPhpunitTests(resolvedConfig, { phpunitArgs });
     // Always include report if PHPUnit was configured to run
     // This ensures bootstrap failures are visible
     if (phpunitReport.results.summary.tests > 0) {
@@ -204,6 +231,12 @@ export const runTests = async (
     process.exit(1);
   }
 
+  // Resolve config and apply CLI overrides
+  let resolvedConfig = await resolveConfig(finalConfigPath);
+  if (failedOnly) {
+    resolvedConfig = applyFailedOnlyOverride(resolvedConfig);
+  }
+
   // Run all test suites and collect results
   const reports: Report[] = [];
 
@@ -212,18 +245,14 @@ export const runTests = async (
 
   // Run smoke tests (wp, plugin, theme) - smoke tests package handles whether to run
   const smokeTestFilter = getSmokeTestFilter(testType);
-  const smokeTestReport = await runSmokeTests(
-    finalConfigPath,
-    smokeTestFilter,
-    { failedOnly }
-  );
+  const smokeTestReport = await runSmokeTests(resolvedConfig, smokeTestFilter);
   if (smokeTestReport.results.summary.tests > 0) {
     reports.push(smokeTestReport);
   }
 
   // Run PHPUnit tests
   if (shouldRunPhpUnit) {
-    const phpunitReport = await runPhpunitTests(finalConfigPath, { phpunitArgs, failedOnly });
+    const phpunitReport = await runPhpunitTests(resolvedConfig, { phpunitArgs });
     // Include report only if it has tests
     if (phpunitReport.results.summary.tests > 0) {
       reports.push(phpunitReport);
