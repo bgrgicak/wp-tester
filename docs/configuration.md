@@ -730,7 +730,7 @@ When your plugin depends on another plugin in your local filesystem (e.g., in a 
 
 **Monorepo with plugins directory:**
 
-For monorepos like the WordPress Performance plugin where multiple plugins live in a `plugins/` directory:
+For monorepos like the WordPress Performance plugin where multiple plugins live in a `plugins/` directory and depend on each other:
 
 ```json
 {
@@ -745,19 +745,11 @@ For monorepos like the WordPress Performance plugin where multiple plugins live 
         "steps": [
           {
             "step": "activatePlugin",
-            "pluginPath": "plugin-a/plugin-a.php"
-          },
-          {
-            "step": "activatePlugin",
             "pluginPath": "plugin-b/plugin-b.php"
           }
         ]
       },
       "mounts": [
-        {
-          "hostPath": "./plugins/plugin-a",
-          "vfsPath": "/wordpress/wp-content/plugins/plugin-a"
-        },
         {
           "hostPath": "./plugins/plugin-b",
           "vfsPath": "/wordpress/wp-content/plugins/plugin-b"
@@ -770,6 +762,8 @@ For monorepos like the WordPress Performance plugin where multiple plugins live 
   }
 }
 ```
+
+In this example, `plugin-a` is automatically mounted by wp-tester (since it's the tested plugin). Only `plugin-b` (the dependency) needs to be explicitly mounted and activated.
 
 ### Installing Theme Dependencies
 
