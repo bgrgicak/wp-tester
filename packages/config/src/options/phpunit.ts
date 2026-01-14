@@ -20,12 +20,12 @@ async function promptForTestMode(): Promise<"unit" | "integration" | null> {
       {
         value: "unit",
         label: "Unit tests (isolated)",
-        hint: "Recommended if you have existing tests - runs without WordPress loaded"
+        hint: "Uses WP Test library mocks - won't break existing tests"
       },
       {
         value: "integration",
         label: "Integration tests (with WordPress)",
-        hint: "Runs with WordPress loaded - may conflict with existing unit test setup"
+        hint: "Runs inside WordPress - call WP functions, test plugin compatibility, make HTTP requests"
       }
     ],
     initialValue: "unit"
