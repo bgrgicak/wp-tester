@@ -12,7 +12,6 @@ class WordPressTest extends PolyfillTestCase {
 	 * Test that we can create and retrieve a post using WordPress functions.
 	 */
 	public function test_can_create_and_retrieve_post() {
-		$this->markTestSkipped();
 		// Create a post using WordPress function
 		$post_id = wp_insert_post( array(
 			'post_title'   => 'Test Post',
