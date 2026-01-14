@@ -141,6 +141,7 @@ interface ReporterState {
   passedTests: number;
   failedTests: number;
   skippedTests: number;
+  pendingTests: number;
 }
 
 /**
@@ -181,6 +182,7 @@ export class StreamingReporter {
       passedTests: 0,
       failedTests: 0,
       skippedTests: 0,
+      pendingTests: 0,
     };
   }
 
@@ -388,12 +390,17 @@ export class StreamingReporter {
         break;
       }
       case "skipped": {
-        const reasonStr = test.message ? ` ${pc.dim(`(${test.message})`)}` : "";
-        lines.push(`${indent}${pc.yellow("○")} ${pc.dim(test.name)}${reasonStr}`);
+        const reasonStr = test.message
+          ? ` ${pc.dim(`(${test.message})`)}`
+          : ` ${pc.dim("(Skipped)")}`;
+        lines.push(
+          `${indent}${pc.yellow("○")} ${pc.dim(test.name)}${reasonStr}`
+        );
         break;
       }
       case "pending": {
-        lines.push(`${indent}${pc.yellow("○")} ${pc.dim(test.name)}`);
+        const message = test.message ? ` ${pc.dim(`(${test.message})`)}` : "";
+        lines.push(`${indent}${pc.yellow("◔")} ${pc.dim(test.name)}${message}`);
         break;
       }
     }
@@ -446,6 +453,7 @@ export class StreamingReporter {
       passedTests: 0,
       failedTests: 0,
       skippedTests: 0,
+      pendingTests: 0,
     };
 
     this.lastOutputLineCount = 0;
@@ -465,6 +473,9 @@ export class StreamingReporter {
         for (const test of suite.tests) {
           if (test.status === "running") {
             test.status = "pending";
+            test.message = test.message || "Did not complete";
+            this.state.pendingTests++;
+            this.state.totalTests++;
           }
         }
       }
@@ -536,6 +547,9 @@ export class StreamingReporter {
         for (const test of suite.tests) {
           if (test.status === "running") {
             test.status = "pending";
+            test.message = test.message || "Did not complete";
+            this.state.pendingTests++;
+            this.state.totalTests++;
           }
         }
       }
@@ -726,11 +740,24 @@ export class StreamingReporter {
       this.writer.writeLine(pc.red(`  ✗ ${this.state.failedTests} failed`));
     }
     if (this.state.skippedTests > 0) {
-      this.writer.writeLine(pc.yellow(`  ○ ${this.state.skippedTests} skipped`));
+      this.writer.writeLine(
+        pc.yellow(`  ○ ${this.state.skippedTests} skipped`)
+      );
+    }
+    if (this.state.pendingTests > 0) {
+      this.writer.writeLine(
+        pc.yellow(`  ◔ ${this.state.pendingTests} pending`)
+      );
     }
 
     this.writer.writeLine("");
     this.writer.writeLine(pc.dim(`  ${this.state.totalTests} tests in ${formatDuration(duration)}`));
+    this.writer.writeLine("");
+
+    // Print icon legend
+    this.writer.writeLine(
+      pc.dim("  Legend: ✓ passed  ✗ failed  ○ skipped  ◔ pending")
+    );
     this.writer.writeLine("");
   }
 
@@ -774,7 +801,7 @@ export class StreamingReporter {
           passed: this.state.passedTests,
           failed: this.state.failedTests,
           skipped: this.state.skippedTests,
-          pending: 0,
+          pending: this.state.pendingTests,
           other: 0,
           start: this.state.startTime,
           stop: Date.now(),
@@ -787,12 +814,13 @@ export class StreamingReporter {
   /**
    * Get current counts for external tracking
    */
-  getCounts(): { total: number; passed: number; failed: number; skipped: number } {
+  getCounts(): { total: number; passed: number; failed: number; skipped: number; pending: number } {
     return {
       total: this.state.totalTests,
       passed: this.state.passedTests,
       failed: this.state.failedTests,
       skipped: this.state.skippedTests,
+      pending: this.state.pendingTests,
     };
   }
 }

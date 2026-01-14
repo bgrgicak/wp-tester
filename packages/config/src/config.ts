@@ -166,7 +166,10 @@ export function getConfigDir(configPath: string): string {
  * @param configPath - Optional path to config file (needed to resolve relative projectHostPath)
  * @returns Absolute path to the project root directory
  */
-export function getProjectDir(config: WPTesterConfig, configPath?: string): string {
+export function getProjectDir(
+  config: WPTesterConfig,
+  configPath?: string
+): string {
   // Get base directory: config file location or cwd
   const baseDir = configPath ? getConfigDir(configPath) : process.cwd();
 
@@ -192,6 +195,7 @@ function resolveTests(tests: Tests, projectDir: string): ResolvedTests {
       plugin: tests.plugin,
       theme: tests.theme,
       wp: tests.wp,
+      passWithNoTests: tests.passWithNoTests,
     };
   }
 
@@ -205,7 +209,10 @@ function resolveTests(tests: Tests, projectDir: string): ResolvedTests {
 
   // Add optional bootstrapPath if present
   if (phpunit.bootstrapPath) {
-    resolvedPhpunit.bootstrapPath = resolveAbsolute(phpunit.bootstrapPath, projectDir);
+    resolvedPhpunit.bootstrapPath = resolveAbsolute(
+      phpunit.bootstrapPath,
+      projectDir
+    );
   }
 
   // Preserve phpunitArgs if present
@@ -218,6 +225,7 @@ function resolveTests(tests: Tests, projectDir: string): ResolvedTests {
     theme: tests.theme,
     wp: tests.wp,
     phpunit: resolvedPhpunit,
+    passWithNoTests: tests.passWithNoTests,
   };
 }
 
@@ -331,6 +339,7 @@ export async function resolveConfig(
         blueprint: resolvedBlueprint,
         mounts: resolvedMounts,
         env: env.env || {},
+        skip: env.skip ?? false,
       };
     })
   );

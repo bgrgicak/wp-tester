@@ -9,6 +9,18 @@ import { validateConfig } from '../config/validate';
 import { setupHandler } from "../setup";
 
 /**
+ * Options for the test runner
+ */
+export interface RunTestsOptions {
+  /** Type of test to run (phpunit, wp, plugin, theme) */
+  testType?: TestType;
+  /** Additional arguments to pass to PHPUnit */
+  phpunitArgs?: string[];
+  /** Allow the test suite to pass when no tests are executed (CLI override) */
+  passWithNoTests?: boolean;
+}
+
+/**
  * Prompt the user to run setup when no configuration file is found.
  * Returns the path to the config file after setup, or exits if the user cancels.
  */
@@ -87,13 +99,13 @@ export interface TestResult {
  */
 export const executeTests = async (
   configPath: string,
-  testType?: TestType,
-  phpunitArgs?: string[]
+  options?: RunTestsOptions
 ): Promise<TestResult> => {
-  const absoluteConfigPath = path.resolve(process.cwd(), configPath);
+  const { testType, phpunitArgs } = options || {};
+  let finalConfigPath = await resolveConfigPath(configPath);
 
   // Validate configuration before running tests
-  const isValid = await validateConfig(absoluteConfigPath);
+  const isValid = await validateConfig(finalConfigPath);
   if (!isValid) {
     process.exit(1);
   }
@@ -108,7 +120,7 @@ export const executeTests = async (
   const smokeTestFilter = getSmokeTestFilter(testType);
   if (smokeTestFilter !== false) {
     const smokeTestReport = await runSmokeTests(
-      absoluteConfigPath,
+      finalConfigPath,
       smokeTestFilter
     );
     if (smokeTestReport.results.summary.tests > 0) {
@@ -118,7 +130,7 @@ export const executeTests = async (
 
   // Run PHPUnit tests
   if (shouldRunPhpUnit) {
-    const phpunitReport = await runPhpunitTests(absoluteConfigPath, phpunitArgs);
+    const phpunitReport = await runPhpunitTests(finalConfigPath, phpunitArgs);
     // Always include report if PHPUnit was configured to run
     // This ensures bootstrap failures are visible
     if (phpunitReport.results.summary.tests > 0) {
@@ -157,9 +169,9 @@ export const executeTests = async (
 
 export const runTests = async (
   configPath: string,
-  testType?: TestType,
-  phpunitArgs?: string[]
+  options?: RunTestsOptions
 ): Promise<void> => {
+  const { testType, phpunitArgs, passWithNoTests } = options || {};
   let finalConfigPath = await resolveConfigPath(configPath);
 
   // Check if config file exists
@@ -183,11 +195,80 @@ export const runTests = async (
     finalConfigPath = newPath;
   }
 
-  const result = await executeTests(finalConfigPath, testType, phpunitArgs);
+  const result = await executeTests(finalConfigPath, options);
 
   if (!result.hasTests) {
     process.exit(1);
   }
 
-  process.exit(result.success ? 0 : 1);
+  // Run all test suites and collect results
+  const reports: Report[] = [];
+
+  // Determine which tests to run based on testType parameter
+  const shouldRunPhpUnit = !testType || testType === "phpunit";
+
+  // Run smoke tests (wp, plugin, theme) - smoke tests package handles whether to run
+  const smokeTestFilter = getSmokeTestFilter(testType);
+  const smokeTestReport = await runSmokeTests(
+    finalConfigPath,
+    smokeTestFilter
+  );
+  if (smokeTestReport.results.summary.tests > 0) {
+    reports.push(smokeTestReport);
+  }
+
+  // Run PHPUnit tests
+  if (shouldRunPhpUnit) {
+    const phpunitReport = await runPhpunitTests(finalConfigPath, phpunitArgs);
+    // Include report only if it has tests
+    if (phpunitReport.results.summary.tests > 0) {
+      reports.push(phpunitReport);
+    }
+  }
+
+  // Merge all reports
+  if (reports.length === 0) {
+    // If passWithNoTests is enabled, treat no tests as success
+    if (passWithNoTests) {
+      clack.log.info("No tests were run. Check your configuration.");
+      process.exit(0);
+    }
+    clack.log.error("No tests were run. Check your configuration.");
+    process.exit(1);
+  }
+
+  // Merge results from all test suites
+  const mergedReport = mergeReports(reports);
+
+  // Display unified summary
+  const { summary, tests } = mergedReport.results;
+
+  // Print failed test details
+  const failedTests = tests.filter(test => test.status === 'failed');
+  if (failedTests.length > 0) {
+    for (const test of failedTests) {
+      if (test.trace) {
+        console.error(`\n${test.name}:\n${test.trace}`);
+      }
+    }
+  }
+
+  // Print final combined summary
+  printSummary(summary);
+
+  // Determine exit code based on test results
+  const hasFailures = summary.failed > 0;
+  const noTestsExecuted = summary.tests === 0;
+
+  if (hasFailures) {
+    process.exit(1);
+  }
+
+  // If no tests were executed, exit with code 1 unless passWithNoTests is enabled
+  if (noTestsExecuted && !passWithNoTests) {
+    clack.log.warn("No tests were executed. Use --passWithNoTests to allow this to pass.");
+    process.exit(1);
+  }
+
+  process.exit(0);
 };

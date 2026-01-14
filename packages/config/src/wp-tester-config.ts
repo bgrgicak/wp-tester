@@ -124,7 +124,7 @@ export interface Tests {
   /**
    * PHPUnit test configuration.
    * When provided, runs PHPUnit tests with the specified paths.
-   * When undefined, PHPUnit tests are disabled.
+   * When undefined, PHPUnit tests are not run.
    */
   phpunit?: PHPUnitConfig;
 
@@ -133,6 +133,13 @@ export interface Tests {
    * Controls which files are watched when using --watch flag.
    */
   watch?: WatchConfig;
+  /**
+   * Allow the test suite to pass when no tests are executed.
+   * By default, wp-tester exits with code 1 when no tests are found.
+   * Set to true to exit with code 0 instead (similar to Jest's --passWithNoTests).
+   * @default false
+   */
+  passWithNoTests?: boolean;
 }
 
 /**
@@ -195,6 +202,14 @@ export interface Environment {
    * @default {}
    */
   env?: EnvironmentVariables;
+
+  /**
+   * Whether this environment should be skipped.
+   * Skipped environments are excluded from test execution.
+   * Useful for temporarily excluding environments without removing them from configuration.
+   * @default false
+   */
+  skip?: boolean;
 }
 
 /**

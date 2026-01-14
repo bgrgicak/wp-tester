@@ -7,11 +7,12 @@ interface TestArgs {
   config: string;
   test?: TestType;
   watch?: boolean;
+  passWithNoTests?: boolean;
   '--'?: string[];
 }
 
 export const testHandler = async (argv: TestArgs): Promise<void> => {
-  const { config, test, watch } = argv;
+  const { config, test, watch, passWithNoTests } = argv;
   const phpunitArgs = argv['--'] || [];
 
   if (watch) {
@@ -19,11 +20,11 @@ export const testHandler = async (argv: TestArgs): Promise<void> => {
     await runWatchMode({
       configPath: absoluteConfigPath,
       onRunTests: async () => {
-        await executeTests(absoluteConfigPath, test, phpunitArgs);
+        await executeTests(absoluteConfigPath, { testType: test, phpunitArgs, passWithNoTests });
       },
     });
   } else {
-    await runTests(config, test, phpunitArgs);
+    await runTests(config, { testType: test, phpunitArgs, passWithNoTests });
   }
 };
 

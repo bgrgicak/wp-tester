@@ -1,8 +1,7 @@
 import { readFile } from 'fs/promises';
-import path from 'path';
 import Ajv, { type ErrorObject } from "ajv";
 import pc from "picocolors";
-import { getSchemaPath, normalizeConfigPath } from "@wp-tester/config";
+import { getSchemaPath, normalizeConfigPath, type WPTesterConfig } from "@wp-tester/config";
 import * as clack from "../../cli/theme";
 
 interface ValidationErrorDisplay {
@@ -115,7 +114,7 @@ export function formatValidationError(error: ErrorObject): ValidationErrorDispla
 export async function validateConfig(configPath: string): Promise<boolean> {
   try {
     // Resolve config path relative to cwd and normalize (handles directory paths)
-    const resolvedConfigPath = normalizeConfigPath(path.resolve(process.cwd(), configPath));
+    const resolvedConfigPath = normalizeConfigPath(configPath);
 
     const config = JSON.parse(await readFile(resolvedConfigPath, "utf-8")) as unknown;
     // Get schema path from config package
@@ -157,6 +156,18 @@ export async function validateConfig(configPath: string): Promise<boolean> {
       }
 
       return false;
+    }
+
+    // Check for skipped environments and display info
+    const typedConfig = config as WPTesterConfig;
+    if (typedConfig.environments) {
+      const skippedEnvs = typedConfig.environments.filter(env => env.skip === true);
+      if (skippedEnvs.length > 0) {
+        for (const env of skippedEnvs) {
+          const envName = env.name || 'Unnamed environment';
+          clack.log.warn(pc.yellow(` ${envName} (Skipped)`));
+        }
+      }
     }
 
     return true;
