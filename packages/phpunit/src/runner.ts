@@ -298,8 +298,8 @@ async function runPhpunitTestsForEnvironment(
       await new Promise<void>((resolve) => {
         runtime.server.close(() => resolve());
       });
-    } catch (error) {
-      console.error("Error closing server:", error);
+    } catch {
+      console.error("Error closing server:");
     }
   }
 }
@@ -462,7 +462,7 @@ export async function translatePhpunitArgs(
             translatedArgs.push(vfsPath);
             continue;
         }
-      } catch (error) {
+      } catch {
         // Ignore validation errors and fallback to original arg (or should we?)
         // If file check fails, it's safer to probably not translate it if we are strict,
         // but existing behavior was "looksLikePath -> translate".
