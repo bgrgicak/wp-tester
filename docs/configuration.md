@@ -639,11 +639,11 @@ wp-tester test --watch --test phpunit
 
 When developing WordPress plugins or themes that depend on other plugins or themes, you need to configure your test environment to include these dependencies. WordPress Tester leverages WordPress Playground's Blueprint system to install and activate dependencies before your tests run.
 
-### Installing Plugin Dependencies
+**Note:** Your project (the plugin or theme being tested) is automatically mounted and activated by wp-tester based on your `tests.plugin` or `tests.theme` configuration. You only need to configure dependencies here.
 
-Use the `installPlugin` Blueprint step to install plugins from WordPress.org or from ZIP files:
+### Installing Plugin Dependencies from WordPress.org
 
-**From WordPress.org:**
+Use the `installPlugin` Blueprint step to install plugins from WordPress.org. The `activate` option automatically activates the plugin after installation:
 
 ```json
 {
@@ -661,25 +661,15 @@ Use the `installPlugin` Blueprint step to install plugins from WordPress.org or 
             "pluginZipFile": {
               "resource": "wordpress.org/plugins",
               "slug": "woocommerce"
-            }
-          },
-          {
-            "step": "activatePlugin",
-            "pluginPath": "woocommerce/woocommerce.php"
+            },
+            "activate": true
           }
         ]
-      },
-      "mounts": [
-        {
-          "hostPath": ".",
-          "vfsPath": "/wordpress/wp-content/plugins/my-woo-extension"
-        }
-      ]
+      }
     }
   ],
   "tests": {
-    "plugin": "my-woo-extension",
-    "wp": true
+    "plugin": "my-woo-extension"
   }
 }
 ```
@@ -693,16 +683,97 @@ Use the `installPlugin` Blueprint step to install plugins from WordPress.org or 
       "step": "installPlugin",
       "pluginZipFile": {
         "resource": "url",
-        "url": "https://example.com/my-plugin.zip"
-      }
+        "url": "https://downloads.wordpress.org/plugin/woocommerce.8.5.0.zip"
+      },
+      "activate": true
     }
   ]
 }
 ```
 
+### Installing Local Plugin Dependencies
+
+When your plugin depends on another plugin in your local filesystem (e.g., in a monorepo or sibling directory), use the `mounts` configuration to make the dependency available:
+
+**Sibling directory dependency:**
+
+```json
+{
+  "environments": [
+    {
+      "name": "With Local Dependency",
+      "blueprint": {
+        "preferredVersions": {
+          "php": "8.2",
+          "wp": "6.7"
+        },
+        "steps": [
+          {
+            "step": "activatePlugin",
+            "pluginPath": "my-dependency/my-dependency.php"
+          }
+        ]
+      },
+      "mounts": [
+        {
+          "hostPath": "../my-dependency",
+          "vfsPath": "/wordpress/wp-content/plugins/my-dependency"
+        }
+      ]
+    }
+  ],
+  "tests": {
+    "plugin": "my-plugin"
+  }
+}
+```
+
+**Monorepo with plugins directory:**
+
+For monorepos like the WordPress Performance plugin where multiple plugins live in a `plugins/` directory:
+
+```json
+{
+  "environments": [
+    {
+      "name": "Monorepo Setup",
+      "blueprint": {
+        "preferredVersions": {
+          "php": "8.2",
+          "wp": "6.7"
+        },
+        "steps": [
+          {
+            "step": "activatePlugin",
+            "pluginPath": "plugin-a/plugin-a.php"
+          },
+          {
+            "step": "activatePlugin",
+            "pluginPath": "plugin-b/plugin-b.php"
+          }
+        ]
+      },
+      "mounts": [
+        {
+          "hostPath": "./plugins/plugin-a",
+          "vfsPath": "/wordpress/wp-content/plugins/plugin-a"
+        },
+        {
+          "hostPath": "./plugins/plugin-b",
+          "vfsPath": "/wordpress/wp-content/plugins/plugin-b"
+        }
+      ]
+    }
+  ],
+  "tests": {
+    "plugin": "plugin-a"
+  }
+}
+```
+
 ### Installing Theme Dependencies
 
-If your plugin or theme depends on a specific parent theme or another theme being available, use the `installTheme` step:
+If your plugin or theme depends on a specific parent theme, use the `installTheme` step. Use `activate` to also activate the theme:
 
 ```json
 {
@@ -720,20 +791,11 @@ If your plugin or theme depends on a specific parent theme or another theme bein
             "themeZipFile": {
               "resource": "wordpress.org/themes",
               "slug": "storefront"
-            }
-          },
-          {
-            "step": "activateTheme",
-            "themeFolderName": "storefront"
+            },
+            "activate": true
           }
         ]
-      },
-      "mounts": [
-        {
-          "hostPath": ".",
-          "vfsPath": "/wordpress/wp-content/themes/storefront-child"
-        }
-      ]
+      }
     }
   ],
   "tests": {
@@ -762,31 +824,19 @@ Many real-world scenarios require multiple dependencies. Install them in order i
             "pluginZipFile": {
               "resource": "wordpress.org/plugins",
               "slug": "woocommerce"
-            }
-          },
-          {
-            "step": "activatePlugin",
-            "pluginPath": "woocommerce/woocommerce.php"
+            },
+            "activate": true
           },
           {
             "step": "installPlugin",
             "pluginZipFile": {
               "resource": "wordpress.org/plugins",
               "slug": "woocommerce-gateway-stripe"
-            }
-          },
-          {
-            "step": "activatePlugin",
-            "pluginPath": "woocommerce-gateway-stripe/woocommerce-gateway-stripe.php"
+            },
+            "activate": true
           }
         ]
-      },
-      "mounts": [
-        {
-          "hostPath": ".",
-          "vfsPath": "/wordpress/wp-content/plugins/my-stripe-extension"
-        }
-      ]
+      }
     }
   ],
   "tests": {
@@ -817,36 +867,23 @@ Testing a WooCommerce extension with the Storefront theme:
             "pluginZipFile": {
               "resource": "wordpress.org/plugins",
               "slug": "woocommerce"
-            }
-          },
-          {
-            "step": "activatePlugin",
-            "pluginPath": "woocommerce/woocommerce.php"
+            },
+            "activate": true
           },
           {
             "step": "installTheme",
             "themeZipFile": {
               "resource": "wordpress.org/themes",
               "slug": "storefront"
-            }
-          },
-          {
-            "step": "activateTheme",
-            "themeFolderName": "storefront"
+            },
+            "activate": true
           }
         ]
-      },
-      "mounts": [
-        {
-          "hostPath": ".",
-          "vfsPath": "/wordpress/wp-content/plugins/my-woo-extension"
-        }
-      ]
+      }
     }
   ],
   "tests": {
     "plugin": "my-woo-extension",
-    "wp": true,
     "phpunit": {
       "phpunitPath": "vendor/bin/phpunit",
       "configPath": "phpunit.xml.dist",
@@ -857,7 +894,7 @@ Testing a WooCommerce extension with the Storefront theme:
 }
 ```
 
-#### Page Builder Plugin
+#### Page Builder Add-on
 
 Testing an add-on for Elementor or another page builder:
 
@@ -877,20 +914,11 @@ Testing an add-on for Elementor or another page builder:
             "pluginZipFile": {
               "resource": "wordpress.org/plugins",
               "slug": "elementor"
-            }
-          },
-          {
-            "step": "activatePlugin",
-            "pluginPath": "elementor/elementor.php"
+            },
+            "activate": true
           }
         ]
-      },
-      "mounts": [
-        {
-          "hostPath": ".",
-          "vfsPath": "/wordpress/wp-content/plugins/my-elementor-addon"
-        }
-      ]
+      }
     }
   ],
   "tests": {
@@ -922,17 +950,40 @@ Testing a child theme that requires a specific parent theme:
             }
           }
         ]
+      }
+    }
+  ],
+  "tests": {
+    "theme": "developer-child"
+  }
+}
+```
+
+#### Local Theme Dependency
+
+Testing a child theme where the parent theme is in a sibling directory:
+
+```json
+{
+  "environments": [
+    {
+      "name": "With Local Parent Theme",
+      "blueprint": {
+        "preferredVersions": {
+          "php": "8.2",
+          "wp": "6.7"
+        }
       },
       "mounts": [
         {
-          "hostPath": ".",
-          "vfsPath": "/wordpress/wp-content/themes/developer-child"
+          "hostPath": "../my-parent-theme",
+          "vfsPath": "/wordpress/wp-content/themes/my-parent-theme"
         }
       ]
     }
   ],
   "tests": {
-    "theme": "developer-child"
+    "theme": "my-child-theme"
   }
 }
 ```
@@ -945,10 +996,10 @@ Commonly used steps for dependencies:
 
 | Step | Description |
 |------|-------------|
-| `installPlugin` | Install a plugin from WordPress.org or URL |
-| `activatePlugin` | Activate an installed plugin |
-| `installTheme` | Install a theme from WordPress.org or URL |
-| `activateTheme` | Activate an installed theme |
+| `installPlugin` | Install and optionally activate a plugin (`activate: true`) |
+| `activatePlugin` | Activate an already installed/mounted plugin |
+| `installTheme` | Install and optionally activate a theme (`activate: true`) |
+| `activateTheme` | Activate an already installed/mounted theme |
 | `runWpInstallationWizard` | Complete WordPress setup wizard |
 | `setSiteOptions` | Configure WordPress options (useful for plugin settings) |
 | `runPHP` | Execute custom PHP code for advanced setup |
@@ -970,12 +1021,11 @@ Test your plugin or theme against multiple versions of its dependencies using ma
             "pluginZipFile": {
               "resource": "wordpress.org/plugins",
               "slug": "woocommerce"
-            }
-          },
-          { "step": "activatePlugin", "pluginPath": "woocommerce/woocommerce.php" }
+            },
+            "activate": true
+          }
         ]
-      },
-      "mounts": [{ "hostPath": ".", "vfsPath": "/wordpress/wp-content/plugins/my-plugin" }]
+      }
     },
     {
       "name": "WooCommerce 8.5",
@@ -987,12 +1037,11 @@ Test your plugin or theme against multiple versions of its dependencies using ma
             "pluginZipFile": {
               "resource": "url",
               "url": "https://downloads.wordpress.org/plugin/woocommerce.8.5.0.zip"
-            }
-          },
-          { "step": "activatePlugin", "pluginPath": "woocommerce/woocommerce.php" }
+            },
+            "activate": true
+          }
         ]
-      },
-      "mounts": [{ "hostPath": ".", "vfsPath": "/wordpress/wp-content/plugins/my-plugin" }]
+      }
     }
   ],
   "tests": {
@@ -1011,13 +1060,7 @@ For complex dependency setups, you can extract the Blueprint to a separate JSON 
   "environments": [
     {
       "name": "Production-like Environment",
-      "blueprint": "./blueprints/woocommerce-full.json",
-      "mounts": [
-        {
-          "hostPath": ".",
-          "vfsPath": "/wordpress/wp-content/plugins/my-plugin"
-        }
-      ]
+      "blueprint": "./blueprints/woocommerce-full.json"
     }
   ],
   "tests": {
@@ -1036,14 +1079,14 @@ For complex dependency setups, you can extract the Blueprint to a separate JSON 
   "steps": [
     {
       "step": "installPlugin",
-      "pluginZipFile": { "resource": "wordpress.org/plugins", "slug": "woocommerce" }
+      "pluginZipFile": { "resource": "wordpress.org/plugins", "slug": "woocommerce" },
+      "activate": true
     },
-    { "step": "activatePlugin", "pluginPath": "woocommerce/woocommerce.php" },
     {
       "step": "installTheme",
-      "themeZipFile": { "resource": "wordpress.org/themes", "slug": "storefront" }
+      "themeZipFile": { "resource": "wordpress.org/themes", "slug": "storefront" },
+      "activate": true
     },
-    { "step": "activateTheme", "themeFolderName": "storefront" },
     {
       "step": "runWpInstallationWizard",
       "options": { "blogTitle": "Test Store" }
