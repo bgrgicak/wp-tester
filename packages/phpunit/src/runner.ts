@@ -298,8 +298,8 @@ async function runPhpunitTestsForEnvironment(
       await new Promise<void>((resolve) => {
         runtime.server.close(() => resolve());
       });
-    } catch {
-      console.error("Error closing server:");
+    } catch(error) {
+      console.error("Error closing server:", error);
     }
   }
 }
