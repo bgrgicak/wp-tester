@@ -125,13 +125,13 @@ async function runPhpunitTestsForEnvironment(
     }
 
     // Append additional PHPUnit arguments from config
-    // Translate file/directory paths from host to VFS
+    // Resolve file/directory paths from host to VFS
     const phpunitArgs = config.tests.phpunit!.phpunitArgs;
     if (phpunitArgs && phpunitArgs.length > 0) {
-      // Use the helper to translate arguments
-      const translatedArgs = await translatePhpunitArgs(phpunitArgs, config, playground);
+      // Use the helper to resolve arguments
+      const resolvedArgs = await resolvePhpunitArgs(phpunitArgs, config, playground);
 
-      cliArgs.push(...translatedArgs);
+      cliArgs.push(...resolvedArgs);
     }
 
     // Create streaming reporter
@@ -383,7 +383,7 @@ export async function runPhpunitTests(
 /**
  * PHPUnit flags that are boolean (do not take a value).
  * If a flag is NOT in this list, we assume it takes a value,
- * and therefore the next argument should NOT be translated as a path.
+ * and therefore the next argument should NOT be resolved as a path.
  */
 const booleanFlags = new Set([
   '--teamcity', '--debug', '--verbose', '--testdox',
@@ -412,26 +412,26 @@ interface PlaygroundClient {
 }
 
 /**
- * Translate PHPUnit arguments to map host paths to VFS paths
+ * Resolve PHPUnit arguments to map host paths to VFS paths
  *
  * @param args - Original arguments
  * @param config - Resolved configuration
  * @param playground - Playground client for checking VFS file existence
- * @returns Translated arguments
+ * @returns Resolved arguments
  */
-export async function translatePhpunitArgs(
+export async function resolvePhpunitArgs(
   args: string[],
   config: ResolvedWPTesterConfig,
   playground: PlaygroundClient
 ): Promise<string[]> {
-  const translatedArgs: string[] = [];
+  const resolvedArgs: string[] = [];
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
 
-    // Don't translate flags
+    // Don't resolve flags
     if (arg.startsWith('-')) {
-      translatedArgs.push(arg);
+      resolvedArgs.push(arg);
       continue;
     }
 
@@ -441,12 +441,12 @@ export async function translatePhpunitArgs(
       // If the previous flag is NOT a known boolean flag, assume it takes a value
       const flagName = prevArg.split('=')[0];
       if (!booleanFlags.has(flagName)) {
-        translatedArgs.push(arg); // This is the flag's value, not a path
+        resolvedArgs.push(arg); // This is the flag's value, not a path
         continue;
       }
     }
 
-    // Translate arguments that look like file/directory paths
+    // Resolve arguments that look like file/directory paths
     const looksLikePath = arg.includes('/') ||
                           arg.endsWith('.php') ||
                           arg === 'tests' || arg === 'test';
@@ -459,21 +459,21 @@ export async function translatePhpunitArgs(
         // Validate that the file actually exists in the VFS
         const exists = await playground.fileExists(vfsPath);
         if (exists) {
-            translatedArgs.push(vfsPath);
+            resolvedArgs.push(vfsPath);
             continue;
         }
       } catch {
         // Ignore validation errors and fallback to original arg (or should we?)
-        // If file check fails, it's safer to probably not translate it if we are strict,
-        // but existing behavior was "looksLikePath -> translate".
+        // If file check fails, it's safer to probably not resolve it if we are strict,
+        // but existing behavior was "looksLikePath -> resolve".
         // If we add this check, we might break things that "look like path" but aren't files YET?
         // But for running tests, the files must exist.
       }
     }
 
-    translatedArgs.push(arg);
+    resolvedArgs.push(arg);
   }
 
-  return translatedArgs;
+  return resolvedArgs;
 }
 

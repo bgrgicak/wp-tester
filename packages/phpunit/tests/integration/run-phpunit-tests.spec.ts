@@ -196,7 +196,7 @@ describe("runPhpunitTests integration", () => {
 	it(
 		"should handle phpunitArgs with flags that have path-like values",
 		async () => {
-			// Test that flag values are NOT translated even if they look like paths
+			// Test that flag values are NOT resolved even if they look like paths
 			// Example: --filter could have a value like "MyNamespace\Tests"
 			const report = await runPhpunitTests(
 				TEST_PLUGIN_CONFIG_PATH,
@@ -240,7 +240,7 @@ describe("runPhpunitTests integration", () => {
 	it(
 		"should handle boolean flags before file paths",
 		async () => {
-			// Test that boolean flags don't prevent path translation
+			// Test that boolean flags don't prevent path resolution
 			// This simulates: wp-tester test -- --stop-on-failure tests/WordPressTest.php
 			const report = await runPhpunitTests(
 				TEST_PLUGIN_CONFIG_PATH,
@@ -261,7 +261,7 @@ describe("runPhpunitTests integration", () => {
 	it(
 		"should handle path after multiple boolean flags",
 		async () => {
-			// Test path translation after multiple boolean flags
+			// Test path resolution after multiple boolean flags
 			// This simulates: wp-tester test -- --no-coverage --stop-on-failure tests/WordPressTest.php
 			const report = await runPhpunitTests(
 				TEST_PLUGIN_CONFIG_PATH,
@@ -277,7 +277,7 @@ describe("runPhpunitTests integration", () => {
 	it(
 		"should handle flag with equals syntax followed by path",
 		async () => {
-			// Test that = syntax doesn't prevent next path translation
+			// Test that = syntax doesn't prevent next path resolution
 			// This simulates: wp-tester test -- --colors=auto tests/WordPressTest.php
 			const report = await runPhpunitTests(
 				TEST_PLUGIN_CONFIG_PATH,
