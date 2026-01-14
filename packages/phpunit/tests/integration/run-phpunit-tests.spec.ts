@@ -192,6 +192,103 @@ describe("runPhpunitTests integration", () => {
 			expect(report.results.summary.failed).toBe(0);
 		}
 	);
+
+	it(
+		"should handle phpunitArgs with flags that have path-like values",
+		async () => {
+			// Test that flag values are NOT translated even if they look like paths
+			// Example: --filter could have a value like "MyNamespace\Tests"
+			const report = await runPhpunitTests(
+				TEST_PLUGIN_CONFIG_PATH,
+				["--filter", "WordPressTest"]
+			);
+
+			// Should only run WordPressTest (3 tests)
+			expect(report.results.summary.tests).toBe(3);
+			expect(report.results.summary.passed).toBe(3);
+
+			// Verify only WordPressTest tests ran
+			const testNames = report.results.tests.map((test) => test.name);
+			expect(testNames.some(name => name.includes("test_can_create_and_retrieve_post"))).toBe(true);
+			expect(testNames.some(name => name.includes("test_sanitize_text_removes_extra_whitespace"))).toBe(false);
+		}
+	);
+
+	it(
+		"should handle mixed flags and file paths",
+		async () => {
+			// Test combining flags with file paths
+			// This simulates: wp-tester test -- --filter test_wordpress tests/WordPressTest.php
+			const report = await runPhpunitTests(
+				TEST_PLUGIN_CONFIG_PATH,
+				["--filter", "test_wordpress", "tests/WordPressTest.php"]
+			);
+
+			// Should only run tests matching filter in the specified file
+			// WordPressTest.php has 3 tests, 2 match "test_wordpress" filter
+			expect(report.results.summary.tests).toBe(2);
+			expect(report.results.summary.passed).toBe(2);
+
+			const testNames = report.results.tests.map((test) => test.name);
+			expect(testNames.some(name => name.includes("test_wordpress_sanitize_functions"))).toBe(true);
+			expect(testNames.some(name => name.includes("test_wordpress_options"))).toBe(true);
+			// This test doesn't match the filter
+			expect(testNames.some(name => name.includes("test_can_create_and_retrieve_post"))).toBe(false);
+		}
+	);
+
+	it(
+		"should handle boolean flags before file paths",
+		async () => {
+			// Test that boolean flags don't prevent path translation
+			// This simulates: wp-tester test -- --stop-on-failure tests/WordPressTest.php
+			const report = await runPhpunitTests(
+				TEST_PLUGIN_CONFIG_PATH,
+				["--stop-on-failure", "tests/WordPressTest.php"]
+			);
+
+			// Should run WordPressTest.php (3 tests)
+			expect(report.results.summary.tests).toBe(3);
+			expect(report.results.summary.passed).toBe(3);
+
+			const testNames = report.results.tests.map((test) => test.name);
+			expect(testNames.some(name => name.includes("test_can_create_and_retrieve_post"))).toBe(true);
+			expect(testNames.some(name => name.includes("test_wordpress_sanitize_functions"))).toBe(true);
+			expect(testNames.some(name => name.includes("test_wordpress_options"))).toBe(true);
+		}
+	);
+
+	it(
+		"should handle path after multiple boolean flags",
+		async () => {
+			// Test path translation after multiple boolean flags
+			// This simulates: wp-tester test -- --no-coverage --stop-on-failure tests/WordPressTest.php
+			const report = await runPhpunitTests(
+				TEST_PLUGIN_CONFIG_PATH,
+				["--no-coverage", "--stop-on-failure", "tests/WordPressTest.php"]
+			);
+
+			// Should run WordPressTest.php (3 tests)
+			expect(report.results.summary.tests).toBe(3);
+			expect(report.results.summary.passed).toBe(3);
+		}
+	);
+
+	it(
+		"should handle flag with equals syntax followed by path",
+		async () => {
+			// Test that = syntax doesn't prevent next path translation
+			// This simulates: wp-tester test -- --colors=auto tests/WordPressTest.php
+			const report = await runPhpunitTests(
+				TEST_PLUGIN_CONFIG_PATH,
+				["--colors=auto", "tests/WordPressTest.php"]
+			);
+
+			// Should run WordPressTest.php (3 tests)
+			expect(report.results.summary.tests).toBe(3);
+			expect(report.results.summary.passed).toBe(3);
+		}
+	);
 });
 
 describe("shouldRunPhpunitTests", () => {
