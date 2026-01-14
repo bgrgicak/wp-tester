@@ -122,7 +122,7 @@ Each environment is an object with:
         "steps": [
           {
             "step": "installPlugin",
-            "pluginZipFile": {
+            "pluginData": {
               "resource": "wordpress.org/plugins",
               "slug": "hello-dolly"
             }
@@ -658,7 +658,7 @@ Use the `installPlugin` Blueprint step to install plugins from WordPress.org. Th
         "steps": [
           {
             "step": "installPlugin",
-            "pluginZipFile": {
+            "pluginData": {
               "resource": "wordpress.org/plugins",
               "slug": "woocommerce"
             },
@@ -681,7 +681,7 @@ Use the `installPlugin` Blueprint step to install plugins from WordPress.org. Th
   "steps": [
     {
       "step": "installPlugin",
-      "pluginZipFile": {
+      "pluginData": {
         "resource": "url",
         "url": "https://downloads.wordpress.org/plugin/woocommerce.8.5.0.zip"
       },
@@ -788,7 +788,7 @@ If your plugin or theme depends on a specific parent theme, use the `installThem
         "steps": [
           {
             "step": "installTheme",
-            "themeZipFile": {
+            "themeData": {
               "resource": "wordpress.org/themes",
               "slug": "storefront"
             },
@@ -821,7 +821,7 @@ Many real-world scenarios require multiple dependencies. Install them in order i
         "steps": [
           {
             "step": "installPlugin",
-            "pluginZipFile": {
+            "pluginData": {
               "resource": "wordpress.org/plugins",
               "slug": "woocommerce"
             },
@@ -829,7 +829,7 @@ Many real-world scenarios require multiple dependencies. Install them in order i
           },
           {
             "step": "installPlugin",
-            "pluginZipFile": {
+            "pluginData": {
               "resource": "wordpress.org/plugins",
               "slug": "woocommerce-gateway-stripe"
             },
@@ -864,7 +864,7 @@ Testing a WooCommerce extension with the Storefront theme:
         "steps": [
           {
             "step": "installPlugin",
-            "pluginZipFile": {
+            "pluginData": {
               "resource": "wordpress.org/plugins",
               "slug": "woocommerce"
             },
@@ -872,7 +872,7 @@ Testing a WooCommerce extension with the Storefront theme:
           },
           {
             "step": "installTheme",
-            "themeZipFile": {
+            "themeData": {
               "resource": "wordpress.org/themes",
               "slug": "storefront"
             },
@@ -911,7 +911,7 @@ Testing an add-on for Elementor or another page builder:
         "steps": [
           {
             "step": "installPlugin",
-            "pluginZipFile": {
+            "pluginData": {
               "resource": "wordpress.org/plugins",
               "slug": "elementor"
             },
@@ -944,7 +944,7 @@ Testing a child theme that requires a specific parent theme:
         "steps": [
           {
             "step": "installTheme",
-            "themeZipFile": {
+            "themeData": {
               "resource": "wordpress.org/themes",
               "slug": "developer"
             }
@@ -1018,7 +1018,7 @@ Test your plugin or theme against multiple versions of its dependencies using ma
         "steps": [
           {
             "step": "installPlugin",
-            "pluginZipFile": {
+            "pluginData": {
               "resource": "wordpress.org/plugins",
               "slug": "woocommerce"
             },
@@ -1034,7 +1034,7 @@ Test your plugin or theme against multiple versions of its dependencies using ma
         "steps": [
           {
             "step": "installPlugin",
-            "pluginZipFile": {
+            "pluginData": {
               "resource": "url",
               "url": "https://downloads.wordpress.org/plugin/woocommerce.8.5.0.zip"
             },
@@ -1079,12 +1079,12 @@ For complex dependency setups, you can extract the Blueprint to a separate JSON 
   "steps": [
     {
       "step": "installPlugin",
-      "pluginZipFile": { "resource": "wordpress.org/plugins", "slug": "woocommerce" },
+      "pluginData": { "resource": "wordpress.org/plugins", "slug": "woocommerce" },
       "activate": true
     },
     {
       "step": "installTheme",
-      "themeZipFile": { "resource": "wordpress.org/themes", "slug": "storefront" },
+      "themeData": { "resource": "wordpress.org/themes", "slug": "storefront" },
       "activate": true
     },
     {
@@ -1175,7 +1175,7 @@ Test a theme with custom environment setup:
         "steps": [
           {
             "step": "installPlugin",
-            "pluginZipFile": {
+            "pluginData": {
               "resource": "wordpress.org/plugins",
               "slug": "woocommerce"
             }
