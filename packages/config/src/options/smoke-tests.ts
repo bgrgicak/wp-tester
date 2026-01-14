@@ -23,7 +23,7 @@ export async function smokeTestsOption(
 
   // Ask about WordPress smoke tests
   const runWpTests = await clack.confirm({
-    message: "Do you want to run WordPress smoke tests?",
+    message: "Run WordPress boot test? (Verifies WordPress loads with your code)",
     initialValue: true,
   });
 
@@ -39,7 +39,7 @@ export async function smokeTestsOption(
   // Ask about plugin tests if project type is plugin
   if (config.projectType === 'plugin') {
     const runPluginTests = await clack.confirm({
-      message: "Do you want to run Plugin smoke tests?",
+      message: "Run plugin activation test? (Verifies your plugin activates without errors)",
       initialValue: true,
     });
 
@@ -67,7 +67,7 @@ export async function smokeTestsOption(
   // Ask about theme tests if project type is theme
   if (config.projectType === 'theme') {
     const runThemeTests = await clack.confirm({
-      message: "Do you want to run Theme smoke tests?",
+      message: "Run theme activation test? (Verifies your theme activates without errors)",
       initialValue: true,
     });
 

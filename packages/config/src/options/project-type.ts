@@ -39,9 +39,9 @@ export async function projectTypeOption(
     const selectedType = await clack.select({
       message: "Select project type:",
       options: [
-        { value: 'plugin', label: 'plugin' },
-        { value: 'theme', label: 'theme' },
-        { value: 'other', label: 'other' },
+        { value: 'plugin', label: 'Plugin', hint: 'Mounted to wp-content/plugins/' },
+        { value: 'theme', label: 'Theme', hint: 'Mounted to wp-content/themes/' },
+        { value: 'other', label: 'Other', hint: 'Custom mount path' },
       ],
     });
 
