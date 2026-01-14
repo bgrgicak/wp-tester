@@ -137,6 +137,61 @@ describe("runPhpunitTests integration", () => {
 			expect(testNames.some(name => name.includes("test_custom_content_filter_is_registered"))).toBe(false);
 		}
 	);
+
+	it(
+		"should run single test file when passed as phpunitArg",
+		async () => {
+			// Test passing a single test file path as an argument
+			// This simulates: wp-tester test -- tests/WordPressTest.php
+			const report = await runPhpunitTests(
+				TEST_PLUGIN_CONFIG_PATH,
+				["tests/WordPressTest.php"]
+			);
+
+			// Validate report structure
+			expect(report).toBeDefined();
+			expect(report.results).toBeDefined();
+			expect(report.results.summary).toBeDefined();
+
+			// Only WordPressTest.php should run (3 tests)
+			// Not UnitTest.php (2 tests)
+			expect(report.results.summary.tests).toBe(3);
+			expect(report.results.summary.passed).toBe(3);
+			expect(report.results.summary.failed).toBe(0);
+
+			// Verify only WordPressTest tests are present
+			const testNames = report.results.tests.map((test) => test.name);
+			expect(testNames.some(name => name.includes("test_can_create_and_retrieve_post"))).toBe(true);
+			expect(testNames.some(name => name.includes("test_wordpress_sanitize_functions"))).toBe(true);
+			expect(testNames.some(name => name.includes("test_wordpress_options"))).toBe(true);
+
+			// UnitTest tests should NOT be present
+			expect(testNames.some(name => name.includes("test_sanitize_text_removes_extra_whitespace"))).toBe(false);
+			expect(testNames.some(name => name.includes("test_custom_content_filter_is_registered"))).toBe(false);
+		}
+	);
+
+	it(
+		"should run tests from directory when passed as phpunitArg",
+		async () => {
+			// Test passing a directory path as an argument
+			// This simulates: wp-tester test -- tests/
+			const report = await runPhpunitTests(
+				TEST_PLUGIN_CONFIG_PATH,
+				["tests/"]
+			);
+
+			// Validate report structure
+			expect(report).toBeDefined();
+			expect(report.results).toBeDefined();
+			expect(report.results.summary).toBeDefined();
+
+			// All tests should run (5 tests total)
+			expect(report.results.summary.tests).toBe(5);
+			expect(report.results.summary.passed).toBe(5);
+			expect(report.results.summary.failed).toBe(0);
+		}
+	);
 });
 
 describe("shouldRunPhpunitTests", () => {

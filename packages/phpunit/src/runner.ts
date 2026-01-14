@@ -125,9 +125,30 @@ async function runPhpunitTestsForEnvironment(
     }
 
     // Append additional PHPUnit arguments from config
+    // Translate file/directory paths from host to VFS
     const phpunitArgs = config.tests.phpunit!.phpunitArgs;
     if (phpunitArgs && phpunitArgs.length > 0) {
-      cliArgs.push(...phpunitArgs);
+      const translatedArgs = phpunitArgs.map(arg => {
+        // Check if this argument looks like a file or directory path
+        // PHPUnit accepts test files/directories as positional arguments
+        // Arguments starting with '-' are flags/options, not paths
+        // Paths typically end with .php, /, or are directory names like 'tests'
+        if (!arg.startsWith('-')) {
+          // Check if it's likely a path (contains path separators, ends with .php, or common test directories)
+          const looksLikePath = arg.includes('/') || arg.includes('\\') ||
+                                arg.endsWith('.php') ||
+                                arg === 'tests' || arg === 'test';
+
+          if (looksLikePath) {
+            // Convert relative path to absolute host path first
+            const absoluteHostPath = resolveAbsolute(arg, config.projectHostPath);
+            // Then translate to VFS path
+            return hostToVfs(absoluteHostPath, config);
+          }
+        }
+        return arg;
+      });
+      cliArgs.push(...translatedArgs);
     }
 
     // Create streaming reporter
