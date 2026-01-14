@@ -5,6 +5,7 @@ import { runSmokeTests } from "@wp-tester/smoke-tests";
 import { runPhpunitTests } from "@wp-tester/phpunit";
 import { mergeReports, printSummary, type Report } from "@wp-tester/results";
 import type { TestType } from "@wp-tester/config";
+import { expandTilde } from "@wp-tester/config";
 import { validateConfig } from '../config/validate';
 import { setupHandler } from "../setup";
 
@@ -42,7 +43,9 @@ async function promptSetupOnMissingConfig(): Promise<string> {
 }
 
 async function resolveConfigPath(configPath: string): Promise<string> {
-  const resolvedPath = path.resolve(process.cwd(), configPath);
+  // Expand tilde (~) to home directory if present
+  const expandedPath = expandTilde(configPath);
+  const resolvedPath = path.resolve(process.cwd(), expandedPath);
 
   try {
     const stats = await stat(resolvedPath);

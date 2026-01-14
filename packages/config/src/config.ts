@@ -5,10 +5,25 @@ import { readFile, writeFile, access, constants as fsConstants } from "fs/promis
 import { existsSync, statSync } from "fs";
 import { join, dirname, resolve, isAbsolute } from "path";
 import { fileURLToPath } from "url";
+import { homedir } from "os";
 import { getProjectRootMount } from "./auto-mount";
 import { detectProjectType } from "./options/project-type-detect";
 
 export type { WPTesterConfig } from "./wp-tester-config";
+
+/**
+ * Expand tilde (~) in a path to the user's home directory.
+ * Only expands ~ at the start of the path, followed by / or end of string.
+ *
+ * @param filePath - Path that may contain a tilde
+ * @returns Path with tilde expanded to home directory
+ */
+export function expandTilde(filePath: string): string {
+  if (filePath.startsWith("~/") || filePath === "~") {
+    return join(homedir(), filePath.slice(1));
+  }
+  return filePath;
+}
 
 /**
  * Resolve a path to an absolute path.
@@ -28,7 +43,7 @@ export function configPath(): string {
 }
 
 export function getSchemaPath(importMetaUrl?: string): string {
-  // For ESM in production (built files)
+  // Use provided import.meta.url (for ESM in production/built files)
   if (importMetaUrl) {
     const currentDir = dirname(fileURLToPath(importMetaUrl));
     return join(currentDir, "schema.json");
@@ -39,24 +54,36 @@ export function getSchemaPath(importMetaUrl?: string): string {
     return join(__dirname, "schema.json");
   }
 
-  // For dev mode: try to find the config package
-  // Could be in monorepo (packages/config) or installed (node_modules)
-  const candidates = [
+  // Build list of candidate paths to try
+  const candidates: string[] = [];
+
+  // Try to resolve from this module's location first (works with tsx/ts-node in dev mode)
+  try {
+    candidates.push(join(dirname(fileURLToPath(import.meta.url)), "schema.json"));
+  } catch {
+    // import.meta.url might not be available in some edge cases
+  }
+
+  // Add fallback paths: monorepo or installed package locations
+  candidates.push(
     // Monorepo from root
     join(process.cwd(), "packages/config/src/schema.json"),
     // Monorepo from a package directory
     join(process.cwd(), "../config/src/schema.json"),
-    // Installed package
+    // Installed package (dist)
     join(process.cwd(), "node_modules/@wp-tester/config/dist/schema.json"),
-  ];
+    // Installed package (src - for local dev with npm link or similar)
+    join(process.cwd(), "node_modules/@wp-tester/config/src/schema.json")
+  );
 
+  // Return first existing path
   for (const candidate of candidates) {
     if (existsSync(candidate)) {
       return candidate;
     }
   }
 
-  // Last resort
+  // Last resort: return the last fallback path
   return candidates[candidates.length - 1];
 }
 
@@ -113,12 +140,14 @@ export async function writeConfigFile(
 
 /**
  * Get the absolute config file path.
+ * Expands tilde (~) to home directory if present.
  *
- * @param config - Path to config file (relative or absolute)
+ * @param config - Path to config file (relative or absolute, may contain ~)
  * @returns Absolute path to the config file
  */
 export function getConfigPath(config: string): string {
-  return isAbsolute(config) ? config : resolve(process.cwd(), config);
+  const expanded = expandTilde(config);
+  return isAbsolute(expanded) ? expanded : resolve(process.cwd(), expanded);
 }
 
 /**

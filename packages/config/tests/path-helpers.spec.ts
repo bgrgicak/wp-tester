@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { getConfigPath, getConfigDir, getProjectDir } from '../src/config';
+import { getConfigPath, getConfigDir, getProjectDir, expandTilde } from '../src/config';
 import type { WPTesterConfig } from '../src/types';
 import * as path from 'path';
+import { homedir } from 'os';
 
 describe('Path Helper Functions', () => {
   let originalCwd: string;
@@ -12,6 +13,27 @@ describe('Path Helper Functions', () => {
 
   afterEach(() => {
     process.chdir(originalCwd);
+  });
+
+  describe('expandTilde', () => {
+    it('should expand ~ to home directory', () => {
+      expect(expandTilde('~')).toBe(homedir());
+    });
+
+    it('should expand ~/path to home directory path', () => {
+      const expected = path.join(homedir(), 'Projects/test');
+      expect(expandTilde('~/Projects/test')).toBe(expected);
+    });
+
+    it('should not modify paths without tilde', () => {
+      expect(expandTilde('/absolute/path')).toBe('/absolute/path');
+      expect(expandTilde('relative/path')).toBe('relative/path');
+      expect(expandTilde('./relative/path')).toBe('./relative/path');
+    });
+
+    it('should not expand tilde in middle of path', () => {
+      expect(expandTilde('/path/~/file')).toBe('/path/~/file');
+    });
   });
 
   describe('getConfigPath', () => {
@@ -42,6 +64,18 @@ describe('Path Helper Functions', () => {
       const relativePath = 'configs/test/wp-tester.json';
       const expected = path.resolve(process.cwd(), relativePath);
       expect(getConfigPath(relativePath)).toBe(expected);
+    });
+
+    it('should expand tilde in path', () => {
+      const tildePathFile = '~/Projects/wp-tester.json';
+      const expected = path.join(homedir(), 'Projects/wp-tester.json');
+      expect(getConfigPath(tildePathFile)).toBe(expected);
+    });
+
+    it('should expand tilde with nested path', () => {
+      const tildePathNested = '~/Projects/my-plugin/config/wp-tester.json';
+      const expected = path.join(homedir(), 'Projects/my-plugin/config/wp-tester.json');
+      expect(getConfigPath(tildePathNested)).toBe(expected);
     });
   });
 
