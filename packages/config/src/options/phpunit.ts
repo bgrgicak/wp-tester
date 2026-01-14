@@ -19,13 +19,13 @@ async function promptForTestMode(): Promise<"unit" | "integration" | null> {
     options: [
       {
         value: "unit",
-        label: "Unit tests (without WordPress)",
-        hint: "Fast tests for isolated PHP logic, pure functions, classes without WordPress dependencies"
+        label: "Unit tests",
+        hint: "Uses WP Test library mocks - won't break existing tests"
       },
       {
         value: "integration",
-        label: "Integration tests (with WordPress)",
-        hint: "Tests that interact with WordPress APIs, hooks, database, plugins/themes"
+        label: "Integration tests",
+        hint: "Runs inside WordPress - call WP functions, test plugin compatibility, make HTTP requests"
       }
     ],
     initialValue: "unit"
@@ -186,11 +186,11 @@ async function handleFullDetection(
 
   // Ask user to confirm or customize
   const action = await clack.select({
-    message: "PHPUnit tests detected. What would you like to do?",
+    message: "PHPUnit configuration detected. What would you like to do?",
     options: [
-      { value: "use", label: "Use detected configuration" },
-      { value: "customize", label: "Customize configuration" },
-      { value: "skip", label: "Skip PHPUnit tests" },
+      { value: "use", label: "Use detected configuration", hint: "Recommended" },
+      { value: "customize", label: "Customize configuration", hint: "Specify different paths" },
+      { value: "skip", label: "Skip PHPUnit tests", hint: "Configure later" },
     ],
     initialValue: "use",
   });
@@ -258,9 +258,9 @@ async function handlePartialDetection(
     const action = await clack.select({
       message: "What would you like to do?",
       options: [
-        { value: "retry", label: "I've installed it, try again" },
-        { value: "custom", label: "Specify custom path" },
-        { value: "skip", label: "Skip for now" },
+        { value: "retry", label: "Try again", hint: "After running composer install" },
+        { value: "custom", label: "Specify custom path", hint: "PHPUnit is in a different location" },
+        { value: "skip", label: "Skip for now", hint: "Configure later" },
       ],
       initialValue: "retry",
     });
