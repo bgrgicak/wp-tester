@@ -2,7 +2,9 @@
 
 A CLI tool for testing WordPress plugins and themes using WordPress Playground.
 
-**[Documentation](https://bgrgicak.github.io/wp-tester/)**
+[![Documentation](https://img.shields.io/badge/Documentation-Read%20the%20Docs-blue?style=for-the-badge)](https://bgrgicak.github.io/wp-tester/)
+[![npm version](https://img.shields.io/npm/v/@wp-tester/cli?style=flat-square)](https://www.npmjs.com/package/@wp-tester/cli)
+[![License: GPL-2.0](https://img.shields.io/badge/License-GPL--2.0-green?style=flat-square)](https://opensource.org/licenses/GPL-2.0)
 
 ## Quick Start
 
