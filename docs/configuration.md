@@ -637,76 +637,59 @@ wp-tester test --watch --test phpunit
 
 ## Dependencies
 
-When developing WordPress plugins or themes that depend on other plugins or themes, you need to configure your test environment to include these dependencies. WordPress Tester leverages WordPress Playground's Blueprint system to install and activate dependencies before your tests run.
+When your plugin or theme depends on other plugins or themes, use Blueprint steps to install them. Your project is automatically mounted and activated by wp-tester based on `tests.plugin` or `tests.theme` - you only need to configure dependencies.
 
-**Note:** Your project (the plugin or theme being tested) is automatically mounted and activated by wp-tester based on your `tests.plugin` or `tests.theme` configuration. You only need to configure dependencies here.
+### From WordPress.org
 
-### Installing Plugin Dependencies from WordPress.org
-
-Use the `installPlugin` Blueprint step to install plugins from WordPress.org. The `activate` option automatically activates the plugin after installation:
+Use `installPlugin` or `installTheme` with `activate: true`:
 
 ```json
 {
-  "environments": [
-    {
-      "name": "With WooCommerce",
-      "blueprint": {
-        "preferredVersions": {
-          "php": "8.2",
-          "wp": "6.7"
+  "blueprint": {
+    "steps": [
+      {
+        "step": "installPlugin",
+        "pluginData": {
+          "resource": "wordpress.org/plugins",
+          "slug": "woocommerce"
         },
-        "steps": [
-          {
-            "step": "installPlugin",
-            "pluginData": {
-              "resource": "wordpress.org/plugins",
-              "slug": "woocommerce"
-            },
-            "activate": true
-          }
-        ]
+        "activate": true
+      },
+      {
+        "step": "installTheme",
+        "themeData": {
+          "resource": "wordpress.org/themes",
+          "slug": "storefront"
+        },
+        "activate": true
       }
-    }
-  ],
-  "tests": {
-    "plugin": "my-woo-extension"
+    ]
   }
 }
 ```
 
-**From URL or ZIP file:**
+To install a specific version, use a URL:
 
 ```json
 {
-  "steps": [
-    {
-      "step": "installPlugin",
-      "pluginData": {
-        "resource": "url",
-        "url": "https://downloads.wordpress.org/plugin/woocommerce.8.5.0.zip"
-      },
-      "activate": true
-    }
-  ]
+  "step": "installPlugin",
+  "pluginData": {
+    "resource": "url",
+    "url": "https://downloads.wordpress.org/plugin/woocommerce.8.5.0.zip"
+  },
+  "activate": true
 }
 ```
 
-### Installing Local Plugin Dependencies
+### Local Dependencies
 
-When your plugin depends on another plugin in your local filesystem (e.g., in a monorepo or sibling directory), use the `mounts` configuration to make the dependency available:
-
-**Sibling directory dependency:**
+For dependencies in your local filesystem (monorepos, sibling directories), mount them and use `activatePlugin`:
 
 ```json
 {
   "environments": [
     {
-      "name": "With Local Dependency",
       "blueprint": {
-        "preferredVersions": {
-          "php": "8.2",
-          "wp": "6.7"
-        },
         "steps": [
           {
             "step": "activatePlugin",
@@ -728,368 +711,7 @@ When your plugin depends on another plugin in your local filesystem (e.g., in a 
 }
 ```
 
-**Monorepo with plugins directory:**
-
-For monorepos like the WordPress Performance plugin where multiple plugins live in a `plugins/` directory and depend on each other:
-
-```json
-{
-  "environments": [
-    {
-      "name": "Monorepo Setup",
-      "blueprint": {
-        "preferredVersions": {
-          "php": "8.2",
-          "wp": "6.7"
-        },
-        "steps": [
-          {
-            "step": "activatePlugin",
-            "pluginPath": "plugin-b/plugin-b.php"
-          }
-        ]
-      },
-      "mounts": [
-        {
-          "hostPath": "./plugins/plugin-b",
-          "vfsPath": "/wordpress/wp-content/plugins/plugin-b"
-        }
-      ]
-    }
-  ],
-  "tests": {
-    "plugin": "plugin-a"
-  }
-}
-```
-
-In this example, `plugin-a` is automatically mounted by wp-tester (since it's the tested plugin). Only `plugin-b` (the dependency) needs to be explicitly mounted and activated.
-
-### Installing Theme Dependencies
-
-If your plugin or theme depends on a specific parent theme, use the `installTheme` step. Use `activate` to also activate the theme:
-
-```json
-{
-  "environments": [
-    {
-      "name": "With Storefront Theme",
-      "blueprint": {
-        "preferredVersions": {
-          "php": "8.2",
-          "wp": "6.7"
-        },
-        "steps": [
-          {
-            "step": "installTheme",
-            "themeData": {
-              "resource": "wordpress.org/themes",
-              "slug": "storefront"
-            },
-            "activate": true
-          }
-        ]
-      }
-    }
-  ],
-  "tests": {
-    "theme": "storefront-child"
-  }
-}
-```
-
-### Multiple Dependencies
-
-Many real-world scenarios require multiple dependencies. Install them in order if there are dependencies between the plugins themselves:
-
-```json
-{
-  "environments": [
-    {
-      "name": "WooCommerce with Extensions",
-      "blueprint": {
-        "preferredVersions": {
-          "php": "8.2",
-          "wp": "6.7"
-        },
-        "steps": [
-          {
-            "step": "installPlugin",
-            "pluginData": {
-              "resource": "wordpress.org/plugins",
-              "slug": "woocommerce"
-            },
-            "activate": true
-          },
-          {
-            "step": "installPlugin",
-            "pluginData": {
-              "resource": "wordpress.org/plugins",
-              "slug": "woocommerce-gateway-stripe"
-            },
-            "activate": true
-          }
-        ]
-      }
-    }
-  ],
-  "tests": {
-    "plugin": "my-stripe-extension"
-  }
-}
-```
-
-### Common Dependency Scenarios
-
-#### WooCommerce Extension
-
-Testing a WooCommerce extension with the Storefront theme:
-
-```json
-{
-  "environments": [
-    {
-      "name": "WooCommerce + Storefront",
-      "blueprint": {
-        "preferredVersions": {
-          "php": "8.2",
-          "wp": "6.7"
-        },
-        "steps": [
-          {
-            "step": "installPlugin",
-            "pluginData": {
-              "resource": "wordpress.org/plugins",
-              "slug": "woocommerce"
-            },
-            "activate": true
-          },
-          {
-            "step": "installTheme",
-            "themeData": {
-              "resource": "wordpress.org/themes",
-              "slug": "storefront"
-            },
-            "activate": true
-          }
-        ]
-      }
-    }
-  ],
-  "tests": {
-    "plugin": "my-woo-extension",
-    "phpunit": {
-      "phpunitPath": "vendor/bin/phpunit",
-      "configPath": "phpunit.xml.dist",
-      "bootstrapPath": "tests/bootstrap.php",
-      "testMode": "integration"
-    }
-  }
-}
-```
-
-#### Page Builder Add-on
-
-Testing an add-on for Elementor or another page builder:
-
-```json
-{
-  "environments": [
-    {
-      "name": "With Elementor",
-      "blueprint": {
-        "preferredVersions": {
-          "php": "8.2",
-          "wp": "6.7"
-        },
-        "steps": [
-          {
-            "step": "installPlugin",
-            "pluginData": {
-              "resource": "wordpress.org/plugins",
-              "slug": "elementor"
-            },
-            "activate": true
-          }
-        ]
-      }
-    }
-  ],
-  "tests": {
-    "plugin": "my-elementor-addon"
-  }
-}
-```
-
-#### Child Theme with Parent
-
-Testing a child theme that requires a specific parent theme:
-
-```json
-{
-  "environments": [
-    {
-      "name": "Child Theme Test",
-      "blueprint": {
-        "preferredVersions": {
-          "php": "8.2",
-          "wp": "6.7"
-        },
-        "steps": [
-          {
-            "step": "installTheme",
-            "themeData": {
-              "resource": "wordpress.org/themes",
-              "slug": "developer"
-            }
-          }
-        ]
-      }
-    }
-  ],
-  "tests": {
-    "theme": "developer-child"
-  }
-}
-```
-
-#### Local Theme Dependency
-
-Testing a child theme where the parent theme is in a sibling directory:
-
-```json
-{
-  "environments": [
-    {
-      "name": "With Local Parent Theme",
-      "blueprint": {
-        "preferredVersions": {
-          "php": "8.2",
-          "wp": "6.7"
-        }
-      },
-      "mounts": [
-        {
-          "hostPath": "../my-parent-theme",
-          "vfsPath": "/wordpress/wp-content/themes/my-parent-theme"
-        }
-      ]
-    }
-  ],
-  "tests": {
-    "theme": "my-child-theme"
-  }
-}
-```
-
-### Blueprint Step Reference
-
-For a complete list of available Blueprint steps, see the [WordPress Playground Blueprint Steps Documentation](https://wordpress.github.io/wordpress-playground/blueprints/steps#).
-
-Commonly used steps for dependencies:
-
-| Step | Description |
-|------|-------------|
-| `installPlugin` | Install and optionally activate a plugin (`activate: true`) |
-| `activatePlugin` | Activate an already installed/mounted plugin |
-| `installTheme` | Install and optionally activate a theme (`activate: true`) |
-| `activateTheme` | Activate an already installed/mounted theme |
-| `runWpInstallationWizard` | Complete WordPress setup wizard |
-| `setSiteOptions` | Configure WordPress options (useful for plugin settings) |
-| `runPHP` | Execute custom PHP code for advanced setup |
-
-### Testing Across Dependency Versions
-
-Test your plugin or theme against multiple versions of its dependencies using matrix testing:
-
-```json
-{
-  "environments": [
-    {
-      "name": "WooCommerce Latest",
-      "blueprint": {
-        "preferredVersions": { "php": "8.2", "wp": "6.7" },
-        "steps": [
-          {
-            "step": "installPlugin",
-            "pluginData": {
-              "resource": "wordpress.org/plugins",
-              "slug": "woocommerce"
-            },
-            "activate": true
-          }
-        ]
-      }
-    },
-    {
-      "name": "WooCommerce 8.5",
-      "blueprint": {
-        "preferredVersions": { "php": "8.1", "wp": "6.5" },
-        "steps": [
-          {
-            "step": "installPlugin",
-            "pluginData": {
-              "resource": "url",
-              "url": "https://downloads.wordpress.org/plugin/woocommerce.8.5.0.zip"
-            },
-            "activate": true
-          }
-        ]
-      }
-    }
-  ],
-  "tests": {
-    "plugin": "my-plugin"
-  }
-}
-```
-
-### External Blueprint Files
-
-For complex dependency setups, you can extract the Blueprint to a separate JSON file:
-
-**wp-tester.json:**
-```json
-{
-  "environments": [
-    {
-      "name": "Production-like Environment",
-      "blueprint": "./blueprints/woocommerce-full.json"
-    }
-  ],
-  "tests": {
-    "plugin": "my-plugin"
-  }
-}
-```
-
-**blueprints/woocommerce-full.json:**
-```json
-{
-  "preferredVersions": {
-    "php": "8.2",
-    "wp": "6.7"
-  },
-  "steps": [
-    {
-      "step": "installPlugin",
-      "pluginData": { "resource": "wordpress.org/plugins", "slug": "woocommerce" },
-      "activate": true
-    },
-    {
-      "step": "installTheme",
-      "themeData": { "resource": "wordpress.org/themes", "slug": "storefront" },
-      "activate": true
-    },
-    {
-      "step": "runWpInstallationWizard",
-      "options": { "blogTitle": "Test Store" }
-    }
-  ]
-}
-```
-
-This separation makes it easier to share common Blueprint configurations across multiple test environments or projects.
+For a complete list of available steps, see the [WordPress Playground Blueprint Steps Documentation](https://wordpress.github.io/wordpress-playground/blueprints/steps#).
 
 ## Complete Examples
 
