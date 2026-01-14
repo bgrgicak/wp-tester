@@ -10,6 +10,7 @@ export type {
   Mount,
   Blueprint,
   JsonReporterOptions,
+  WatchConfig,
 } from "./wp-tester-config";
 
 export type {

@@ -88,6 +88,85 @@ function getSmokeTestFilter(testType?: TestType): TestType | undefined | false {
   return smokeTestTypes.includes(testType) ? testType : false;
 }
 
+export interface TestResult {
+  success: boolean;
+  hasTests: boolean;
+}
+
+/**
+ * Execute tests and return results without exiting the process.
+ * Used internally and by watch mode.
+ */
+export const executeTests = async (
+  configPath: string,
+  options?: RunTestsOptions
+): Promise<TestResult> => {
+  const { testType, phpunitArgs } = options || {};
+  const finalConfigPath = await resolveConfigPath(configPath);
+
+  // Validate configuration before running tests
+  const isValid = await validateConfig(finalConfigPath);
+  if (!isValid) {
+    process.exit(1);
+  }
+
+  // Run all test suites and collect results
+  const reports: Report[] = [];
+
+  // Determine which tests to run based on testType parameter
+  const shouldRunPhpUnit = !testType || testType === "phpunit";
+
+  // Run smoke tests (wp, plugin, theme) - smoke tests package handles whether to run
+  const smokeTestFilter = getSmokeTestFilter(testType);
+  if (smokeTestFilter !== false) {
+    const smokeTestReport = await runSmokeTests(
+      finalConfigPath,
+      smokeTestFilter
+    );
+    if (smokeTestReport.results.summary.tests > 0) {
+      reports.push(smokeTestReport);
+    }
+  }
+
+  // Run PHPUnit tests
+  if (shouldRunPhpUnit) {
+    const phpunitReport = await runPhpunitTests(finalConfigPath, phpunitArgs);
+    // Always include report if PHPUnit was configured to run
+    // This ensures bootstrap failures are visible
+    if (phpunitReport.results.summary.tests > 0) {
+      reports.push(phpunitReport);
+    }
+  }
+
+  // No tests were run
+  if (reports.length === 0) {
+    clack.log.error("No tests were run. Check your configuration.");
+    return { success: false, hasTests: false };
+  }
+
+  // Merge results from all test suites
+  const mergedReport = mergeReports(reports);
+
+  // Display unified summary
+  const { summary, tests } = mergedReport.results;
+  const success = summary.failed === 0;
+
+  // Print failed test details
+  const failedTests = tests.filter(test => test.status === 'failed');
+  if (failedTests.length > 0) {
+    for (const test of failedTests) {
+      if (test.trace) {
+        console.error(`\n${test.name}:\n${test.trace}`);
+      }
+    }
+  }
+
+  // Print final combined summary
+  printSummary(summary);
+
+  return { success, hasTests: true };
+};
+
 export const runTests = async (
   configPath: string,
   options?: RunTestsOptions
@@ -116,11 +195,9 @@ export const runTests = async (
     finalConfigPath = newPath;
   }
 
-  const absoluteConfigPath = path.resolve(process.cwd(), finalConfigPath);
+  const result = await executeTests(finalConfigPath, options);
 
-  // Validate configuration before running tests
-  const isValid = await validateConfig(absoluteConfigPath);
-  if (!isValid) {
+  if (!result.hasTests) {
     process.exit(1);
   }
 
@@ -133,7 +210,7 @@ export const runTests = async (
   // Run smoke tests (wp, plugin, theme) - smoke tests package handles whether to run
   const smokeTestFilter = getSmokeTestFilter(testType);
   const smokeTestReport = await runSmokeTests(
-    absoluteConfigPath,
+    finalConfigPath,
     smokeTestFilter
   );
   if (smokeTestReport.results.summary.tests > 0) {
@@ -142,7 +219,7 @@ export const runTests = async (
 
   // Run PHPUnit tests
   if (shouldRunPhpUnit) {
-    const phpunitReport = await runPhpunitTests(absoluteConfigPath, phpunitArgs);
+    const phpunitReport = await runPhpunitTests(finalConfigPath, phpunitArgs);
     // Include report only if it has tests
     if (phpunitReport.results.summary.tests > 0) {
       reports.push(phpunitReport);

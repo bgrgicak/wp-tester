@@ -40,7 +40,9 @@ This command validates your `wp-tester.json` file against the JSON schema to ens
 
 ### Validation Options
 
-- `--config` or `-c`: Specify a custom path to your configuration file (default: `./wp-tester.json`)
+- `--config` or `-c`: Specify a custom path to your configuration file or directory (default: `./wp-tester.json`)
+  - When a directory path is provided, wp-tester will look for `wp-tester.json` within that directory
+  - When a file path is provided, wp-tester will use that specific file
 
 **Examples:**
 
@@ -50,6 +52,9 @@ wp-tester config validate
 
 # Validate a configuration file at a custom location
 wp-tester config validate --config ./configs/prod-config.json
+
+# Validate using a directory path (looks for wp-tester.json in the directory)
+wp-tester config validate --config /path/to/project
 ```
 
 The validation will check for:
@@ -535,6 +540,99 @@ You can use multiple reporters simultaneously:
     ["json", { "outputFile": "ci-results.json" }]
   ]
 }
+```
+
+#### `tests.watch`
+
+**Type:** `Object`
+**Required:** No
+**Description:** Configures watch mode behavior when using `wp-tester test --watch`. Controls which files trigger test re-runs.
+
+Watch mode monitors the project directory for file changes. The project directory is determined by:
+- The directory containing `wp-tester.json` if no `projectHostPath` is specified
+- The `projectHostPath` configuration option if specified
+- When using `--config` with a directory path, the directory itself is used as the project directory
+
+**Properties:**
+
+##### `tests.watch.include`
+
+**Type:** `Array<string>`
+**Required:** No
+**Description:** Glob patterns for files/directories to watch. If not specified, watches all files in the project directory.
+
+**Examples:**
+```json
+{
+  "tests": {
+    "watch": {
+      "include": ["src/**/*.php", "tests/**/*.php"]
+    }
+  }
+}
+```
+
+```json
+{
+  "tests": {
+    "watch": {
+      "include": ["**/*.php", "**/*.js"]
+    }
+  }
+}
+```
+
+##### `tests.watch.exclude`
+
+**Type:** `Array<string>`
+**Required:** No
+**Default:** `["**/node_modules/**", "**/vendor/**", "**/.git/**"]`
+**Description:** Glob patterns to exclude from watching. These patterns are checked before include patterns.
+
+**Example:**
+```json
+{
+  "tests": {
+    "watch": {
+      "exclude": ["vendor/**", "node_modules/**", "*.log", "coverage/**"]
+    }
+  }
+}
+```
+
+**Complete Example:**
+
+```json
+{
+  "tests": {
+    "plugin": "my-plugin",
+    "phpunit": {
+      "phpunitPath": "vendor/bin/phpunit",
+      "configPath": "phpunit.xml.dist"
+    },
+    "watch": {
+      "include": ["src/**/*.php", "tests/**/*.php", "includes/**/*.php"],
+      "exclude": ["vendor/**", "node_modules/**", "*.log"]
+    }
+  }
+}
+```
+
+**Behavior:**
+
+1. If `include` is specified, only files matching those patterns trigger re-runs
+2. Files matching `exclude` patterns are always ignored
+3. If `include` is not specified, all files (except excluded ones) trigger re-runs
+4. Default excludes cover common directories that shouldn't trigger tests (node_modules, vendor, .git)
+
+**Usage:**
+
+```bash
+# Start watch mode
+wp-tester test --watch
+
+# Watch mode with specific test type
+wp-tester test --watch --test phpunit
 ```
 
 ## Complete Examples

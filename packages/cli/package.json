@@ -36,10 +36,12 @@
     "@wp-tester/smoke-tests": "*",
     "ajv": "^8.17.1",
     "picocolors": "^1.1.1",
+    "picomatch": "^4.0.3",
     "yargs": "^18.0.0"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
+    "@types/picomatch": "^4.0.2",
     "@types/yargs": "^17.0.35",
     "@wp-playground/blueprints": "3.0.15",
     "@wp-playground/cli": "3.0.15",

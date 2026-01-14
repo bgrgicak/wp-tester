@@ -29,14 +29,14 @@ void yargs(hideBin(process.argv))
       return yargs
         .positional("action", {
           describe: "Action to perform",
-          type: "string" as const,
+          type: "string",
           choices: ["validate", ...optionNames] as const,
           demandOption: true,
         })
         .option("config", {
           alias: "c",
           describe: "Path to wp-tester.json config file",
-          type: "string" as const,
+          type: "string",
           default: "./wp-tester.json",
         });
     },
@@ -53,18 +53,24 @@ void yargs(hideBin(process.argv))
         .option("config", {
           alias: "c",
           describe: "Path to wp-tester.json config file",
-          type: "string" as const,
+          type: "string",
           default: "./wp-tester.json",
         })
         .option("test", {
           alias: "t",
           describe: "Type of test to run (wp, plugin, theme, or phpunit)",
-          type: "string" as const,
+          type: "string",
           choices: ["wp", "plugin", "theme", "phpunit"] as const,
+        })
+        .option("watch", {
+          alias: "w",
+          describe: "Watch for file changes and re-run tests automatically",
+          type: "boolean",
+          default: false,
         })
         .option("passWithNoTests", {
           describe: "Allow the test suite to pass when no tests are executed",
-          type: "boolean" as const,
+          type: "boolean",
           default: false,
         });
     },

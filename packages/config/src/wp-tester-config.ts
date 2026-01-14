@@ -129,6 +129,11 @@ export interface Tests {
   phpunit?: PHPUnitConfig;
 
   /**
+   * Watch mode configuration.
+   * Controls which files are watched when using --watch flag.
+   */
+  watch?: WatchConfig;
+  /**
    * Allow the test suite to pass when no tests are executed.
    * By default, wp-tester exits with code 1 when no tests are found.
    * Set to true to exit with code 0 instead (similar to Jest's --passWithNoTests).
@@ -205,6 +210,22 @@ export interface Environment {
    * @default false
    */
   skip?: boolean;
+}
+
+/**
+ * Watch mode configuration for automatic test re-runs.
+ */
+export interface WatchConfig {
+  /**
+   * Glob patterns for files/directories to watch (relative to projectHostPath).
+   * If not specified, watches all files in the projectHostPath directory.
+   */
+  include?: string[];
+
+  /**
+   * Glob patterns to exclude from watching.
+   */
+  exclude?: string[];
 }
 
 /**

@@ -10,6 +10,7 @@ export type {
   Mount,
   Blueprint,
   JsonReporterOptions,
+  WatchConfig,
 } from "./types";
 
 // Resolved types (after resolveConfig())
@@ -33,6 +34,7 @@ export {
   getProjectDir,
   getConfigDir,
   getConfigPath,
+  normalizeConfigPath,
   resolveAbsolute,
 } from "./config";
 

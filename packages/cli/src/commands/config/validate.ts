@@ -1,8 +1,7 @@
 import { readFile } from 'fs/promises';
-import path from 'path';
 import Ajv, { type ErrorObject } from "ajv";
 import pc from "picocolors";
-import { getSchemaPath, type WPTesterConfig } from "@wp-tester/config";
+import { getSchemaPath, normalizeConfigPath, type WPTesterConfig } from "@wp-tester/config";
 import * as clack from "../../cli/theme";
 
 interface ValidationErrorDisplay {
@@ -114,8 +113,8 @@ export function formatValidationError(error: ErrorObject): ValidationErrorDispla
  */
 export async function validateConfig(configPath: string): Promise<boolean> {
   try {
-    // Resolve config path relative to cwd
-    const resolvedConfigPath = path.resolve(process.cwd(), configPath);
+    // Resolve config path relative to cwd and normalize (handles directory paths)
+    const resolvedConfigPath = normalizeConfigPath(configPath);
 
     const config = JSON.parse(await readFile(resolvedConfigPath, "utf-8")) as unknown;
     // Get schema path from config package

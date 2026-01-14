@@ -1,17 +1,31 @@
-import { runTests } from './runner';
+import { runTests, executeTests } from './runner';
+import { runWatchMode } from './watcher';
 import type { TestType } from '@wp-tester/config';
+import path from 'path';
 
 interface TestArgs {
   config: string;
   test?: TestType;
+  watch?: boolean;
   passWithNoTests?: boolean;
   '--'?: string[];
 }
 
 export const testHandler = async (argv: TestArgs): Promise<void> => {
-  const { config, test, passWithNoTests } = argv;
+  const { config, test, watch, passWithNoTests } = argv;
   const phpunitArgs = argv['--'] || [];
-  await runTests(config, { testType: test, phpunitArgs, passWithNoTests });
+
+  if (watch) {
+    const absoluteConfigPath = path.resolve(process.cwd(), config);
+    await runWatchMode({
+      configPath: absoluteConfigPath,
+      onRunTests: async () => {
+        await executeTests(absoluteConfigPath, { testType: test, phpunitArgs, passWithNoTests });
+      },
+    });
+  } else {
+    await runTests(config, { testType: test, phpunitArgs, passWithNoTests });
+  }
 };
 
 export default testHandler;
