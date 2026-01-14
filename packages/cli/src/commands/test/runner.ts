@@ -102,7 +102,7 @@ export const executeTests = async (
   options?: RunTestsOptions
 ): Promise<TestResult> => {
   const { testType, phpunitArgs } = options || {};
-  let finalConfigPath = await resolveConfigPath(configPath);
+  const finalConfigPath = await resolveConfigPath(configPath);
 
   // Validate configuration before running tests
   const isValid = await validateConfig(finalConfigPath);

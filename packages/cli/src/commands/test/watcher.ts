@@ -92,7 +92,10 @@ export async function runWatchMode(options: WatchOptions): Promise<void> {
     }
 
     isRunning = true;
-    console.clear();
+    // Clear screen and move cursor to top-left using ANSI escape codes
+    // \x1b[2J clears the entire screen, \x1b[3J clears scrollback, \x1b[H moves cursor to home
+    // This is more reliable than console.clear() in watch mode
+    process.stdout.write('\x1b[2J\x1b[3J\x1b[H');
     clack.log.info("Running tests...\n");
 
     try {
@@ -104,7 +107,7 @@ export async function runWatchMode(options: WatchOptions): Promise<void> {
       }
     } finally {
       isRunning = false;
-      clack.log.info("\nWatching for changes... (Enter to re-run, q to quit)");
+      clack.log.info("Watching for changes... (Enter to re-run, q to quit)");
 
       if (pendingRun) {
         pendingRun = false;
@@ -127,7 +130,6 @@ export async function runWatchMode(options: WatchOptions): Promise<void> {
   try {
     watcher = watch(projectDir, { recursive: true }, (eventType, filename) => {
       if (filename && matcher.shouldWatch(filename)) {
-        clack.log.step(`File changed: ${filename}`);
         scheduleRun();
       }
     });
