@@ -18,6 +18,8 @@ export interface RunTestsOptions {
   phpunitArgs?: string[];
   /** Allow the test suite to pass when no tests are executed (CLI override) */
   passWithNoTests?: boolean;
+  /** Only display failed tests in output (CLI override) */
+  failedOnly?: boolean;
 }
 
 /**
@@ -101,7 +103,7 @@ export const executeTests = async (
   configPath: string,
   options?: RunTestsOptions
 ): Promise<TestResult> => {
-  const { testType, phpunitArgs } = options || {};
+  const { testType, phpunitArgs, failedOnly } = options || {};
   const finalConfigPath = await resolveConfigPath(configPath);
 
   // Validate configuration before running tests
@@ -121,7 +123,8 @@ export const executeTests = async (
   if (smokeTestFilter !== false) {
     const smokeTestReport = await runSmokeTests(
       finalConfigPath,
-      smokeTestFilter
+      smokeTestFilter,
+      { failedOnly }
     );
     if (smokeTestReport.results.summary.tests > 0) {
       reports.push(smokeTestReport);
@@ -130,7 +133,7 @@ export const executeTests = async (
 
   // Run PHPUnit tests
   if (shouldRunPhpUnit) {
-    const phpunitReport = await runPhpunitTests(finalConfigPath, phpunitArgs);
+    const phpunitReport = await runPhpunitTests(finalConfigPath, { phpunitArgs, failedOnly });
     // Always include report if PHPUnit was configured to run
     // This ensures bootstrap failures are visible
     if (phpunitReport.results.summary.tests > 0) {
@@ -171,7 +174,7 @@ export const runTests = async (
   configPath: string,
   options?: RunTestsOptions
 ): Promise<void> => {
-  const { testType, phpunitArgs, passWithNoTests } = options || {};
+  const { testType, phpunitArgs, passWithNoTests, failedOnly } = options || {};
   let finalConfigPath = await resolveConfigPath(configPath);
 
   // Check if config file exists
@@ -211,7 +214,8 @@ export const runTests = async (
   const smokeTestFilter = getSmokeTestFilter(testType);
   const smokeTestReport = await runSmokeTests(
     finalConfigPath,
-    smokeTestFilter
+    smokeTestFilter,
+    { failedOnly }
   );
   if (smokeTestReport.results.summary.tests > 0) {
     reports.push(smokeTestReport);
@@ -219,7 +223,7 @@ export const runTests = async (
 
   // Run PHPUnit tests
   if (shouldRunPhpUnit) {
-    const phpunitReport = await runPhpunitTests(finalConfigPath, phpunitArgs);
+    const phpunitReport = await runPhpunitTests(finalConfigPath, { phpunitArgs, failedOnly });
     // Include report only if it has tests
     if (phpunitReport.results.summary.tests > 0) {
       reports.push(phpunitReport);

@@ -1,5 +1,5 @@
 import type { BlueprintV1Declaration } from "@wp-playground/blueprints";
-import type { Mount, Reporter, PHPUnitConfig, Tests, Environment, WPTesterConfig, TestMode, ProjectType } from "./wp-tester-config";
+import type { Mount, Reporters, PHPUnitConfig, Tests, Environment, WPTesterConfig, TestMode, ProjectType } from "./wp-tester-config";
 
 /**
  * Resolved PHPUnit configuration with absolute paths and required testMode.
@@ -55,5 +55,5 @@ export interface ResolvedWPTesterConfig extends Omit<WPTesterConfig, 'projectHos
   /** Resolved tests with absolute paths and defaults */
   tests: ResolvedTests;
   /** Reporters (always defined after resolution) */
-  reporters: Reporter[];
+  reporters: Reporters;
 }

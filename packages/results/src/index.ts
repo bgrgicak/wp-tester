@@ -28,6 +28,7 @@ export {
   type RunEvent,
   type StreamWriter,
   type StreamingReporterOptions,
+  type ReporterFilterOptions,
 } from './streaming.js';
 export {
   VitestStreamingReporter,

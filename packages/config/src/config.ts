@@ -1,4 +1,4 @@
-import type { WPTesterConfig, Tests } from "./wp-tester-config";
+import type { WPTesterConfig, Tests, Reporters } from "./wp-tester-config";
 import type { ResolvedWPTesterConfig, ResolvedEnvironment, ResolvedTests, ResolvedPHPUnitConfig } from "./resolved-types";
 import type { BlueprintV1Declaration } from "@wp-playground/blueprints";
 import { readFile, writeFile, access, constants as fsConstants } from "fs/promises";
@@ -76,7 +76,6 @@ export function getDefaultConfig(): WPTesterConfig {
       },
     ],
     tests: {},
-    reporters: ["default"],
   };
 }
 
@@ -271,8 +270,28 @@ export async function resolveConfig(
     projectType = 'other';
   }
 
-  // Ensure reporters is set
-  const reporters = resolvedConfig.reporters || ["default"];
+  // Ensure reporters is set with defaults
+  // If no reporters configured, default to showing all test statuses
+  const defaultReporterOptions = {
+    passed: true,
+    failed: true,
+    skipped: true,
+    pending: true,
+    other: true,
+  };
+
+  const reporters: Reporters = resolvedConfig.reporters ?? {
+    default: defaultReporterOptions,
+  };
+
+  // If default reporter is specified but has no options, apply defaults
+  if (reporters.default && Object.keys(reporters.default).length === 0) {
+    // Empty object means show only failed (all default to false)
+    // This is intentional - user explicitly configured empty options
+  } else if (reporters.default === undefined && !reporters.json) {
+    // No reporters configured at all, use default with all statuses shown
+    reporters.default = defaultReporterOptions;
+  }
 
   // Resolve environments: convert Environment[] to ResolvedEnvironment[]
   const resolvedEnvironments: ResolvedEnvironment[] = await Promise.all(

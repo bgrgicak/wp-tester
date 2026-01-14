@@ -65,15 +65,25 @@ export function selectTestFiles(
 }
 
 /**
+ * Options for running smoke tests
+ */
+export interface RunSmokeTestsOptions {
+  /** Only display failed tests in output */
+  failedOnly?: boolean;
+}
+
+/**
  * Run WordPress smoke tests
  *
  * @param config - Test configuration or path to config file
  * @param test - Optional filter to run only specific test type (wp, plugin, or theme)
+ * @param options - Additional options for the test run
  * @returns CTRF report with test results
  */
 export async function runSmokeTests(
   config: WPTesterConfig | string,
-  test?: TestType | false
+  test?: TestType | false,
+  options?: RunSmokeTestsOptions
 ): Promise<Report> {
   // Resolve config (loads from path if string, resolves paths)
   const resolvedConfig = await resolveConfig(config);
@@ -94,14 +104,20 @@ export async function runSmokeTests(
     return Promise.resolve(EMPTY_REPORT);
   }
 
-  // Determine if streaming should be enabled
-  const useStreaming = resolvedConfig.reporters?.includes("default") ?? true;
+  // Determine if streaming should be enabled (default reporter is configured)
+  const useStreaming = resolvedConfig.reporters?.default !== undefined;
+
+  // Get filter options from config or CLI override
+  const defaultReporterOptions = resolvedConfig.reporters?.default;
+  const filter = options?.failedOnly
+    ? { passed: false, failed: true, skipped: false, pending: false, other: false }
+    : defaultReporterOptions;
 
   // Create Vitest streaming reporter with streaming configured
   // Disable summary since the CLI will print a combined summary
   const vitestReporter = new VitestStreamingReporter(
     "wp-tester-smoke-tests",
-    new StreamingReporter({ enabled: useStreaming, showSummary: false })
+    new StreamingReporter({ enabled: useStreaming, showSummary: false, filter })
   );
   const reporter = vitestReporter.getStreamingReporter();
 

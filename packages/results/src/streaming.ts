@@ -89,6 +89,22 @@ function formatDuration(ms: number): string {
 }
 
 /**
+ * Filter options for controlling which test statuses are displayed
+ */
+export interface ReporterFilterOptions {
+  /** Show passed tests (default: false) */
+  passed?: boolean;
+  /** Show failed tests (default: false) */
+  failed?: boolean;
+  /** Show skipped tests (default: false) */
+  skipped?: boolean;
+  /** Show pending tests (default: false) */
+  pending?: boolean;
+  /** Show other test statuses (default: false) */
+  other?: boolean;
+}
+
+/**
  * Options for StreamingReporter constructor
  */
 export interface StreamingReporterOptions {
@@ -96,6 +112,8 @@ export interface StreamingReporterOptions {
   showRunBoundaries?: boolean;
   showSummary?: boolean;
   enabled?: boolean;
+  /** Filter options for which test statuses to display */
+  filter?: ReporterFilterOptions;
 }
 
 /**
@@ -159,6 +177,7 @@ export class StreamingReporter {
   private enabled = true;
   private showRunBoundaries = true;
   private showSummary = true;
+  private filter: ReporterFilterOptions;
 
   // Unified state
   private state: ReporterState;
@@ -173,6 +192,14 @@ export class StreamingReporter {
     this.showRunBoundaries = options.showRunBoundaries ?? true;
     this.showSummary = options.showSummary ?? true;
     this.enabled = options.enabled ?? true;
+    // Default filter: show all statuses (for backwards compatibility)
+    this.filter = options.filter ?? {
+      passed: true,
+      failed: true,
+      skipped: true,
+      pending: true,
+      other: true,
+    };
 
     this.state = {
       files: new Map(),
@@ -352,9 +379,35 @@ export class StreamingReporter {
   }
 
   /**
+   * Check if a test status should be displayed based on filter settings
+   */
+  private shouldShowStatus(status: TestState["status"]): boolean {
+    // Always show running tests (transient state)
+    if (status === "running") {
+      return true;
+    }
+
+    // Map status to filter property
+    const filterMap: Record<Exclude<TestState["status"], "running">, keyof ReporterFilterOptions> = {
+      passed: "passed",
+      failed: "failed",
+      skipped: "skipped",
+      pending: "pending",
+    };
+
+    const filterKey = filterMap[status];
+    return this.filter[filterKey] ?? false;
+  }
+
+  /**
    * Render a single test
    */
   private renderTest(test: TestState, depth: number, lines: string[]): void {
+    // Check if this test status should be displayed
+    if (!this.shouldShowStatus(test.status)) {
+      return;
+    }
+
     const indent = "  ".repeat(depth);
 
     switch (test.status) {

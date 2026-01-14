@@ -72,6 +72,11 @@ void yargs(hideBin(process.argv))
           describe: "Allow the test suite to pass when no tests are executed",
           type: "boolean",
           default: false,
+        })
+        .option("failed-only", {
+          describe: "Only display failed tests in output",
+          type: "boolean",
+          default: false,
         });
     },
     async (argv) => {
