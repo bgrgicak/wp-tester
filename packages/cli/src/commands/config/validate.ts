@@ -2,7 +2,7 @@ import { readFile } from 'fs/promises';
 import path from 'path';
 import Ajv, { type ErrorObject } from "ajv";
 import pc from "picocolors";
-import { getSchemaPath } from "@wp-tester/config";
+import { getSchemaPath, type WPTesterConfig } from "@wp-tester/config";
 import * as clack from "../../cli/theme";
 
 interface ValidationErrorDisplay {
@@ -157,6 +157,18 @@ export async function validateConfig(configPath: string): Promise<boolean> {
       }
 
       return false;
+    }
+
+    // Check for skipped environments and display info
+    const typedConfig = config as WPTesterConfig;
+    if (typedConfig.environments) {
+      const skippedEnvs = typedConfig.environments.filter(env => env.skip === true);
+      if (skippedEnvs.length > 0) {
+        for (const env of skippedEnvs) {
+          const envName = env.name || 'Unnamed environment';
+          clack.log.warn(pc.yellow(` ${envName} (Skipped)`));
+        }
+      }
     }
 
     return true;

@@ -6,45 +6,47 @@ import { login } from '@wp-playground/blueprints';
 
 // Get config from Vitest's provide/inject
 const config = inject('config') as ResolvedWPTesterConfig;
-const environments = config.environments;
+// Filter out skipped environments
+const environments = config.environments.filter(env => !env.skip);
 
 // Test each environment
-describe.each(environments)('WordPress Tests - $name', (environment) => {
-  let runtime: RunCLIServer;
-  let playground: RunCLIServer['playground'];
-  let documentRoot: string;
-  let bootError: Error | undefined;
+for (const environment of environments) {
+  describe(`${environment.name} - WordPress Tests`, () => {
+    let runtime: RunCLIServer;
+    let playground: RunCLIServer['playground'];
+    let documentRoot: string;
+    let bootError: Error | undefined;
 
-  beforeAll(async () => {
-    try {
-      runtime = await startPlayground(environment);
-      playground = runtime.playground;
-      documentRoot = await playground.documentRoot;
-    } catch (error) {
-      bootError = error as Error;
-    }
-  });
+    beforeAll(async () => {
+      try {
+        runtime = await startPlayground(environment);
+        playground = runtime.playground;
+        documentRoot = await playground.documentRoot;
+      } catch (error) {
+        bootError = error as Error;
+      }
+    });
 
-  afterAll(() => {
-    stopPlayground(runtime);
-  });
+    afterAll(() => {
+      stopPlayground(runtime);
+    });
 
-  it("should boot WordPress without errors", ({ task }) => {
-    if (bootError) {
-      task.meta["error"] = {
-        message: bootError?.message,
-        stack: bootError?.stack,
-      };
-    }
-    expect(bootError).toBeUndefined();
-  });
+    it("should boot WordPress without errors", ({ task }) => {
+      if (bootError) {
+        task.meta["error"] = {
+          message: bootError?.message,
+          stack: bootError?.stack,
+        };
+      }
+      expect(bootError).toBeUndefined();
+    });
 
-  describe.skipIf(bootError)("WordPress", () => {
-    it("create a post", async () => {
-      const postTitle = "Test Post";
-      const postContent = "Test content";
-      const result = await playground.run({
-        code: `<?php
+    describe.skipIf(bootError)("WordPress", () => {
+      it("create a post", async () => {
+        const postTitle = "Test Post";
+        const postContent = "Test content";
+        const result = await playground.run({
+          code: `<?php
           require_once "${documentRoot}/wp-load.php";
           $post_id = wp_insert_post([
             'post_title' => ${phpVar(postTitle)},
@@ -53,27 +55,28 @@ describe.each(environments)('WordPress Tests - $name', (environment) => {
           $post = get_post($post_id);
           echo json_encode($post);
         ?>`,
+        });
+
+        const post = result.json;
+        expect(post.post_title).toBe(postTitle);
+        expect(post.post_content).toBe(postContent);
       });
 
-      const post = result.json;
-      expect(post.post_title).toBe(postTitle);
-      expect(post.post_content).toBe(postContent);
-    });
+      it("should load wp-admin", async () => {
+        // Use the login blueprint step to authenticate
+        await login(playground, {
+          username: "admin",
+        });
 
-    it("should load wp-admin", async () => {
-      // Use the login blueprint step to authenticate
-      await login(playground, {
-        username: "admin",
+        // Access wp-admin - the cookie jar will handle cookies automatically
+        const response = await request(playground, {
+          url: "/wp-admin/",
+          method: "GET",
+        });
+
+        expect(response.httpStatusCode).toBe(200);
+        expect(response.text).toContain("Dashboard");
       });
-
-      // Access wp-admin - the cookie jar will handle cookies automatically
-      const response = await request(playground, {
-        url: "/wp-admin/",
-        method: "GET",
-      });
-
-      expect(response.httpStatusCode).toBe(200);
-      expect(response.text).toContain("Dashboard");
     });
   });
-});
+}

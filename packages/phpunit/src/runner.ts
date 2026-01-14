@@ -146,7 +146,7 @@ async function runPhpunitTestsForEnvironment(
 
     reporter.onEvent({
       type: "suite:start",
-      name: `PHPUnit ${testMode} tests - '${environment.name}'`,
+      name: `${environment.name} - PHPUnit ${testMode} tests`,
     });
 
     // Create TeamCity parser connected to the reporter
@@ -205,7 +205,7 @@ async function runPhpunitTestsForEnvironment(
     // Close the outer suite that was started earlier
     reporter.onEvent({
       type: "suite:end",
-      name: `PHPUnit ${testMode} tests - '${environment.name}'`,
+      name: `${environment.name} - PHPUnit ${testMode} tests`,
     });
 
     // Signal test run end to finalize timing
@@ -347,9 +347,10 @@ export async function runPhpunitTests(
     return Promise.resolve(EMPTY_REPORT);
   }
 
-  // Run tests for all environments
+  // Run tests for all enabled environments (skip those marked with skip: true)
   const reports: Report[] = [];
-  for (const environment of resolvedConfig.environments) {
+  const enabledEnvironments = resolvedConfig.environments.filter(env => !env.skip);
+  for (const environment of enabledEnvironments) {
     const report = await runPhpunitTestsForEnvironment(
       resolvedConfig,
       environment,

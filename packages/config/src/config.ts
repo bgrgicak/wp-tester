@@ -308,6 +308,7 @@ export async function resolveConfig(
         blueprint: resolvedBlueprint,
         mounts: resolvedMounts,
         env: env.env || {},
+        skip: env.skip ?? false,
       };
     })
   );

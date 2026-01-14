@@ -1276,6 +1276,11 @@
           "$ref": "#/definitions/Blueprint",
           "description": "WordPress Playground Blueprint configuration.\nCan be an inline blueprint object or a file path to a blueprint JSON file."
         },
+        "skip": {
+          "default": false,
+          "description": "Whether this environment should be skipped.\nSkipped environments are excluded from test execution.\nUseful for temporarily excluding environments without removing them from configuration.",
+          "type": "boolean"
+        },
         "env": {
           "$ref": "#/definitions/EnvironmentVariables",
           "default": {},
@@ -2894,7 +2899,7 @@
         },
         "phpunit": {
           "$ref": "#/definitions/PHPUnitConfig",
-          "description": "PHPUnit test configuration.\nWhen provided, runs PHPUnit tests with the specified paths.\nWhen undefined, PHPUnit tests are disabled."
+          "description": "PHPUnit test configuration.\nWhen provided, runs PHPUnit tests with the specified paths.\nWhen undefined, PHPUnit tests are not run."
         },
         "plugin": {
           "description": "Plugin slug to test.\nWhen provided, runs plugin-specific tests including activation, deactivation, and load tests.",
