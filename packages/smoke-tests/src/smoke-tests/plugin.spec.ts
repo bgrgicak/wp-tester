@@ -51,7 +51,7 @@ if (pluginSlug) {
             "--field=name",
             "--format=json",
           ]);
-          expect(activePlugins).toContain(pluginSlug + "FAKE");
+          expect(activePlugins).toContain(pluginSlug);
         });
       });
     });
