@@ -159,21 +159,12 @@ export const executeTests = async (
   const mergedReport = mergeReports(reports);
 
   // Display unified summary
-  const { summary, tests } = mergedReport.results;
+  const { summary } = mergedReport.results;
   const success = summary.failed === 0;
 
-  // Print failed test details
-  const failedTests = tests.filter(test => test.status === 'failed');
-  if (failedTests.length > 0) {
-    for (const test of failedTests) {
-      if (test.trace) {
-        console.error(`\n${test.name}:\n${test.trace}`);
-      }
-    }
-  }
-
-  // Print final combined summary
-  printSummary(summary);
+  // Print final combined summary with default reporter options
+  const defaultReporterOptions = resolvedConfig.reporters?.default;
+  printSummary(summary, defaultReporterOptions);
 
   return { success, hasTests: true };
 };

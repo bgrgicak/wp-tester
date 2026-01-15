@@ -46,7 +46,7 @@ export {
   createTeamCityParserStream,
   parseTeamCityOutput,
 } from './teamcity-parser.js';
-export { printSummary } from './summary.js';
+export { printSummary, type SummaryOptions } from './summary.js';
 
 export const EMPTY_REPORT: Report = {
   results: {

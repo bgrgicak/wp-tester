@@ -8,6 +8,16 @@ import type { Summary } from "ctrf";
 import pc from "picocolors";
 
 /**
+ * Options for filtering summary output based on test statuses
+ */
+export interface SummaryOptions {
+  passed?: boolean;
+  failed?: boolean;
+  skipped?: boolean;
+  pending?: boolean;
+}
+
+/**
  * Format duration in human-readable format
  */
 function formatDuration(ms: number): string {
@@ -21,22 +31,29 @@ function formatDuration(ms: number): string {
  * Print test summary to console
  *
  * @param summary - The test summary from a CTRF report
+ * @param options - Options for filtering which test statuses to show
  */
-export function printSummary(summary: Summary): void {
+export function printSummary(summary: Summary, options?: SummaryOptions): void {
   const duration = summary.stop - summary.start;
+
+  // Default to showing all statuses if no options provided
+  const showPassed = options?.passed ?? true;
+  const showFailed = options?.failed ?? true;
+  const showSkipped = options?.skipped ?? true;
+  const showPending = options?.pending ?? true;
 
   console.log("");
 
-  if (summary.passed > 0) {
+  if (summary.passed > 0 && showPassed) {
     console.log(pc.green(`  ✓ ${summary.passed} passed`));
   }
-  if (summary.failed > 0) {
+  if (summary.failed > 0 && showFailed) {
     console.log(pc.red(`  ✗ ${summary.failed} failed`));
   }
-  if (summary.skipped > 0) {
+  if (summary.skipped > 0 && showSkipped) {
     console.log(pc.yellow(`  ○ ${summary.skipped} skipped`));
   }
-  if (summary.pending > 0) {
+  if (summary.pending > 0 && showPending) {
     console.log(pc.yellow(`  ◔ ${summary.pending} pending`));
   }
 
@@ -52,7 +69,15 @@ export function printSummary(summary: Summary): void {
   console.log(pc.dim(`  ${summary.tests} tests in ${formatDuration(duration)}`));
   console.log("");
 
-  // Print icon legend
-  console.log(pc.dim("  Legend: ✓ passed  ✗ failed  ○ skipped  ◔ pending"));
-  console.log("");
+  // Build legend based on enabled statuses
+  const legendParts: string[] = [];
+  if (showPassed) legendParts.push("✓ passed");
+  if (showFailed) legendParts.push("✗ failed");
+  if (showSkipped) legendParts.push("○ skipped");
+  if (showPending) legendParts.push("◔ pending");
+
+  if (legendParts.length > 0) {
+    console.log(pc.dim(`  Legend: ${legendParts.join("  ")}`));
+    console.log("");
+  }
 }
