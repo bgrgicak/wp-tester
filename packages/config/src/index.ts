@@ -22,6 +22,7 @@ export type {
   ResolvedPHPUnitConfig,
   ResolvedTests,
   ResolvedBlueprint,
+  ResolvedReporters,
 } from './resolved-types';
 
 // Functions

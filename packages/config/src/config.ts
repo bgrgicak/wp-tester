@@ -1,5 +1,5 @@
-import type { WPTesterConfig, Tests, Reporters } from "./wp-tester-config";
-import type { ResolvedWPTesterConfig, ResolvedEnvironment, ResolvedTests, ResolvedPHPUnitConfig } from "./resolved-types";
+import type { WPTesterConfig, Tests } from "./wp-tester-config";
+import type { ResolvedWPTesterConfig, ResolvedEnvironment, ResolvedTests, ResolvedPHPUnitConfig, ResolvedReporters } from "./resolved-types";
 import type { BlueprintV1Declaration } from "@wp-playground/blueprints";
 import { readFile, writeFile, access, constants as fsConstants } from "fs/promises";
 import { existsSync, statSync } from "fs";
@@ -288,21 +288,27 @@ export async function resolveConfig(
     other: true,
   };
 
-  const reporters: Reporters = resolvedConfig.reporters ?? {
-    default: defaultReporterOptions,
+  const reporters: ResolvedReporters = {
+    ...(resolvedConfig.reporters ?? {}),
+    default: undefined, // Will be set below
   };
 
   // Normalize default reporter:
   // - `true` or empty object `{}` -> apply default options (show all)
   // - `false` -> disable default reporter (remove it)
   // - object with options -> use as-is
-  if (reporters.default === true || (typeof reporters.default === 'object' && Object.keys(reporters.default).length === 0)) {
-    reporters.default = defaultReporterOptions;
-  } else if (reporters.default === false) {
-    delete reporters.default;
-  } else if (reporters.default === undefined && !reporters.json) {
-    // No reporters configured at all, use default with all statuses shown
-    reporters.default = defaultReporterOptions;
+  const inputDefault = resolvedConfig.reporters?.default;
+  if (inputDefault === true || inputDefault === undefined || (typeof inputDefault === 'object' && Object.keys(inputDefault).length === 0)) {
+    // true, undefined, or empty object -> use defaults (show all)
+    if (inputDefault !== undefined || !resolvedConfig.reporters?.json) {
+      reporters.default = defaultReporterOptions;
+    }
+  } else if (inputDefault === false) {
+    // false -> disable default reporter
+    reporters.default = undefined;
+  } else {
+    // Object with specific options -> use as-is
+    reporters.default = inputDefault;
   }
 
   // Resolve environments: convert Environment[] to ResolvedEnvironment[]
