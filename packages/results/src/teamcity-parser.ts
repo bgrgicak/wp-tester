@@ -16,6 +16,7 @@
 
 import type { StreamEvent } from "./streaming.js";
 import type { StreamingReporter } from "./streaming.js";
+import { highlightStringDiff } from "./diff-utils.js";
 
 /**
  * TeamCity message types we care about
@@ -245,13 +246,38 @@ export class TeamCityParser {
 
         this.testStartTimes.delete(name);
         this.completedTests.add(name); // Mark as completed to skip testFinished
+
+        // Build trace with comparison diff if available
+        let trace = attributes.details || '';
+
+        // If this is a comparison failure, format the diff with color markers
+        if (attributes.type === 'comparisonFailure' &&
+            attributes.expected !== undefined &&
+            attributes.actual !== undefined) {
+              // Highlight character-level differences for better readability
+              const highlighted = highlightStringDiff(
+                attributes.expected,
+                attributes.actual
+              );
+
+              const diffOutput = [
+                `Expected:`,
+                highlighted.expected,
+                `Actual:`,
+                highlighted.actual,
+              ].join("\n");
+
+              // Reorder: path first, blank line, diff
+              trace = trace ? `${trace}\n${diffOutput}\n` : `\n${diffOutput}\n`;
+            }
+
         this.emit({
           type: "test:fail",
           name,
           suiteName: this.currentSuite || undefined,
           duration,
           message: attributes.message,
-          trace: attributes.details,
+          trace,
         });
         break;
       }

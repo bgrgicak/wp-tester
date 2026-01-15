@@ -426,6 +426,8 @@ Integration test mode runs your tests with the full WordPress environment loaded
 
 **When to use:** When your tests need WordPress functions, database access, or any WordPress-specific functionality.
 
+**How it works:** In integration mode, wp-tester automatically loads WordPress before your bootstrap file runs. Your bootstrap only needs to handle unit mode setup.
+
 ##### Default Behavior
 
 If you omit the `testMode` property, it defaults to `"unit"`:
@@ -466,18 +468,24 @@ When you run PHPUnit unit tests, WP Tester automatically:
 4. Generates `wp-tests-config.php` with proper database and path settings
 5. Sets the `WP_TESTS_DIR` environment variable
 
-**Your test bootstrap** should reference wordpress-tests-lib normally:
+**Your test bootstrap** only needs to handle unit mode (integration mode is handled by wp-tester):
 
 ```php
 <?php
+// Check for unit mode (WordPress test library)
 $_tests_dir = getenv( 'WP_TESTS_DIR' );
 
-if ( ! $_tests_dir ) {
-    $_tests_dir = rtrim( sys_get_temp_dir(), '/\\' ) . '/wordpress-tests-lib';
-}
+if ( $_tests_dir && file_exists( $_tests_dir . '/includes/functions.php' ) ) {
+    // Unit mode: Load WordPress test library
+    require_once $_tests_dir . '/includes/functions.php';
 
-require_once $_tests_dir . '/includes/functions.php';
-require $_tests_dir . '/includes/bootstrap.php';
+    tests_add_filter( 'muplugins_loaded', function() {
+        require dirname( __DIR__ ) . '/your-plugin.php';
+    } );
+
+    require $_tests_dir . '/includes/bootstrap.php';
+}
+// Note: Integration mode doesn't need bootstrap code - wp-tester loads WordPress automatically
 ```
 
 **Why unit tests only?**

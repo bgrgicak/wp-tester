@@ -9,7 +9,7 @@ import {
   resolveAbsolute,
 } from "@wp-tester/config";
 import type { Report } from "@wp-tester/results";
-import { EMPTY_REPORT, mergeReports, StreamingReporter, TeamCityParser } from "@wp-tester/results";
+import { EMPTY_REPORT, mergeReports, PHPUnitStreamingReporter, TeamCityParser } from "@wp-tester/results";
 import { startPlayground } from "@wp-tester/runtime";
 import { mountWordPressTestLibrary } from "./wordpress-test-lib";
 import { access } from "fs/promises";
@@ -142,7 +142,7 @@ async function runPhpunitTestsForEnvironment(
       ? config.reporters.default
       : undefined;
 
-    const reporter = new StreamingReporter({
+    const reporter = new PHPUnitStreamingReporter({
       enabled: useStreaming,
       showSummary: false,
       filter,

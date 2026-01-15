@@ -10,6 +10,7 @@
 
 import type { Test, TestStatus, Report } from "ctrf";
 import pc from "picocolors";
+import { applyDiffHighlighting } from "./diff-utils.js";
 
 /**
  * Spinner frames for animated loader
@@ -214,6 +215,14 @@ export class StreamingReporter {
   }
 
   /**
+   * Generate filter command for re-running a specific test
+   * Override in subclasses for framework-specific behavior
+   */
+  protected getFilterCommand(_testName: string, _suiteName?: string): string | null {
+    return null;
+  }
+
+  /**
    * Enable or disable run boundaries (header and summary)
    */
   setShowRunBoundaries(show: boolean): void {
@@ -247,7 +256,12 @@ export class StreamingReporter {
         this.onTestStart(event.name, event.suiteName, event.fileId);
         break;
       case "test:pass":
-        this.onTestPass(event.name, event.duration || 0, event.suiteName, event.fileId);
+        this.onTestPass(
+          event.name,
+          event.duration || 0,
+          event.suiteName,
+          event.fileId
+        );
         break;
       case "test:fail":
         this.onTestFail(
@@ -260,7 +274,12 @@ export class StreamingReporter {
         );
         break;
       case "test:skip":
-        this.onTestSkip(event.name, event.message, event.suiteName, event.fileId);
+        this.onTestSkip(
+          event.name,
+          event.message,
+          event.suiteName,
+          event.fileId
+        );
         break;
       case "test:pending":
         this.onTestPending(event.name, event.suiteName, event.fileId);
@@ -315,7 +334,10 @@ export class StreamingReporter {
     let hasRunningTests = false;
     for (const file of this.state.files.values()) {
       for (const suite of file.suites) {
-        if (suite.isLoading || suite.tests.some(t => t.status === "running")) {
+        if (
+          suite.isLoading ||
+          suite.tests.some((t) => t.status === "running")
+        ) {
           hasRunningTests = true;
           break;
         }
@@ -417,28 +439,98 @@ export class StreamingReporter {
         break;
       }
       case "passed": {
-        const durationStr = test.duration ? pc.dim(` ${formatDuration(test.duration)}`) : "";
+        const durationStr = test.duration
+          ? pc.dim(` ${formatDuration(test.duration)}`)
+          : "";
         lines.push(`${indent}${pc.green("✓")} ${test.name}${durationStr}`);
         break;
       }
       case "failed": {
-        const durationStr = test.duration ? pc.dim(` ${formatDuration(test.duration)}`) : "";
+        const durationStr = test.duration
+          ? pc.dim(` ${formatDuration(test.duration)}`)
+          : "";
         lines.push(`${indent}${pc.red("✗")} ${test.name}${durationStr}`);
         if (test.message) {
           const messageIndent = "  ".repeat(depth + 1);
-          const indentedMessage = test.message
-            .split("\n")
-            .map((line) => `${messageIndent}${pc.red(line)}`)
-            .join("\n");
-          lines.push(indentedMessage);
+          for (const line of test.message.split("\n")) {
+            lines.push(`${messageIndent}${pc.red(line)}`);
+          }
         }
         if (test.trace) {
           const traceIndent = "  ".repeat(depth + 1);
-          const indentedTrace = test.trace
-            .split("\n")
-            .map((line) => `${traceIndent}${pc.dim(line)}`)
-            .join("\n");
-          lines.push(indentedTrace);
+          const traceLines = test.trace.split("\n");
+
+          for (let i = 0; i < traceLines.length; i++) {
+            const line = traceLines[i];
+            const trimmed = line.trim();
+
+            // Detect Expected/Actual labels and color the values (supports multiline values)
+            if (trimmed === "Expected:" && i + 1 < traceLines.length) {
+              lines.push(`${traceIndent}${pc.dim("Expected:")}`);
+              i++; // Move to the first value line
+
+              // Continue processing lines until we hit Actual:, an empty line, or end of trace
+              while (i < traceLines.length) {
+                const valueLine = traceLines[i];
+                const valueTrimmed = valueLine.trim();
+
+                // Stop if we hit the Actual: label or empty line
+                if (valueTrimmed === "Actual:" || valueTrimmed === "") {
+                  i--; // Back up so the outer loop can process this line
+                  break;
+                }
+
+                if (valueTrimmed) {
+                  lines.push(
+                    `${traceIndent}${applyDiffHighlighting(valueLine, pc.red)}`
+                  );
+                }
+                i++;
+              }
+            } else if (trimmed === "Actual:" && i + 1 < traceLines.length) {
+              lines.push(`${traceIndent}${pc.dim("Actual:")}`);
+              i++; // Move to the first value line
+
+              // Continue processing lines until we hit an empty line or end of trace
+              while (i < traceLines.length) {
+                const valueLine = traceLines[i];
+                const valueTrimmed = valueLine.trim();
+
+                // Stop if we hit an empty line
+                if (valueTrimmed === "") {
+                  i--; // Back up so the outer loop can process this line
+                  break;
+                }
+
+                if (valueTrimmed) {
+                  lines.push(
+                    `${traceIndent}${applyDiffHighlighting(
+                      valueLine,
+                      pc.green
+                    )}`
+                  );
+                }
+                i++;
+              }
+            } else if (trimmed) {
+              // File paths, context lines, other trace info
+              lines.push(`${traceIndent}${pc.dim(line)}`);
+            } else {
+              // Empty lines (preserve them for spacing)
+              lines.push("");
+            }
+          }
+
+          // Add filter to re-run this specific test
+          if (test.name) {
+            const filterCmd = this.getFilterCommand(test.name, test.suiteName);
+            if (filterCmd) {
+              lines.push(
+                `${traceIndent}${pc.dim("Re-run only this test by appending:")}`
+              );
+              lines.push(`${traceIndent}${pc.dim(filterCmd)}`);
+            }
+          }
         }
         break;
       }
@@ -481,7 +573,7 @@ export class StreamingReporter {
    */
   private getOrCreateSuite(file: FileState, suiteName: string): SuiteState {
     // Find existing suite
-    let suite = file.suites.find(s => s.name === suiteName);
+    let suite = file.suites.find((s) => s.name === suiteName);
     if (!suite) {
       suite = {
         name: suiteName,
@@ -563,7 +655,9 @@ export class StreamingReporter {
    * Called when a test suite starts
    */
   onSuiteStart(name: string, fileId?: string): void {
-    const file = fileId ? this.getOrCreateFile(fileId) : this.getOrCreateFile("__global__");
+    const file = fileId
+      ? this.getOrCreateFile(fileId)
+      : this.getOrCreateFile("__global__");
     file.currentSuiteStack.push(name);
     const suite = this.getOrCreateSuite(file, name);
 
@@ -582,7 +676,9 @@ export class StreamingReporter {
    * Called when a test suite ends
    */
   onSuiteEnd(name: string, fileId?: string): void {
-    const file = fileId ? this.state.files.get(fileId) : this.state.files.get("__global__");
+    const file = fileId
+      ? this.state.files.get(fileId)
+      : this.state.files.get("__global__");
     if (file) {
       const index = file.currentSuiteStack.lastIndexOf(name);
       if (index !== -1) {
@@ -591,7 +687,7 @@ export class StreamingReporter {
 
       // Mark suite as no longer loading when it ends
       // This ensures loaders are removed even if no tests were reported
-      const suite = file.suites.find(s => s.name === name);
+      const suite = file.suites.find((s) => s.name === name);
       if (suite) {
         suite.isLoading = false;
 
@@ -614,7 +710,9 @@ export class StreamingReporter {
    * Called when a test starts
    */
   onTestStart(name: string, suiteName?: string, fileId?: string): void {
-    const file = fileId ? this.getOrCreateFile(fileId) : this.getOrCreateFile("__global__");
+    const file = fileId
+      ? this.getOrCreateFile(fileId)
+      : this.getOrCreateFile("__global__");
     const suite = this.getOrCreateSuite(file, suiteName || "Tests");
 
     // Mark ALL suites in this file as no longer loading once any test starts
@@ -635,8 +733,15 @@ export class StreamingReporter {
   /**
    * Called when a test passes
    */
-  onTestPass(name: string, duration: number, suiteName?: string, fileId?: string): void {
-    const file = fileId ? this.getOrCreateFile(fileId) : this.getOrCreateFile("__global__");
+  onTestPass(
+    name: string,
+    duration: number,
+    suiteName?: string,
+    fileId?: string
+  ): void {
+    const file = fileId
+      ? this.getOrCreateFile(fileId)
+      : this.getOrCreateFile("__global__");
     const suite = this.getOrCreateSuite(file, suiteName || "Tests");
 
     // Mark ALL suites in this file as no longer loading once any test completes
@@ -646,10 +751,12 @@ export class StreamingReporter {
     }
 
     // Find and update the test - try exact match first, then fallback to name-only match
-    let test = suite.tests.find(t => t.name === name && t.suiteName === suiteName);
+    let test = suite.tests.find(
+      (t) => t.name === name && t.suiteName === suiteName
+    );
     if (!test) {
       // Fallback: try to find by name only (handles cases where suiteName might differ)
-      test = suite.tests.find(t => t.name === name && t.status === "running");
+      test = suite.tests.find((t) => t.name === name && t.status === "running");
     }
 
     if (test) {
@@ -680,7 +787,9 @@ export class StreamingReporter {
     suiteName?: string,
     fileId?: string
   ): void {
-    const file = fileId ? this.getOrCreateFile(fileId) : this.getOrCreateFile("__global__");
+    const file = fileId
+      ? this.getOrCreateFile(fileId)
+      : this.getOrCreateFile("__global__");
     const suite = this.getOrCreateSuite(file, suiteName || "Tests");
 
     // Mark ALL suites in this file as no longer loading once any test completes
@@ -690,10 +799,12 @@ export class StreamingReporter {
     }
 
     // Find and update the test - try exact match first, then fallback to name-only match
-    let test = suite.tests.find(t => t.name === name && t.suiteName === suiteName);
+    let test = suite.tests.find(
+      (t) => t.name === name && t.suiteName === suiteName
+    );
     if (!test) {
       // Fallback: try to find by name only (handles cases where suiteName might differ)
-      test = suite.tests.find(t => t.name === name && t.status === "running");
+      test = suite.tests.find((t) => t.name === name && t.status === "running");
     }
 
     if (test) {
@@ -720,8 +831,15 @@ export class StreamingReporter {
   /**
    * Called when a test is skipped
    */
-  onTestSkip(name: string, reason?: string, suiteName?: string, fileId?: string): void {
-    const file = fileId ? this.getOrCreateFile(fileId) : this.getOrCreateFile("__global__");
+  onTestSkip(
+    name: string,
+    reason?: string,
+    suiteName?: string,
+    fileId?: string
+  ): void {
+    const file = fileId
+      ? this.getOrCreateFile(fileId)
+      : this.getOrCreateFile("__global__");
     const suite = this.getOrCreateSuite(file, suiteName || "Tests");
 
     // Mark ALL suites in this file as no longer loading once any test completes
@@ -731,10 +849,12 @@ export class StreamingReporter {
     }
 
     // Find and update the test - try exact match first, then fallback to name-only match
-    let test = suite.tests.find(t => t.name === name && t.suiteName === suiteName);
+    let test = suite.tests.find(
+      (t) => t.name === name && t.suiteName === suiteName
+    );
     if (!test) {
       // Fallback: try to find by name only (handles cases where suiteName might differ)
-      test = suite.tests.find(t => t.name === name && t.status === "running");
+      test = suite.tests.find((t) => t.name === name && t.status === "running");
     }
 
     if (test) {
@@ -758,14 +878,18 @@ export class StreamingReporter {
    * Called when a test is pending
    */
   onTestPending(name: string, suiteName?: string, fileId?: string): void {
-    const file = fileId ? this.getOrCreateFile(fileId) : this.getOrCreateFile("__global__");
+    const file = fileId
+      ? this.getOrCreateFile(fileId)
+      : this.getOrCreateFile("__global__");
     const suite = this.getOrCreateSuite(file, suiteName || "Tests");
 
     // Mark suite as no longer loading once first test completes
     suite.isLoading = false;
 
     // Find and update the test
-    const test = suite.tests.find(t => t.name === name && t.suiteName === suiteName);
+    const test = suite.tests.find(
+      (t) => t.name === name && t.suiteName === suiteName
+    );
     if (test) {
       test.status = "pending";
     } else {
@@ -804,7 +928,9 @@ export class StreamingReporter {
     }
 
     this.writer.writeLine("");
-    this.writer.writeLine(pc.dim(`  ${this.state.totalTests} tests in ${formatDuration(duration)}`));
+    this.writer.writeLine(
+      pc.dim(`  ${this.state.totalTests} tests in ${formatDuration(duration)}`)
+    );
     this.writer.writeLine("");
 
     // Print icon legend
@@ -825,8 +951,11 @@ export class StreamingReporter {
       for (const suite of file.suites) {
         for (const test of suite.tests) {
           const ctrf: Test = {
-            name: test.suiteName ? `${test.suiteName}::${test.name}` : test.name,
-            status: test.status === "running" ? "other" : test.status as TestStatus,
+            name: test.suiteName
+              ? `${test.suiteName}::${test.name}`
+              : test.name,
+            status:
+              test.status === "running" ? "other" : (test.status as TestStatus),
             duration: test.duration || 0,
           };
 
@@ -867,7 +996,13 @@ export class StreamingReporter {
   /**
    * Get current counts for external tracking
    */
-  getCounts(): { total: number; passed: number; failed: number; skipped: number; pending: number } {
+  getCounts(): {
+    total: number;
+    passed: number;
+    failed: number;
+    skipped: number;
+    pending: number;
+  } {
     return {
       total: this.state.totalTests,
       passed: this.state.passedTests,
