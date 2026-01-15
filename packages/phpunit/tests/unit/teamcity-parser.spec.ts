@@ -57,6 +57,33 @@ describe("TeamCityParser", () => {
       expect(events[3]).toEqual({ type: "suite:end", name: "TestClass" });
     });
 
+    it("should parse a comparison failure and format the diff", () => {
+      const output = `
+##teamcity[testSuiteStarted name='TestClass']
+##teamcity[testStarted name='testMethod']
+##teamcity[testFailed name='testMethod' message='Failed asserting that two strings are equal.' details='/path/to/file.php:42' type='comparisonFailure' actual='|'Hello World|'' expected='|'Hello World Test|'']
+##teamcity[testFinished name='testMethod' duration='50']
+##teamcity[testSuiteFinished name='TestClass']
+`;
+      const events = parseTeamCityOutput(output);
+
+      expect(events).toHaveLength(4);
+      expect(events[2]).toMatchObject({
+        type: "test:fail",
+        name: "testMethod",
+        suiteName: "TestClass",
+        message: "Failed asserting that two strings are equal.",
+      });
+
+      // Verify the trace includes the formatted diff with highlighting markers
+      const failEvent = events[2] as { trace?: string };
+      expect(failEvent.trace).toContain("Expected:");
+      expect(failEvent.trace).toContain("'Hello World« Test»'");
+      expect(failEvent.trace).toContain("Actual:");
+      expect(failEvent.trace).toContain("'Hello World'");
+      expect(failEvent.trace).toContain("/path/to/file.php:42");
+    });
+
     it("should parse a skipped test", () => {
       const output = `
 ##teamcity[testSuiteStarted name='TestClass']

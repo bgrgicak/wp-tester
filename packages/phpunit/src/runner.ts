@@ -185,22 +185,12 @@ async function runPhpunitTestsForEnvironment(
           write(chunk) {
             const text = stderrDecoder.decode(chunk, { stream: true });
             stderrCapture += text;
-            // Try to parse as TeamCity format first
-            parser.write(text);
 
-            // If streaming is disabled, also write non-TeamCity lines to stderr
+            // If streaming is disabled, write stderr to console
             // This ensures error messages still appear
             if (!useStreaming) {
-              const lines = text.split("\n");
-              for (const line of lines) {
-                if (!line.trim().startsWith("##teamcity[")) {
-                  process.stderr.write(line + "\n");
-                }
-              }
+              process.stderr.write(text);
             }
-          },
-          close() {
-            parser.flush();
           },
         })
       ),
