@@ -199,7 +199,7 @@ export interface JsonReporterOptions extends BaseReporterOptions {
  * Reporter configuration object.
  * Each key is a reporter name, and the value is its options.
  *
- * @example { "default": true }
+ * @example {}
  * @example { "default": { "failed": true, "passed": true } }
  * @example { "json": { "outputFile": "results.json", "failed": true } }
  */

@@ -1,13 +1,13 @@
 import type { BlueprintV1Declaration } from "@wp-playground/blueprints";
-import type { Mount, Reporters, PHPUnitConfig, Tests, Environment, WPTesterConfig, TestMode, ProjectType, BaseReporterOptions, JsonReporterOptions } from "./wp-tester-config";
+import type { Mount, PHPUnitConfig, Tests, Environment, WPTesterConfig, TestMode, ProjectType, BaseReporterOptions, JsonReporterOptions } from "./wp-tester-config";
 
 /**
  * Resolved reporters configuration.
- * After resolution, default is always an object (boolean values are converted).
+ * Supports boolean shorthand for default reporter (true = enable with defaults).
  */
-export interface ResolvedReporters extends Omit<Reporters, 'default'> {
-  /** Default reporter options (always an object after resolution, never boolean) */
-  default?: BaseReporterOptions;
+export interface ResolvedReporters {
+  /** Default reporter options (supports boolean shorthand: true = enable with defaults) */
+  default?: boolean | BaseReporterOptions;
   /** JSON reporter options */
   json?: JsonReporterOptions;
 }

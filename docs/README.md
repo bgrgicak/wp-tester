@@ -145,7 +145,6 @@ Test across multiple environments:
     }
   },
   "reporters": {
-    "default": true,
     "json": {
       "outputFile": "test-results.json"
     }
@@ -303,7 +302,6 @@ Generate machine-readable reports for CI pipelines:
 ```json
 {
   "reporters": {
-    "default": true,
     "json": {
       "outputFile": "test-results.json"
     }

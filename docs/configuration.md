@@ -490,7 +490,7 @@ However, integration tests load WordPress via `wp-load.php` before your bootstra
 
 **Type:** `Object`
 **Required:** No
-**Default:** `{ "default": true }`
+**Default:** `{}` (default console reporter enabled)
 
 **Description:** Configures how test results are displayed and saved. Each reporter can have filter options to control which test statuses are shown.
 
@@ -514,11 +514,11 @@ Outputs human-readable test results to the console.
 **Example:**
 ```json
 {
-  "reporters": {
-    "default": true
-  }
+  "reporters": {}
 }
 ```
+
+Or simply omit the property to use defaults.
 
 **With filter options (show only failed tests):**
 ```json
@@ -551,7 +551,7 @@ Outputs test results in CTRF (Common Test Report Format) JSON format to a file.
 
 **Default Behavior:**
 
-When `reporters` is omitted, defaults to `{ "default": true }` (console output with all statuses shown).
+When `reporters` is omitted (or `default` is `true` or omitted), console output with all statuses is shown.
 
 **Multiple Reporters:**
 
@@ -560,13 +560,14 @@ You can use multiple reporters simultaneously:
 ```json
 {
   "reporters": {
-    "default": true,
     "json": {
       "outputFile": "results.json"
     }
   }
 }
 ```
+
+Note: The default console reporter is enabled automatically when you add other reporters (like `json`), so you don't need to explicitly set `"default": true`.
 
 #### `tests.watch`
 
@@ -759,9 +760,6 @@ Test a plugin with default settings:
   ],
   "tests": {
     "wp": true
-  },
-  "reporters": {
-    "default": true
   }
 }
 ```
@@ -796,7 +794,6 @@ Test across multiple PHP and WordPress versions:
     "wp": true
   },
   "reporters": {
-    "default": true,
     "json": {
       "outputFile": "test-results.json"
     }
@@ -833,9 +830,6 @@ Test a theme with custom environment setup:
   "tests": {
     "theme": "my-theme",
     "wp": true
-  },
-  "reporters": {
-    "default": true
   }
 }
 ```
@@ -875,7 +869,6 @@ Test a plugin with PHPUnit integration. You can use `testMode` to control whethe
     }
   },
   "reporters": {
-    "default": true,
     "json": {
       "outputFile": "test-results.json"
     }

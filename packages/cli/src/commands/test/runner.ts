@@ -41,7 +41,9 @@ function applyFailedOnlyOverride(config: ResolvedWPTesterConfig): ResolvedWPTest
     reporters: {
       ...config.reporters,
       default: config.reporters?.default !== undefined
-        ? { ...config.reporters.default, ...failedOnlyFilter }
+        ? typeof config.reporters.default === 'object'
+          ? { ...config.reporters.default, ...failedOnlyFilter }
+          : failedOnlyFilter
         : failedOnlyFilter,
     },
   };

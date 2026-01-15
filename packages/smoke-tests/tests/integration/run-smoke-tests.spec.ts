@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { runSmokeTests } from '../../src/index.js';
 import type { WPTesterConfig } from '@wp-tester/config';
+import { resolveConfig } from "@wp-tester/config";
 import { TEST_PLUGIN_CONFIG_PATH, TEST_THEME_CONFIG_PATH } from "@wp-tester/test-fixtures";
 import { EMPTY_REPORT } from "@wp-tester/results";
 
@@ -20,7 +21,8 @@ describe("runSmokeTests integration", () => {
       },
     };
 
-    const report = await runSmokeTests(config);
+    const resolvedConfig = await resolveConfig(config);
+    const report = await runSmokeTests(resolvedConfig);
 
     expect(report).toBeDefined();
     expect(report.results).toBeDefined();
@@ -29,7 +31,8 @@ describe("runSmokeTests integration", () => {
   });
 
   it("should run plugin tests and return CTRF report", async () => {
-    const report = await runSmokeTests(TEST_PLUGIN_CONFIG_PATH);
+    const resolvedConfig = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
+    const report = await runSmokeTests(resolvedConfig);
 
     expect(report).toBeDefined();
     expect(report.results).toBeDefined();
@@ -46,7 +49,8 @@ describe("runSmokeTests integration", () => {
   });
 
   it("should run theme tests and return CTRF report", async () => {
-    const report = await runSmokeTests(TEST_THEME_CONFIG_PATH);
+    const resolvedConfig = await resolveConfig(TEST_THEME_CONFIG_PATH);
+    const report = await runSmokeTests(resolvedConfig);
 
     expect(report).toBeDefined();
     expect(report.results).toBeDefined();
@@ -73,6 +77,7 @@ describe("runSmokeTests integration", () => {
       tests: {},
     };
 
-    await expect(await runSmokeTests(config)).toBe(EMPTY_REPORT);
+    const resolvedConfig = await resolveConfig(config);
+    await expect(await runSmokeTests(resolvedConfig)).toBe(EMPTY_REPORT);
   });
 });

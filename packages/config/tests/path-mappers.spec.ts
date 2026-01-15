@@ -9,7 +9,7 @@ describe("Path Mappers", () => {
     projectType: "plugin",
     environments: [],
     tests: {},
-    reporters: { default: {} },
+    reporters: {},
   };
 
   const mockThemeConfig: ResolvedWPTesterConfig = {
@@ -18,7 +18,7 @@ describe("Path Mappers", () => {
     projectType: "theme",
     environments: [],
     tests: {},
-    reporters: { default: {} },
+    reporters: {},
   };
 
   describe("hostToVfs", () => {

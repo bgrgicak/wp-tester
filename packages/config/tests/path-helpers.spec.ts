@@ -80,7 +80,6 @@ describe('Path Helper Functions', () => {
     const baseConfig: WPTesterConfig = {
       environments: [],
       tests: {},
-      reporters: { default: true },
     };
 
     describe('without projectHostPath config', () => {

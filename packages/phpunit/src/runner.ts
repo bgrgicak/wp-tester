@@ -4,7 +4,6 @@ import type {
   ResolvedEnvironment,
 } from "@wp-tester/config";
 import {
-  resolveConfig,
   parseBootstrapPath,
   hostToVfs,
   resolveAbsolute,
@@ -138,8 +137,10 @@ async function runPhpunitTestsForEnvironment(
     // Disable summary since the CLI will print a combined summary
     const useStreaming = config.reporters?.default !== undefined;
 
-    // Get filter options from config reporters
-    const filter = config.reporters?.default;
+    // Get filter options from config reporters (only if it's an object, not boolean)
+    const filter = typeof config.reporters?.default === 'object'
+      ? config.reporters.default
+      : undefined;
 
     const reporter = new StreamingReporter({
       enabled: useStreaming,
@@ -320,12 +321,12 @@ export interface RunPhpunitTestsOptions {
 /**
  * Run PHPUnit tests in WordPress Playground environment
  *
- * @param config - Resolved test configuration, unresolved config, or path to config file
+ * @param config - Resolved test configuration
  * @param phpunitArgsOrOptions - Additional PHPUnit arguments or options object
  * @returns CTRF report with test results
  */
 export async function runPhpunitTests(
-  config: ResolvedWPTesterConfig | WPTesterConfig | string,
+  config: ResolvedWPTesterConfig,
   phpunitArgsOrOptions?: string[] | RunPhpunitTestsOptions
 ): Promise<Report> {
   // Support both old signature (string[]) and new signature (options object)
@@ -334,17 +335,8 @@ export async function runPhpunitTests(
     : phpunitArgsOrOptions || {};
   const { phpunitArgs } = options;
 
-  // Resolve config if needed (only if string path or unresolved config provided)
-  let resolvedConfig: ResolvedWPTesterConfig;
-  if (typeof config === "string") {
-    resolvedConfig = await resolveConfig(config);
-  } else if ("projectHostPath" in config && typeof config.projectHostPath === "string") {
-    resolvedConfig = config as ResolvedWPTesterConfig;
-  } else {
-    resolvedConfig = await resolveConfig(config);
-  }
-
   // Merge additional PHPUnit args if provided
+  let resolvedConfig = { ...config };
   if (phpunitArgs && phpunitArgs.length > 0) {
     const configArgs = resolvedConfig.tests.phpunit?.phpunitArgs || [];
     const mergedArgs = [...configArgs, ...phpunitArgs];
@@ -353,10 +345,12 @@ export async function runPhpunitTests(
       ...resolvedConfig,
       tests: {
         ...resolvedConfig.tests,
-        phpunit: resolvedConfig.tests.phpunit ? {
-          ...resolvedConfig.tests.phpunit,
-          phpunitArgs: mergedArgs,
-        } : undefined,
+        phpunit: resolvedConfig.tests.phpunit
+          ? {
+              ...resolvedConfig.tests.phpunit,
+              phpunitArgs: mergedArgs,
+            }
+          : undefined,
       },
     };
   }
@@ -379,7 +373,9 @@ export async function runPhpunitTests(
 
   // Run tests for all enabled environments (skip those marked with skip: true)
   const reports: Report[] = [];
-  const enabledEnvironments = resolvedConfig.environments.filter(env => !env.skip);
+  const enabledEnvironments = resolvedConfig.environments.filter(
+    (env) => !env.skip
+  );
   for (const environment of enabledEnvironments) {
     const report = await runPhpunitTestsForEnvironment(
       resolvedConfig,

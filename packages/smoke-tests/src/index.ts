@@ -8,7 +8,6 @@ import { startVitest, type Reporter } from "vitest/node";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { WPTesterConfig, Tests, TestType, ResolvedWPTesterConfig } from "@wp-tester/config";
-import { resolveConfig } from "@wp-tester/config";
 import {
   EMPTY_REPORT,
   VitestStreamingReporter,
@@ -67,23 +66,16 @@ export function selectTestFiles(
 /**
  * Run WordPress smoke tests
  *
- * @param config - Resolved test configuration, unresolved config, or path to config file
+ * @param config - Resolved test configuration
  * @param test - Optional filter to run only specific test type (wp, plugin, or theme)
  * @returns CTRF report with test results
  */
 export async function runSmokeTests(
-  config: ResolvedWPTesterConfig | WPTesterConfig | string,
+  config: ResolvedWPTesterConfig,
   test?: TestType | false
 ): Promise<Report> {
-  // Resolve config if needed (only if string path provided)
-  const resolvedConfig = typeof config === "string"
-    ? await resolveConfig(config)
-    : "projectHostPath" in config && typeof config.projectHostPath === "string"
-      ? config as ResolvedWPTesterConfig
-      : await resolveConfig(config);
-
   // Check if any tests are configured
-  if (!shouldRunSmokeTests(resolvedConfig)) {
+  if (!shouldRunSmokeTests(config)) {
     return Promise.resolve(EMPTY_REPORT);
   }
   // Get package root directory
@@ -92,17 +84,19 @@ export async function runSmokeTests(
   const packageRoot = join(__dirname, "..");
 
   // Select test files based on config and filter
-  const testFiles = selectTestFiles(resolvedConfig.tests, test);
+  const testFiles = selectTestFiles(config.tests, test);
 
   if (testFiles.length === 0) {
     return Promise.resolve(EMPTY_REPORT);
   }
 
   // Determine if streaming should be enabled (default reporter is configured)
-  const useStreaming = resolvedConfig.reporters?.default !== undefined;
+  const useStreaming = config.reporters?.default !== undefined;
 
-  // Get filter options from config reporters
-  const filter = resolvedConfig.reporters?.default;
+  // Get filter options from config reporters (only if it's an object, not boolean)
+  const filter = typeof config.reporters?.default === 'object'
+    ? config.reporters.default
+    : undefined;
 
   // Create Vitest streaming reporter with streaming configured
   // Disable summary since the CLI will print a combined summary
@@ -123,7 +117,7 @@ export async function runSmokeTests(
     run: true,
     reporters,
     provide: {
-      config: resolvedConfig,
+      config: config,
     },
   });
 
