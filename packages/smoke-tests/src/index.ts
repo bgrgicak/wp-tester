@@ -12,7 +12,7 @@ import { resolveConfig } from "@wp-tester/config";
 import {
   EMPTY_REPORT,
   VitestStreamingReporter,
-  StreamingReporter,
+  VitestStreamingBase,
 } from "@wp-tester/results";
 import type { Report } from "@wp-tester/results";
 
@@ -69,11 +69,13 @@ export function selectTestFiles(
  *
  * @param config - Test configuration or path to config file
  * @param test - Optional filter to run only specific test type (wp, plugin, or theme)
+ * @param vitestArgs - Additional arguments to pass to Vitest CLI
  * @returns CTRF report with test results
  */
 export async function runSmokeTests(
   config: WPTesterConfig | string,
-  test?: TestType | false
+  test?: TestType | false,
+  vitestArgs?: string[]
 ): Promise<Report> {
   // Resolve config (loads from path if string, resolves paths)
   const resolvedConfig = await resolveConfig(config);
@@ -99,14 +101,32 @@ export async function runSmokeTests(
 
   // Create Vitest streaming reporter with streaming configured
   // Disable summary since the CLI will print a combined summary
+  const streamingBase = new VitestStreamingBase({
+    enabled: useStreaming,
+    showSummary: false
+  });
   const vitestReporter = new VitestStreamingReporter(
     "wp-tester-smoke-tests",
-    new StreamingReporter({ enabled: useStreaming, showSummary: false })
+    streamingBase
   );
   const reporter = vitestReporter.getStreamingReporter();
 
   // Build reporters array - use our streaming reporter
   const reporters: Reporter[] = [vitestReporter];
+
+  // Parse Vitest args to extract test name pattern filter
+  let testNamePattern: string | undefined;
+  if (vitestArgs && vitestArgs.length > 0) {
+    // Look for -t or --testNamePattern flag
+    const tIndex = vitestArgs.indexOf('-t');
+    const patternIndex = vitestArgs.indexOf('--testNamePattern');
+
+    if (tIndex !== -1 && tIndex + 1 < vitestArgs.length) {
+      testNamePattern = vitestArgs[tIndex + 1];
+    } else if (patternIndex !== -1 && patternIndex + 1 < vitestArgs.length) {
+      testNamePattern = vitestArgs[patternIndex + 1];
+    }
+  }
 
   // Start Vitest programmatically with our streaming reporter
   const vitest = await startVitest("test", [], {
@@ -115,6 +135,7 @@ export async function runSmokeTests(
     include: testFiles,
     run: true,
     reporters,
+    testNamePattern,
     provide: {
       config: resolvedConfig,
     },

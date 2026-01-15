@@ -16,6 +16,7 @@
 
 import type { StreamEvent } from "./streaming.js";
 import type { StreamingReporter } from "./streaming.js";
+import { highlightStringDiff } from "./diff-utils.js";
 
 /**
  * TeamCity message types we care about
@@ -54,46 +55,6 @@ function unescapeTeamCityValue(value: string): string {
     .replace(/\|\[/g, "[")
     .replace(/\|\]/g, "]")
     .replace(/\|\|/g, "|");
-}
-
-/**
- * Highlight character-level differences between two strings
- * Adds markers for rendering differences in bold/bright
- */
-function highlightStringDiff(expected: string, actual: string): { expected: string; actual: string } {
-  // Find common prefix
-  let prefixEnd = 0;
-  const minLen = Math.min(expected.length, actual.length);
-  while (prefixEnd < minLen && expected[prefixEnd] === actual[prefixEnd]) {
-    prefixEnd++;
-  }
-
-  // Find common suffix (starting from the end, but not overlapping with prefix)
-  let suffixStart = expected.length;
-  let actualSuffixStart = actual.length;
-  while (
-    suffixStart > prefixEnd &&
-    actualSuffixStart > prefixEnd &&
-    expected[suffixStart - 1] === actual[actualSuffixStart - 1]
-  ) {
-    suffixStart--;
-    actualSuffixStart--;
-  }
-
-  // Build highlighted strings with markers for the renderer
-  const expectedPrefix = expected.slice(0, prefixEnd);
-  const expectedDiff = expected.slice(prefixEnd, suffixStart);
-  const expectedSuffix = expected.slice(suffixStart);
-
-  const actualPrefix = actual.slice(0, prefixEnd);
-  const actualDiff = actual.slice(prefixEnd, actualSuffixStart);
-  const actualSuffix = actual.slice(actualSuffixStart);
-
-  // Use special markers that the renderer will detect: «diff text»
-  const highlightedExpected = expectedPrefix + (expectedDiff ? `«${expectedDiff}»` : '') + expectedSuffix;
-  const highlightedActual = actualPrefix + (actualDiff ? `«${actualDiff}»` : '') + actualSuffix;
-
-  return { expected: highlightedExpected, actual: highlightedActual };
 }
 
 /**
@@ -307,7 +268,7 @@ export class TeamCityParser {
               ].join("\n");
 
               // Reorder: path first, blank line, diff
-              trace = trace ? `${trace}\n${diffOutput}` : `\n${diffOutput}`;
+              trace = trace ? `${trace}\n${diffOutput}\n` : `\n${diffOutput}\n`;
             }
 
         this.emit({

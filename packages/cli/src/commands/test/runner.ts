@@ -14,8 +14,8 @@ import { getWorkingDirectory } from '@wp-tester/config';
 export interface RunTestsOptions {
   /** Type of test to run (phpunit, wp, plugin, theme) */
   testType?: TestType;
-  /** Additional arguments to pass to PHPUnit */
-  phpunitArgs?: string[];
+  /** Additional arguments to pass to test runners */
+  extraArgs?: string[];
   /** Allow the test suite to pass when no tests are executed (CLI override) */
   passWithNoTests?: boolean;
 }
@@ -76,7 +76,7 @@ export const executeTests = async (
   configPath: string,
   options?: RunTestsOptions
 ): Promise<TestResult> => {
-  const { testType, phpunitArgs } = options || {};
+  const { testType, extraArgs } = options || {};
   const finalConfigPath = await resolveConfigPath(configPath);
 
   // Validate configuration before running tests
@@ -96,7 +96,8 @@ export const executeTests = async (
   if (smokeTestFilter !== false) {
     const smokeTestReport = await runSmokeTests(
       finalConfigPath,
-      smokeTestFilter
+      smokeTestFilter,
+      extraArgs
     );
     if (smokeTestReport.results.summary.tests > 0) {
       reports.push(smokeTestReport);
@@ -105,7 +106,7 @@ export const executeTests = async (
 
   // Run PHPUnit tests
   if (shouldRunPhpUnit) {
-    const phpunitReport = await runPhpunitTests(finalConfigPath, phpunitArgs);
+    const phpunitReport = await runPhpunitTests(finalConfigPath, extraArgs);
     // Always include report if PHPUnit was configured to run
     // This ensures bootstrap failures are visible
     if (phpunitReport.results.summary.tests > 0) {
