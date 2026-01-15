@@ -57,6 +57,46 @@ function unescapeTeamCityValue(value: string): string {
 }
 
 /**
+ * Highlight character-level differences between two strings
+ * Adds markers for rendering differences in bold/bright
+ */
+function highlightStringDiff(expected: string, actual: string): { expected: string; actual: string } {
+  // Find common prefix
+  let prefixEnd = 0;
+  const minLen = Math.min(expected.length, actual.length);
+  while (prefixEnd < minLen && expected[prefixEnd] === actual[prefixEnd]) {
+    prefixEnd++;
+  }
+
+  // Find common suffix (starting from the end, but not overlapping with prefix)
+  let suffixStart = expected.length;
+  let actualSuffixStart = actual.length;
+  while (
+    suffixStart > prefixEnd &&
+    actualSuffixStart > prefixEnd &&
+    expected[suffixStart - 1] === actual[actualSuffixStart - 1]
+  ) {
+    suffixStart--;
+    actualSuffixStart--;
+  }
+
+  // Build highlighted strings with markers for the renderer
+  const expectedPrefix = expected.slice(0, prefixEnd);
+  const expectedDiff = expected.slice(prefixEnd, suffixStart);
+  const expectedSuffix = expected.slice(suffixStart);
+
+  const actualPrefix = actual.slice(0, prefixEnd);
+  const actualDiff = actual.slice(prefixEnd, actualSuffixStart);
+  const actualSuffix = actual.slice(actualSuffixStart);
+
+  // Use special markers that the renderer will detect: «diff text»
+  const highlightedExpected = expectedPrefix + (expectedDiff ? `«${expectedDiff}»` : '') + expectedSuffix;
+  const highlightedActual = actualPrefix + (actualDiff ? `«${actualDiff}»` : '') + actualSuffix;
+
+  return { expected: highlightedExpected, actual: highlightedActual };
+}
+
+/**
  * Parse a single TeamCity message line
  */
 function parseTeamCityLine(line: string): TeamCityMessage | null {
@@ -245,13 +285,38 @@ export class TeamCityParser {
 
         this.testStartTimes.delete(name);
         this.completedTests.add(name); // Mark as completed to skip testFinished
+
+        // Build trace with comparison diff if available
+        let trace = attributes.details || '';
+
+        // If this is a comparison failure, format the diff with color markers
+        if (attributes.type === 'comparisonFailure' &&
+            attributes.expected !== undefined &&
+            attributes.actual !== undefined) {
+              // Highlight character-level differences for better readability
+              const highlighted = highlightStringDiff(
+                attributes.expected,
+                attributes.actual
+              );
+
+              const diffOutput = [
+                `Expected:`,
+                highlighted.expected,
+                `Actual:`,
+                highlighted.actual,
+              ].join("\n");
+
+              // Reorder: path first, blank line, diff
+              trace = trace ? `${trace}\n${diffOutput}` : `\n${diffOutput}`;
+            }
+
         this.emit({
           type: "test:fail",
           name,
           suiteName: this.currentSuite || undefined,
           duration,
           message: attributes.message,
-          trace: attributes.details,
+          trace,
         });
         break;
       }

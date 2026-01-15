@@ -17,6 +17,36 @@ import pc from "picocolors";
 const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 
 /**
+ * Apply character-level highlighting to diff lines
+ * Converts «text» markers to bold/bright text
+ */
+function applyDiffHighlighting(line: string, colorFn: (str: string) => string): string {
+  // Find all highlighted sections marked with « and »
+  const parts: string[] = [];
+  let lastIndex = 0;
+  const regex = /«([^»]+)»/g;
+  let match;
+
+  while ((match = regex.exec(line)) !== null) {
+    // Add the text before the highlight (normal color, not dimmed)
+    if (match.index > lastIndex) {
+      parts.push(colorFn(line.slice(lastIndex, match.index)));
+    }
+    // Add the highlighted text (bright/bold)
+    parts.push(pc.bold(colorFn(match[1])));
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add any remaining text after the last highlight
+  if (lastIndex < line.length) {
+    parts.push(colorFn(line.slice(lastIndex)));
+  }
+
+  // If no highlights found, return the line with color applied
+  return parts.length > 0 ? parts.join('') : colorFn(line);
+}
+
+/**
  * Test event emitted during test execution
  */
 export interface TestEvent {
@@ -373,19 +403,52 @@ export class StreamingReporter {
         lines.push(`${indent}${pc.red("✗")} ${test.name}${durationStr}`);
         if (test.message) {
           const messageIndent = "  ".repeat(depth + 1);
-          const indentedMessage = test.message
-            .split("\n")
-            .map((line) => `${messageIndent}${pc.red(line)}`)
-            .join("\n");
-          lines.push(indentedMessage);
+          for (const line of test.message.split("\n")) {
+            lines.push(`${messageIndent}${pc.red(line)}`);
+          }
         }
         if (test.trace) {
           const traceIndent = "  ".repeat(depth + 1);
-          const indentedTrace = test.trace
-            .split("\n")
-            .map((line) => `${traceIndent}${pc.dim(line)}`)
-            .join("\n");
-          lines.push(indentedTrace);
+          const traceLines = test.trace.split("\n");
+
+          for (let i = 0; i < traceLines.length; i++) {
+            const line = traceLines[i];
+            const trimmed = line.trim();
+
+            // Detect Expected/Actual labels and color the values
+            if (trimmed === 'Expected:' && i + 1 < traceLines.length) {
+              lines.push(`${traceIndent}${pc.dim('Expected:')}`);
+              i++; // Move to the next line (the value)
+              const valueLine = traceLines[i];
+              if (valueLine.trim()) {
+                lines.push(`${traceIndent}${applyDiffHighlighting(valueLine, pc.red)}`);
+              }
+            } else if (trimmed === 'Actual:' && i + 1 < traceLines.length) {
+              lines.push(`${traceIndent}${pc.dim('Actual:')}`);
+              i++; // Move to the next line (the value)
+              const valueLine = traceLines[i];
+              if (valueLine.trim()) {
+                lines.push(`${traceIndent}${applyDiffHighlighting(valueLine, pc.green)}`);
+              }
+            } else if (trimmed) {
+              // File paths, context lines, other trace info
+              lines.push(`${traceIndent}${pc.dim(line)}`);
+            } else {
+              // Empty lines (preserve them for spacing)
+              lines.push('');
+            }
+          }
+
+          // Add filter to re-run this specific test
+          if (test.name) {
+            lines.push('');
+            lines.push(`${traceIndent}${pc.dim('Re-run only this test by appending a filter:')}`);
+            const filterArg = test.suiteName
+              ? `${test.suiteName}::${test.name}`
+              : test.name;
+            lines.push(`${traceIndent}${pc.dim(`--filter '${filterArg}'`)}`);
+            lines.push('');
+          }
         }
         break;
       }
