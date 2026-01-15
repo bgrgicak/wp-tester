@@ -6,11 +6,11 @@ import pc from 'picocolors';
 
 interface ConfigArgs {
   action: string;
-  config: string;
+  config?: string;
 }
 
 export const configHandler = async (argv: ConfigArgs): Promise<void> => {
-  const { action, config } = argv;
+  const { action, config = './wp-tester.json' } = argv;
 
   if (action === "validate") {
     const isValid = await validateConfig(config);

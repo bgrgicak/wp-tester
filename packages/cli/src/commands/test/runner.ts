@@ -6,7 +6,7 @@ import { runPhpunitTests } from "@wp-tester/phpunit";
 import { mergeReports, printSummary, type Report } from "@wp-tester/results";
 import type { TestType } from "@wp-tester/config";
 import { validateConfig } from '../config/validate';
-import { setupHandler } from "../setup";
+import { getWorkingDirectory } from '@wp-tester/config';
 
 /**
  * Options for the test runner
@@ -20,45 +20,19 @@ export interface RunTestsOptions {
   passWithNoTests?: boolean;
 }
 
-/**
- * Prompt the user to run setup when no configuration file is found.
- * Returns the path to the config file after setup, or exits if the user cancels.
- */
-async function promptSetupOnMissingConfig(): Promise<string> {
-  clack.log.error("No configuration found. Run `wp-tester setup` to create one.");
-
-  const runSetup = await clack.confirm({
-    message: "Would you like to run setup now?",
-  });
-
-  if (clack.isCancel(runSetup) || !runSetup) {
-    clack.cancel("Test cancelled.");
-    process.exit(0);
-  }
-
-  await setupHandler();
-
-  return path.resolve(process.cwd(), "wp-tester.json");
-}
-
 async function resolveConfigPath(configPath: string): Promise<string> {
-  const resolvedPath = path.resolve(process.cwd(), configPath);
+  const cwd = getWorkingDirectory();
+  const resolvedPath = path.resolve(cwd, configPath);
 
   try {
     const stats = await stat(resolvedPath);
 
     if (stats.isDirectory()) {
-      const configFile = path.join(resolvedPath, "wp-tester.json");
-
-      try {
-        await access(configFile, constants.F_OK);
-        return configFile;
-      } catch {
-        return promptSetupOnMissingConfig();
-      }
+      return path.join(resolvedPath, "wp-tester.json");
     }
   } catch {
-    return promptSetupOnMissingConfig();
+    // File doesn't exist yet, but that's ok - return the resolved path
+    // The caller will handle the missing file case
   }
 
   return resolvedPath;
@@ -66,7 +40,8 @@ async function resolveConfigPath(configPath: string): Promise<string> {
 
 async function checkConfigExists(configPath: string): Promise<boolean> {
   try {
-    const resolvedPath = path.resolve(process.cwd(), configPath);
+    const cwd = getWorkingDirectory();
+    const resolvedPath = path.resolve(cwd, configPath);
     await access(resolvedPath, constants.F_OK);
     return true;
   } catch {
@@ -176,7 +151,8 @@ export const runTests = async (
 
   // Check if config file exists
   while (!(await checkConfigExists(finalConfigPath))) {
-    const resolvedPath = path.resolve(process.cwd(), finalConfigPath);
+    const cwd = getWorkingDirectory();
+    const resolvedPath = path.resolve(cwd, finalConfigPath);
     clack.log.error(`Config file not found: ${resolvedPath}`);
 
     const newPath = await clack.text({

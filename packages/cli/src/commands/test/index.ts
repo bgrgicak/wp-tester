@@ -1,10 +1,11 @@
 import { runTests, executeTests } from './runner';
 import { runWatchMode } from './watcher';
 import type { TestType } from '@wp-tester/config';
+import { getWorkingDirectory } from '@wp-tester/config';
 import path from 'path';
 
 interface TestArgs {
-  config: string;
+  config?: string;
   test?: TestType;
   watch?: boolean;
   passWithNoTests?: boolean;
@@ -12,11 +13,12 @@ interface TestArgs {
 }
 
 export const testHandler = async (argv: TestArgs): Promise<void> => {
-  const { config, test, watch, passWithNoTests } = argv;
+  const { config = './wp-tester.json', test, watch, passWithNoTests } = argv;
   const phpunitArgs = argv['--'] || [];
 
   if (watch) {
-    const absoluteConfigPath = path.resolve(process.cwd(), config);
+    const cwd = getWorkingDirectory();
+    const absoluteConfigPath = path.resolve(cwd, config);
     await runWatchMode({
       configPath: absoluteConfigPath,
       onRunTests: async () => {
