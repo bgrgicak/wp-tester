@@ -80,7 +80,7 @@ describe('Path Helper Functions', () => {
     const baseConfig: WPTesterConfig = {
       environments: [],
       tests: {},
-      reporters: { default: {} },
+      reporters: { default: true },
     };
 
     describe('without projectHostPath config', () => {
@@ -183,7 +183,7 @@ describe('Path Helper Functions', () => {
       const config: WPTesterConfig = {
         environments: [],
         tests: {},
-        reporters: { default: {} },
+        reporters: { default: true },
       };
       const configPath = 'configs/wp-tester.json';
       const configDir = getConfigDir(configPath);
@@ -195,7 +195,7 @@ describe('Path Helper Functions', () => {
       const config: WPTesterConfig = {
         environments: [],
         tests: {},
-        reporters: { default: {} },
+        reporters: { default: true },
         projectHostPath: '../src',
       };
       const configPath = 'project/config/wp-tester.json';

@@ -199,14 +199,16 @@ export interface JsonReporterOptions extends BaseReporterOptions {
  * Reporter configuration object.
  * Each key is a reporter name, and the value is its options.
  *
+ * @example { "default": true }
  * @example { "default": { "failed": true, "passed": true } }
  * @example { "json": { "outputFile": "results.json", "failed": true } }
  */
 export interface Reporters {
   /**
-   * Default console reporter options
+   * Default console reporter options.
+   * Use `true` to enable with defaults, or an object for custom options.
    */
-  default?: DefaultReporterOptions;
+  default?: boolean | DefaultReporterOptions;
 
   /**
    * JSON file reporter options

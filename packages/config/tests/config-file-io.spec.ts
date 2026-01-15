@@ -22,7 +22,7 @@ describe('Config File I/O', () => {
       },
     ],
     tests: {},
-    reporters: { default: {} },
+    reporters: { default: true },
   };
 
   beforeEach(async () => {

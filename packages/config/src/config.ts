@@ -292,10 +292,14 @@ export async function resolveConfig(
     default: defaultReporterOptions,
   };
 
-  // If default reporter is specified but has no options (empty object), apply defaults
-  // Empty object means "use default reporter with default options" (show all)
-  if (reporters.default && Object.keys(reporters.default).length === 0) {
+  // Normalize default reporter:
+  // - `true` or empty object `{}` -> apply default options (show all)
+  // - `false` -> disable default reporter (remove it)
+  // - object with options -> use as-is
+  if (reporters.default === true || (typeof reporters.default === 'object' && Object.keys(reporters.default).length === 0)) {
     reporters.default = defaultReporterOptions;
+  } else if (reporters.default === false) {
+    delete reporters.default;
   } else if (reporters.default === undefined && !reporters.json) {
     // No reporters configured at all, use default with all statuses shown
     reporters.default = defaultReporterOptions;
