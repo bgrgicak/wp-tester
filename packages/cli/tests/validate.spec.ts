@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { type ErrorObject } from 'ajv';
-import { formatValidationError } from '../src/commands/config/validate';
+import { formatValidationError, getEnabledTestSuites, generateConfigSummary } from '../src/commands/config/validate';
+import type { Tests, WPTesterConfig } from '@wp-tester/config';
+import { Blueprint } from "@wp-playground/blueprints";
 
 describe('formatValidationError', () => {
   it('should format additionalProperties error', () => {
@@ -122,5 +124,125 @@ describe('formatValidationError', () => {
     expect(result.message).toContain('/someField');
     expect(result.message).toContain('must match pattern');
     expect(result.docsUrl).toBe('https://bgrgicak.github.io/wp-tester/#/configuration');
+  });
+});
+
+describe('getEnabledTestSuites', () => {
+  it('should return empty array when no tests are enabled', () => {
+    const tests: Tests = {};
+    const result = getEnabledTestSuites(tests);
+    expect(result).toEqual([]);
+  });
+
+  it('should include WordPress tests when wp is true', () => {
+    const tests: Tests = { wp: true };
+    const result = getEnabledTestSuites(tests);
+    expect(result.map((s) => s.name)).toContain("wp");
+  });
+
+  it('should include plugin tests with plugin name', () => {
+    const tests: Tests = { plugin: 'my-plugin' };
+    const result = getEnabledTestSuites(tests);
+    expect(result.map((s) => s.name)).toContain("plugin");
+  });
+
+  it('should include theme tests with theme name', () => {
+    const tests: Tests = { theme: 'my-theme' };
+    const result = getEnabledTestSuites(tests);
+    expect(result.map((s) => s.name)).toContain("theme");
+  });
+
+  it('should include PHPUnit tests with unit mode by default', () => {
+    const tests: Tests = { phpunit: { phpunitPath: 'vendor/bin/phpunit', configPath: 'phpunit.xml' } };
+    const result = getEnabledTestSuites(tests);
+    expect(result.map((s) => s.name)).toContain("phpunit");
+  });
+
+  it('should include PHPUnit tests with integration mode', () => {
+    const tests: Tests = { phpunit: { phpunitPath: 'vendor/bin/phpunit', configPath: 'phpunit.xml', testMode: 'integration' } };
+    const result = getEnabledTestSuites(tests);
+    expect(result.map((s) => s.name)).toContain("phpunit");
+  });
+
+  it('should include all enabled test suites', () => {
+    const tests: Tests = {
+      wp: true,
+      plugin: 'my-plugin',
+      phpunit: { phpunitPath: 'vendor/bin/phpunit', configPath: 'phpunit.xml', testMode: 'integration' }
+    };
+    const result = getEnabledTestSuites(tests);
+    expect(result).toHaveLength(3);
+    expect(result.map(s => s.name)).toEqual(['wp', 'plugin', 'phpunit']);
+  });
+});
+
+describe('generateConfigSummary', () => {
+  const baseBlueprint: Blueprint = {
+    preferredVersions: { php: "latest", wp: "latest" },
+  };
+
+  it('should count active environments', () => {
+    const config: WPTesterConfig = {
+      environments: [
+        { name: 'Env 1', blueprint: baseBlueprint },
+        { name: 'Env 2', blueprint: baseBlueprint },
+      ],
+      tests: { wp: true }
+    };
+    const result = generateConfigSummary(config);
+    expect(result.activeEnvironments).toBe(2);
+    expect(result.skippedEnvironments).toBe(0);
+  });
+
+  it('should count skipped environments separately', () => {
+    const config: WPTesterConfig = {
+      environments: [
+        { name: 'Env 1', blueprint: baseBlueprint },
+        { name: 'Env 2', blueprint: baseBlueprint, skip: true },
+        { name: 'Env 3', blueprint: baseBlueprint, skip: true },
+      ],
+      tests: { wp: true }
+    };
+    const result = generateConfigSummary(config);
+    expect(result.activeEnvironments).toBe(1);
+    expect(result.skippedEnvironments).toBe(2);
+  });
+
+  it('should calculate matrix combinations correctly', () => {
+    const config: WPTesterConfig = {
+      environments: [
+        { name: 'Env 1', blueprint: baseBlueprint },
+        { name: 'Env 2', blueprint: baseBlueprint },
+        { name: 'Env 3', blueprint: baseBlueprint },
+      ],
+      tests: { wp: true, plugin: 'my-plugin' }
+    };
+    const result = generateConfigSummary(config);
+    // 3 environments * 2 test suites = 6 combinations
+    expect(result.matrixCombinations).toBe(6);
+  });
+
+  it('should exclude skipped environments from matrix calculation', () => {
+    const config: WPTesterConfig = {
+      environments: [
+        { name: 'Env 1', blueprint: baseBlueprint },
+        { name: 'Env 2', blueprint: baseBlueprint, skip: true },
+      ],
+      tests: { wp: true, plugin: 'my-plugin' }
+    };
+    const result = generateConfigSummary(config);
+    // 1 active environment * 2 test suites = 2 combinations
+    expect(result.matrixCombinations).toBe(2);
+  });
+
+  it('should return zero matrix combinations when no test suites', () => {
+    const config: WPTesterConfig = {
+      environments: [
+        { name: 'Env 1', blueprint: baseBlueprint },
+      ],
+      tests: {}
+    };
+    const result = generateConfigSummary(config);
+    expect(result.matrixCombinations).toBe(0);
   });
 });

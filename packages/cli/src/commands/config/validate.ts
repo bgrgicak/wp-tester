@@ -1,8 +1,96 @@
 import { readFile } from 'fs/promises';
 import Ajv, { type ErrorObject } from "ajv";
 import pc from "picocolors";
-import { getSchemaPath, normalizeConfigPath, type WPTesterConfig } from "@wp-tester/config";
+import { getSchemaPath, normalizeConfigPath, type WPTesterConfig, type Tests } from "@wp-tester/config";
 import * as clack from "../../cli/theme";
+
+/**
+ * Summary of enabled test suites
+ */
+export interface TestSuiteSummary {
+  name: string;
+  label: string;
+}
+
+/**
+ * Configuration summary for display
+ */
+export interface ConfigSummary {
+  activeEnvironments: number;
+  skippedEnvironments: number;
+  testSuites: TestSuiteSummary[];
+  matrixCombinations: number;
+}
+
+/**
+ * Get a list of enabled test suites from the tests configuration
+ */
+export function getEnabledTestSuites(tests: Tests): TestSuiteSummary[] {
+  const suites: TestSuiteSummary[] = [];
+
+  if (tests.wp) {
+    suites.push({ name: 'wp', label: 'WordPress' });
+  }
+
+  if (tests.plugin) {
+    suites.push({ name: 'plugin', label: `Plugin (${tests.plugin})` });
+  }
+
+  if (tests.theme) {
+    suites.push({ name: 'theme', label: `Theme (${tests.theme})` });
+  }
+
+  if (tests.phpunit) {
+    const modeLabel = tests.phpunit.testMode === 'integration' ? 'integration' : 'unit';
+    suites.push({ name: 'phpunit', label: `PHPUnit (${modeLabel})` });
+  }
+
+  return suites;
+}
+
+/**
+ * Generate a configuration summary from a valid config
+ */
+export function generateConfigSummary(config: WPTesterConfig): ConfigSummary {
+  const activeEnvironments = config.environments.filter(env => !env.skip).length;
+  const skippedEnvironments = config.environments.filter(env => env.skip).length;
+  const testSuites = getEnabledTestSuites(config.tests);
+  const matrixCombinations = activeEnvironments * testSuites.length;
+
+  return {
+    activeEnvironments,
+    skippedEnvironments,
+    testSuites,
+    matrixCombinations,
+  };
+}
+
+/**
+ * Print the configuration summary
+ */
+export function printConfigSummary(summary: ConfigSummary): void {
+  const lines: string[] = [];
+
+  // Environment count
+  if (summary.skippedEnvironments > 0) {
+    lines.push(`Environments: ${pc.cyan(String(summary.activeEnvironments))} active, ${pc.yellow(String(summary.skippedEnvironments))} skipped`);
+  } else {
+    lines.push(`Environments: ${pc.cyan(String(summary.activeEnvironments))}`);
+  }
+
+  // Test suites
+  if (summary.testSuites.length > 0) {
+    const suiteLabels = summary.testSuites.map(s => s.label).join(', ');
+    lines.push(`Test suites:  ${pc.cyan(suiteLabels)}`);
+  } else {
+    lines.push(`Test suites:  ${pc.dim('None configured')}`);
+  }
+
+  // Matrix combinations
+  lines.push(`Total runs:   ${pc.cyan(String(summary.matrixCombinations))}`);
+
+  clack.note(lines.join('\n'), 'Configuration Summary');
+}
 
 interface ValidationErrorDisplay {
   message: string;
@@ -109,9 +197,9 @@ export function formatValidationError(error: ErrorObject): ValidationErrorDispla
 
 /**
  * Validates config and prints errors if invalid.
- * Returns true if valid, false otherwise.
+ * Returns the validated config if valid, null otherwise.
  */
-export async function validateConfig(configPath: string): Promise<boolean> {
+export async function validateConfig(configPath: string): Promise<WPTesterConfig | null> {
   try {
     // Resolve config path relative to cwd and normalize (handles directory paths)
     const resolvedConfigPath = normalizeConfigPath(configPath);
@@ -155,7 +243,7 @@ export async function validateConfig(configPath: string): Promise<boolean> {
         }
       }
 
-      return false;
+      return null;
     }
 
     // Check for skipped environments and display info
@@ -170,11 +258,11 @@ export async function validateConfig(configPath: string): Promise<boolean> {
       }
     }
 
-    return true;
+    return typedConfig;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     clack.log.error("Validation error:");
     clack.log.error(message);
-    return false;
+    return null;
   }
 }
