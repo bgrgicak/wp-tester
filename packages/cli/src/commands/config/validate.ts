@@ -69,27 +69,27 @@ export function generateConfigSummary(config: WPTesterConfig): ConfigSummary {
  * Print the configuration summary
  */
 export function printConfigSummary(summary: ConfigSummary): void {
-  console.log();
-  console.log(pc.bold('Configuration Summary'));
-  console.log();
+  const lines: string[] = [];
 
   // Environment count
   if (summary.skippedEnvironments > 0) {
-    console.log(`  Environments: ${pc.cyan(String(summary.activeEnvironments))} active, ${pc.yellow(String(summary.skippedEnvironments))} skipped`);
+    lines.push(`Environments: ${pc.cyan(String(summary.activeEnvironments))} active, ${pc.yellow(String(summary.skippedEnvironments))} skipped`);
   } else {
-    console.log(`  Environments: ${pc.cyan(String(summary.activeEnvironments))}`);
+    lines.push(`Environments: ${pc.cyan(String(summary.activeEnvironments))}`);
   }
 
   // Test suites
   if (summary.testSuites.length > 0) {
     const suiteLabels = summary.testSuites.map(s => s.label).join(', ');
-    console.log(`  Test suites:  ${pc.cyan(suiteLabels)}`);
+    lines.push(`Test suites:  ${pc.cyan(suiteLabels)}`);
   } else {
-    console.log(`  Test suites:  ${pc.dim('None configured')}`);
+    lines.push(`Test suites:  ${pc.dim('None configured')}`);
   }
 
   // Matrix combinations
-  console.log(`  Total runs:   ${pc.cyan(String(summary.matrixCombinations))}`);
+  lines.push(`Total runs:   ${pc.cyan(String(summary.matrixCombinations))}`);
+
+  clack.note(lines.join('\n'), 'Configuration Summary');
 }
 
 interface ValidationErrorDisplay {

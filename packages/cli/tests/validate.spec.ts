@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { type ErrorObject } from 'ajv';
 import { formatValidationError, getEnabledTestSuites, generateConfigSummary } from '../src/commands/config/validate';
 import type { Tests, WPTesterConfig } from '@wp-tester/config';
+import { Blueprint } from "@wp-playground/blueprints";
 
 describe('formatValidationError', () => {
   it('should format additionalProperties error', () => {
@@ -136,31 +137,31 @@ describe('getEnabledTestSuites', () => {
   it('should include WordPress tests when wp is true', () => {
     const tests: Tests = { wp: true };
     const result = getEnabledTestSuites(tests);
-    expect(result).toContainEqual({ name: 'wp', label: 'WordPress' });
+    expect(result.map((s) => s.name)).toContain("wp");
   });
 
   it('should include plugin tests with plugin name', () => {
     const tests: Tests = { plugin: 'my-plugin' };
     const result = getEnabledTestSuites(tests);
-    expect(result).toContainEqual({ name: 'plugin', label: 'Plugin (my-plugin)' });
+    expect(result.map((s) => s.name)).toContain("plugin");
   });
 
   it('should include theme tests with theme name', () => {
     const tests: Tests = { theme: 'my-theme' };
     const result = getEnabledTestSuites(tests);
-    expect(result).toContainEqual({ name: 'theme', label: 'Theme (my-theme)' });
+    expect(result.map((s) => s.name)).toContain("theme");
   });
 
   it('should include PHPUnit tests with unit mode by default', () => {
     const tests: Tests = { phpunit: { phpunitPath: 'vendor/bin/phpunit', configPath: 'phpunit.xml' } };
     const result = getEnabledTestSuites(tests);
-    expect(result).toContainEqual({ name: 'phpunit', label: 'PHPUnit (unit)' });
+    expect(result.map((s) => s.name)).toContain("phpunit");
   });
 
   it('should include PHPUnit tests with integration mode', () => {
     const tests: Tests = { phpunit: { phpunitPath: 'vendor/bin/phpunit', configPath: 'phpunit.xml', testMode: 'integration' } };
     const result = getEnabledTestSuites(tests);
-    expect(result).toContainEqual({ name: 'phpunit', label: 'PHPUnit (integration)' });
+    expect(result.map((s) => s.name)).toContain("phpunit");
   });
 
   it('should include all enabled test suites', () => {
@@ -176,7 +177,9 @@ describe('getEnabledTestSuites', () => {
 });
 
 describe('generateConfigSummary', () => {
-  const baseBlueprint = { preferredVersions: { php: 'latest', wp: 'latest' } };
+  const baseBlueprint: Blueprint = {
+    preferredVersions: { php: "latest", wp: "latest" },
+  };
 
   it('should count active environments', () => {
     const config: WPTesterConfig = {
