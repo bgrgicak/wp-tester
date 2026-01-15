@@ -18,36 +18,6 @@ import { applyDiffHighlighting } from "./diff-utils.js";
 const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 
 /**
- * Apply character-level highlighting to diff lines
- * Converts «text» markers to bold/bright text
- */
-function applyDiffHighlighting(line: string, colorFn: (str: string) => string): string {
-  // Find all highlighted sections marked with « and »
-  const parts: string[] = [];
-  let lastIndex = 0;
-  const regex = /«([^»]+)»/g;
-  let match;
-
-  while ((match = regex.exec(line)) !== null) {
-    // Add the text before the highlight (normal color, not dimmed)
-    if (match.index > lastIndex) {
-      parts.push(colorFn(line.slice(lastIndex, match.index)));
-    }
-    // Add the highlighted text (bright/bold)
-    parts.push(pc.bold(colorFn(match[1])));
-    lastIndex = match.index + match[0].length;
-  }
-
-  // Add any remaining text after the last highlight
-  if (lastIndex < line.length) {
-    parts.push(colorFn(line.slice(lastIndex)));
-  }
-
-  // If no highlights found, return the line with color applied
-  return parts.length > 0 ? parts.join('') : colorFn(line);
-}
-
-/**
  * Test event emitted during test execution
  */
 export interface TestEvent {

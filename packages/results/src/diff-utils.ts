@@ -50,22 +50,52 @@ export function applyMarkersToMultiline(text: string): string {
 }
 
 /**
+ * Ensure markers don't span newlines by splitting and re-wrapping
+ * Converts "text«diff\nmore»end" to "text«diff»\n«more»end"
+ */
+function ensureMarkersPerLine(text: string): string {
+  // Split by markers first to identify highlighted sections
+  const parts: string[] = [];
+  let lastIndex = 0;
+  const regex = /«([^»]+)»/g;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    // Add text before the marker
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+
+    // Split the highlighted section by newlines and re-wrap each line
+    const highlighted = match[1];
+    const lines = highlighted.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i]) {
+        parts.push(`«${lines[i]}»`);
+      }
+      if (i < lines.length - 1) {
+        parts.push('\n');
+      }
+    }
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add any remaining text
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts.length > 0 ? parts.join('') : text;
+}
+
+/**
  * Highlight character-level differences between two strings
  * Adds markers for rendering differences in bold/bright
  * Uses « and » markers that will be processed by applyDiffHighlighting
- * Handles multiline strings by applying markers to each line individually
+ * Handles multiline strings by ensuring markers don't span newlines
  */
 export function highlightStringDiff(expected: string, actual: string): { expected: string; actual: string } {
-  // For multiline strings, apply markers to each line to ensure proper rendering
-  // Check if either string contains newlines
-  if (expected.includes('\n') || actual.includes('\n')) {
-    return {
-      expected: applyMarkersToMultiline(expected),
-      actual: applyMarkersToMultiline(actual)
-    };
-  }
-
-  // For single-line strings, use character-level diff highlighting
   // Find common prefix
   let prefixEnd = 0;
   const minLen = Math.min(expected.length, actual.length);
@@ -97,5 +127,9 @@ export function highlightStringDiff(expected: string, actual: string): { expecte
   const highlightedExpected = expectedPrefix + (expectedDiff ? `«${expectedDiff}»` : '') + expectedSuffix;
   const highlightedActual = actualPrefix + (actualDiff ? `«${actualDiff}»` : '') + actualSuffix;
 
-  return { expected: highlightedExpected, actual: highlightedActual };
+  // Ensure markers don't span newlines for multiline strings
+  return {
+    expected: ensureMarkersPerLine(highlightedExpected),
+    actual: ensureMarkersPerLine(highlightedActual)
+  };
 }
