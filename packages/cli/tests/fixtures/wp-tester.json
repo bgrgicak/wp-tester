@@ -23,7 +23,7 @@
   "tests": {
     "wp": true
   },
-  "reporters": [
-    "default"
-  ]
+  "reporters": {
+    "default": {}
+  }
 }
