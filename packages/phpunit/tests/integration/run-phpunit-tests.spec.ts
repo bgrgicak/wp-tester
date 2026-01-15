@@ -49,18 +49,9 @@ describe("runPhpunitTests integration", () => {
 	it(
 		"should run theme PHPUnit tests and return CTRF report",
 		async () => {
-			// Load config, enable PHPUnit, set projectHostPath
-			const config = await resolveConfig(TEST_THEME_CONFIG_PATH);
-			config.tests.phpunit = {
-				phpunitPath: "vendor/bin/phpunit",
-				configPath: "phpunit.xml.dist",
-				bootstrapPath: "tests/bootstrap.php",
-				testMode: "integration",
-			};
-			// Set projectHostPath to theme fixture path so runner can find phpunit.xml.dist
-			config.projectHostPath = TEST_THEME_CONFIG_PATH.replace("/wp-tester.json", "");
-
-			const report = await runPhpunitTests(config);
+			// Pass the config path string directly so the runner can determine project root
+			// Theme fixture already has phpunit config with testMode: "integration"
+			const report = await runPhpunitTests(TEST_THEME_CONFIG_PATH);
 
 			// Validate report structure
 			expect(report).toBeDefined();
