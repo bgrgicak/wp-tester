@@ -181,7 +181,7 @@ export interface BaseReporterOptions {
 /**
  * Default reporter configuration options
  */
-export interface DefaultReporterOptions extends BaseReporterOptions {}
+export type DefaultReporterOptions = BaseReporterOptions;
 
 /**
  * JSON reporter configuration options
