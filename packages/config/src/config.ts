@@ -11,6 +11,14 @@ import { detectProjectType } from "./options/project-type-detect";
 export type { WPTesterConfig } from "./wp-tester-config";
 
 /**
+ * Get the actual working directory, accounting for tools like tsx that may change process.cwd()
+ * When running via npx or tsx, INIT_CWD contains the original directory where the command was invoked
+ */
+export function getWorkingDirectory(): string {
+  return process.env.INIT_CWD || process.cwd();
+}
+
+/**
  * Resolve a path to an absolute path.
  * If the path is already absolute, return it as-is.
  * Otherwise, resolve it relative to the base directory.
@@ -24,7 +32,7 @@ export function resolveAbsolute(path: string, baseDir: string): string {
 }
 
 export function configPath(): string {
-  return join(process.cwd(), "wp-tester.json");
+  return join(getWorkingDirectory(), "wp-tester.json");
 }
 
 export function getSchemaPath(importMetaUrl?: string): string {
@@ -117,7 +125,7 @@ export async function writeConfigFile(
  * @returns Absolute path to the config file
  */
 export function getConfigPath(config: string): string {
-  return isAbsolute(config) ? config : resolve(process.cwd(), config);
+  return isAbsolute(config) ? config : resolve(getWorkingDirectory(), config);
 }
 
 /**
@@ -170,7 +178,7 @@ export function getProjectDir(
   configPath?: string
 ): string {
   // Get base directory: config file location or cwd
-  const baseDir = configPath ? getConfigDir(configPath) : process.cwd();
+  const baseDir = configPath ? getConfigDir(configPath) : getWorkingDirectory();
 
   // If projectHostPath is specified, resolve it relative to base directory
   if (config.projectHostPath) {

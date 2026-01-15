@@ -32,4 +32,16 @@ describe('CLI Integration Tests', () => {
     });
     expect(output).toContain('Configuration is valid');
   });
+
+  it('should show configuration summary after validation', () => {
+    const fixtureConfig = join(__dirname, '../fixtures/wp-tester.json');
+    const output = execSync(`node ${cliPath} config validate -c ${fixtureConfig}`, {
+      encoding: 'utf-8',
+      cwd: join(__dirname, '../../../..'),
+    });
+    expect(output).toContain('Configuration Summary');
+    expect(output).toContain('Environments:');
+    expect(output).toContain('Test suites:');
+    expect(output).toContain('Total runs:');
+  });
 });

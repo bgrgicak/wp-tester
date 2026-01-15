@@ -2,6 +2,7 @@ import type { WPTesterConfig } from '../types';
 import * as clack from '@clack/prompts';
 import * as path from 'path';
 import * as fs from 'fs';
+import { getWorkingDirectory } from '../config';
 
 export function validatePath(value: string | undefined): string | undefined {
   // Allow empty value - will be replaced with cwd
@@ -11,7 +12,7 @@ export function validatePath(value: string | undefined): string | undefined {
 
   const resolvedPath = path.isAbsolute(value)
     ? value
-    : path.resolve(process.cwd(), value);
+    : path.resolve(getWorkingDirectory(), value);
 
   if (!fs.existsSync(resolvedPath)) {
     return 'Directory does not exist';
@@ -23,7 +24,7 @@ export function validatePath(value: string | undefined): string | undefined {
 export async function projectRootOption(
   config: WPTesterConfig
 ): Promise<WPTesterConfig> {
-  const cwd = process.cwd();
+  const cwd = getWorkingDirectory();
 
   // Single input step: user can press Enter to confirm cwd or type a new path
   const rootPath = await clack.text({

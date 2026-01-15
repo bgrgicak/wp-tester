@@ -37,7 +37,6 @@ void yargs(hideBin(process.argv))
           alias: "c",
           describe: "Path to wp-tester.json config file",
           type: "string",
-          default: "./wp-tester.json",
         });
     },
     async (argv) => {
@@ -54,7 +53,6 @@ void yargs(hideBin(process.argv))
           alias: "c",
           describe: "Path to wp-tester.json config file",
           type: "string",
-          default: "./wp-tester.json",
         })
         .option("test", {
           alias: "t",

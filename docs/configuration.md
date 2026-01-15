@@ -122,7 +122,7 @@ Each environment is an object with:
         "steps": [
           {
             "step": "installPlugin",
-            "pluginZipFile": {
+            "pluginData": {
               "resource": "wordpress.org/plugins",
               "slug": "hello-dolly"
             }
@@ -635,6 +635,84 @@ wp-tester test --watch
 wp-tester test --watch --test phpunit
 ```
 
+## Dependencies
+
+When your plugin or theme depends on other plugins or themes, use Blueprint steps to install them. Your project is automatically mounted and activated by wp-tester based on `tests.plugin` or `tests.theme` - you only need to configure dependencies.
+
+### From WordPress.org
+
+Use `installPlugin` or `installTheme` with `activate: true`:
+
+```json
+{
+  "blueprint": {
+    "steps": [
+      {
+        "step": "installPlugin",
+        "pluginData": {
+          "resource": "wordpress.org/plugins",
+          "slug": "woocommerce"
+        },
+        "activate": true
+      },
+      {
+        "step": "installTheme",
+        "themeData": {
+          "resource": "wordpress.org/themes",
+          "slug": "storefront"
+        },
+        "activate": true
+      }
+    ]
+  }
+}
+```
+
+To install a specific version, use a URL:
+
+```json
+{
+  "step": "installPlugin",
+  "pluginData": {
+    "resource": "url",
+    "url": "https://downloads.wordpress.org/plugin/woocommerce.8.5.0.zip"
+  },
+  "activate": true
+}
+```
+
+### Local Dependencies
+
+For dependencies in your local filesystem (monorepos, sibling directories), mount them and use `activatePlugin`:
+
+```json
+{
+  "environments": [
+    {
+      "blueprint": {
+        "steps": [
+          {
+            "step": "activatePlugin",
+            "pluginPath": "my-dependency/my-dependency.php"
+          }
+        ]
+      },
+      "mounts": [
+        {
+          "hostPath": "../my-dependency",
+          "vfsPath": "/wordpress/wp-content/plugins/my-dependency"
+        }
+      ]
+    }
+  ],
+  "tests": {
+    "plugin": "my-plugin"
+  }
+}
+```
+
+For a complete list of available steps, see the [WordPress Playground Blueprint Steps Documentation](https://wordpress.github.io/wordpress-playground/blueprints/steps#).
+
 ## Complete Examples
 
 ### Minimal Configuration
@@ -713,7 +791,7 @@ Test a theme with custom environment setup:
         "steps": [
           {
             "step": "installPlugin",
-            "pluginZipFile": {
+            "pluginData": {
               "resource": "wordpress.org/plugins",
               "slug": "woocommerce"
             }

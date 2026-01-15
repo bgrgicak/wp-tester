@@ -38,6 +38,7 @@ export {
   getConfigPath,
   normalizeConfigPath,
   resolveAbsolute,
+  getWorkingDirectory,
 } from "./config";
 
 export { getProjectRootMount } from './auto-mount';
