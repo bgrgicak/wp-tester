@@ -97,7 +97,7 @@ export async function runSmokeTests(
   }
 
   // Determine if streaming should be enabled
-  const useStreaming = resolvedConfig.reporters?.includes("default") ?? true;
+  const useStreaming = resolvedConfig.reporters?.some((r) => r === "default") ?? true;
 
   // Create Vitest streaming reporter with streaming configured
   // Disable summary since the CLI will print a combined summary

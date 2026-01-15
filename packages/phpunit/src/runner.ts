@@ -136,7 +136,7 @@ async function runPhpunitTestsForEnvironment(
 
     // Create streaming reporter
     // Disable summary since the CLI will print a combined summary
-    const useStreaming = config.reporters?.includes("default") ?? true;
+    const useStreaming = config.reporters?.some((r) => r === "default") ?? true;
     const reporter = new PHPUnitStreamingReporter({
       enabled: useStreaming,
       showSummary: false,
