@@ -10,7 +10,7 @@ import {
   resolveAbsolute,
 } from "@wp-tester/config";
 import type { Report } from "@wp-tester/results";
-import { EMPTY_REPORT, mergeReports, StreamingReporter, TeamCityParser } from "@wp-tester/results";
+import { EMPTY_REPORT, mergeReports, PHPUnitStreamingReporter, TeamCityParser } from "@wp-tester/results";
 import { startPlayground } from "@wp-tester/runtime";
 import { mountWordPressTestLibrary } from "./wordpress-test-lib";
 import { access } from "fs/promises";
@@ -137,7 +137,7 @@ async function runPhpunitTestsForEnvironment(
     // Create streaming reporter
     // Disable summary since the CLI will print a combined summary
     const useStreaming = config.reporters?.includes("default") ?? true;
-    const reporter = new StreamingReporter({
+    const reporter = new PHPUnitStreamingReporter({
       enabled: useStreaming,
       showSummary: false,
     });
@@ -185,22 +185,12 @@ async function runPhpunitTestsForEnvironment(
           write(chunk) {
             const text = stderrDecoder.decode(chunk, { stream: true });
             stderrCapture += text;
-            // Try to parse as TeamCity format first
-            parser.write(text);
 
-            // If streaming is disabled, also write non-TeamCity lines to stderr
+            // If streaming is disabled, write stderr to console
             // This ensures error messages still appear
             if (!useStreaming) {
-              const lines = text.split("\n");
-              for (const line of lines) {
-                if (!line.trim().startsWith("##teamcity[")) {
-                  process.stderr.write(line + "\n");
-                }
-              }
+              process.stderr.write(text);
             }
-          },
-          close() {
-            parser.flush();
           },
         })
       ),

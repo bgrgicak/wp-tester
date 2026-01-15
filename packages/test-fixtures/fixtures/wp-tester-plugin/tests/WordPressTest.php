@@ -1,12 +1,22 @@
 <?php
 
-use PHPUnit\Framework\TestCase;
-use Yoast\PHPUnitPolyfills\TestCases\TestCase as PolyfillTestCase;
+use Yoast\PHPUnitPolyfills\TestCases\TestCase;
 
 /**
  * Tests that require WordPress to be loaded.
  */
-class WordPressTest extends PolyfillTestCase {
+class WordPressTest extends TestCase {
+
+	/**
+	 * Skip all tests if WordPress is not loaded.
+	 */
+	protected function set_up() {
+		parent::set_up();
+
+		if ( ! function_exists( 'wp_insert_post' ) ) {
+			$this->markTestSkipped( 'WordPress is not loaded. Run tests using wp-tester CLI or set WP_LOAD_PATH environment variable.' );
+		}
+	}
 
 	/**
 	 * Test that we can create and retrieve a post using WordPress functions.

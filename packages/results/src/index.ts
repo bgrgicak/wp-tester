@@ -30,6 +30,13 @@ export {
   type StreamingReporterOptions,
 } from './streaming.js';
 export {
+  VitestStreamingBase,
+} from './vitest-streaming.js';
+export { applyDiffHighlighting, highlightStringDiff } from './diff-utils.js';
+export {
+  PHPUnitStreamingReporter,
+} from './phpunit-streaming-reporter.js';
+export {
   VitestStreamingReporter,
   createVitestStreamingReporter,
 } from './vitest-streaming-reporter.js';
