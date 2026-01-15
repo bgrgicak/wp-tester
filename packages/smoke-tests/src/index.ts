@@ -4,7 +4,7 @@
  * Provides environment validation smoke tests for wp-tester.
  */
 
-import { startVitest, type Reporter } from "vitest/node";
+import { startVitest, parseCLI, type Reporter } from "vitest/node";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { WPTesterConfig, Tests, TestType } from "@wp-tester/config";
@@ -114,31 +114,25 @@ export async function runSmokeTests(
   // Build reporters array - use our streaming reporter
   const reporters: Reporter[] = [vitestReporter];
 
-  // Parse Vitest args to extract test name pattern filter
-  let testNamePattern: string | undefined;
-  if (vitestArgs && vitestArgs.length > 0) {
-    // Look for -t or --testNamePattern flag
-    const tIndex = vitestArgs.indexOf('-t');
-    const patternIndex = vitestArgs.indexOf('--testNamePattern');
-
-    if (tIndex !== -1 && tIndex + 1 < vitestArgs.length) {
-      testNamePattern = vitestArgs[tIndex + 1];
-    } else if (patternIndex !== -1 && patternIndex + 1 < vitestArgs.length) {
-      testNamePattern = vitestArgs[patternIndex + 1];
-    }
-  }
+  // Parse all Vitest CLI arguments using Vitest's built-in parser
+  // parseCLI expects "vitest" as the first argument (like process.argv)
+  const parsedArgs = vitestArgs && vitestArgs.length > 0
+    ? parseCLI(["vitest", ...vitestArgs], { allowUnknownOptions: true })
+    : { options: {}, filter: [] };
 
   // Start Vitest programmatically with our streaming reporter
-  const vitest = await startVitest("test", [], {
+  // Merge parsed CLI options with our required overrides
+  const vitest = await startVitest("test", parsedArgs.filter, {
     config: join(packageRoot, CONFIG_FILE),
     root: packageRoot,
     include: testFiles,
     run: true,
     reporters,
-    testNamePattern,
     provide: {
       config: resolvedConfig,
     },
+    // Spread parsed CLI options - these will override defaults but be overridden by explicit options above
+    ...parsedArgs.options,
   });
 
   if (!vitest) {
