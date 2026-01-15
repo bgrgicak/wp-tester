@@ -16,6 +16,7 @@
 
 import type { StreamEvent } from "./streaming.js";
 import type { StreamingReporter } from "./streaming.js";
+import { highlightStringDiff } from "./diff-utils.js";
 
 /**
  * TeamCity message types we care about
@@ -307,7 +308,7 @@ export class TeamCityParser {
               ].join("\n");
 
               // Reorder: path first, blank line, diff
-              trace = trace ? `${trace}\n${diffOutput}` : `\n${diffOutput}`;
+              trace = trace ? `${trace}\n${diffOutput}\n` : `\n${diffOutput}\n`;
             }
 
         this.emit({

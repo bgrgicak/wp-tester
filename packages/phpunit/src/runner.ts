@@ -10,7 +10,7 @@ import {
   resolveAbsolute,
 } from "@wp-tester/config";
 import type { Report } from "@wp-tester/results";
-import { EMPTY_REPORT, mergeReports, StreamingReporter, TeamCityParser } from "@wp-tester/results";
+import { EMPTY_REPORT, mergeReports, PHPUnitStreamingReporter, TeamCityParser } from "@wp-tester/results";
 import { startPlayground } from "@wp-tester/runtime";
 import { mountWordPressTestLibrary } from "./wordpress-test-lib";
 import { access } from "fs/promises";
@@ -137,7 +137,7 @@ async function runPhpunitTestsForEnvironment(
     // Create streaming reporter
     // Disable summary since the CLI will print a combined summary
     const useStreaming = config.reporters?.includes("default") ?? true;
-    const reporter = new StreamingReporter({
+    const reporter = new PHPUnitStreamingReporter({
       enabled: useStreaming,
       showSummary: false,
     });

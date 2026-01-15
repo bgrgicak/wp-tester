@@ -4,7 +4,7 @@
  * Provides environment validation smoke tests for wp-tester.
  */
 
-import { startVitest, type Reporter } from "vitest/node";
+import { startVitest, parseCLI, type Reporter } from "vitest/node";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { WPTesterConfig, Tests, TestType } from "@wp-tester/config";
@@ -12,7 +12,7 @@ import { resolveConfig } from "@wp-tester/config";
 import {
   EMPTY_REPORT,
   VitestStreamingReporter,
-  StreamingReporter,
+  VitestStreamingBase,
 } from "@wp-tester/results";
 import type { Report } from "@wp-tester/results";
 
@@ -69,11 +69,13 @@ export function selectTestFiles(
  *
  * @param config - Test configuration or path to config file
  * @param test - Optional filter to run only specific test type (wp, plugin, or theme)
+ * @param vitestArgs - Additional arguments to pass to Vitest CLI
  * @returns CTRF report with test results
  */
 export async function runSmokeTests(
   config: WPTesterConfig | string,
-  test?: TestType | false
+  test?: TestType | false,
+  vitestArgs?: string[]
 ): Promise<Report> {
   // Resolve config (loads from path if string, resolves paths)
   const resolvedConfig = await resolveConfig(config);
@@ -99,17 +101,28 @@ export async function runSmokeTests(
 
   // Create Vitest streaming reporter with streaming configured
   // Disable summary since the CLI will print a combined summary
+  const streamingBase = new VitestStreamingBase({
+    enabled: useStreaming,
+    showSummary: false
+  });
   const vitestReporter = new VitestStreamingReporter(
     "wp-tester-smoke-tests",
-    new StreamingReporter({ enabled: useStreaming, showSummary: false })
+    streamingBase
   );
   const reporter = vitestReporter.getStreamingReporter();
 
   // Build reporters array - use our streaming reporter
   const reporters: Reporter[] = [vitestReporter];
 
+  // Parse all Vitest CLI arguments using Vitest's built-in parser
+  // parseCLI expects "vitest" as the first argument (like process.argv)
+  const parsedArgs = vitestArgs && vitestArgs.length > 0
+    ? parseCLI(["vitest", ...vitestArgs], { allowUnknownOptions: true })
+    : { options: {}, filter: [] };
+
   // Start Vitest programmatically with our streaming reporter
-  const vitest = await startVitest("test", [], {
+  // Merge parsed CLI options with our required overrides
+  const vitest = await startVitest("test", parsedArgs.filter, {
     config: join(packageRoot, CONFIG_FILE),
     root: packageRoot,
     include: testFiles,
@@ -118,6 +131,8 @@ export async function runSmokeTests(
     provide: {
       config: resolvedConfig,
     },
+    // Spread parsed CLI options - these will override defaults but be overridden by explicit options above
+    ...parsedArgs.options,
   });
 
   if (!vitest) {
