@@ -11,11 +11,7 @@
 import type { Test, TestStatus, Report } from "ctrf";
 import pc from "picocolors";
 import { applyDiffHighlighting } from "./diff-utils.js";
-
-/**
- * Spinner frames for animated loader
- */
-const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+import { SPINNER_FRAMES } from "./spinner.js";
 
 /**
  * Test event emitted during test execution
@@ -155,12 +151,14 @@ interface FileState {
 interface ReporterState {
   files: Map<string, FileState>;
   toolName: string;
+  displayName?: string;
   startTime: number;
   totalTests: number;
   passedTests: number;
   failedTests: number;
   skippedTests: number;
   pendingTests: number;
+  isRunning: boolean;
 }
 
 /**
@@ -211,6 +209,7 @@ export class StreamingReporter {
       failedTests: 0,
       skippedTests: 0,
       pendingTests: 0,
+      isRunning: false,
     };
   }
 
@@ -633,18 +632,33 @@ export class StreamingReporter {
   }
 
   /**
+   * Get display name from tool name
+   */
+  private getDisplayName(toolName: string): string {
+    const nameMap: Record<string, string> = {
+      "wp-tester-phpunit": "PHPUnit Tests",
+      "wp-tester-smoke": "WordPress Tests",
+      "wp-tester": "Tests",
+    };
+    return nameMap[toolName] || toolName;
+  }
+
+  /**
    * Called when test run starts
    */
   onRunStart(toolName?: string): void {
+    const tool = toolName || "wp-tester";
     this.state = {
       files: new Map(),
-      toolName: toolName || "wp-tester",
+      toolName: tool,
+      displayName: this.getDisplayName(tool),
       startTime: Date.now(),
       totalTests: 0,
       passedTests: 0,
       failedTests: 0,
       skippedTests: 0,
       pendingTests: 0,
+      isRunning: true,
     };
 
     this.lastOutputLineCount = 0;
@@ -655,6 +669,7 @@ export class StreamingReporter {
    */
   onRunEnd(): void {
     this.stopSpinner();
+    this.state.isRunning = false;
 
     // Clean up any tests still in "running" state across all files
     // This ensures we never show spinners in the final output
@@ -804,8 +819,9 @@ export class StreamingReporter {
 
     // Find and update the test
     // Look for a test in "running" state first (most common case - completion follows start)
-    let test = suite.tests.find((t) => t.name === name && t.status === "running");
-    const wasRunning = !!test;
+    let test = suite.tests.find(
+      (t) => t.name === name && t.status === "running"
+    );
 
     if (!test) {
       // Fallback: try exact match with suiteName (handles case where test completed before start event)

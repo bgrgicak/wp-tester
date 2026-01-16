@@ -30,11 +30,22 @@ export const testHandler = async (argv: TestArgs): Promise<void> => {
     await runWatchMode({
       configPath: absoluteConfigPath,
       onRunTests: async () => {
-        await executeTests(absoluteConfigPath, { testType: test, extraArgs, passWithNoTests, failedOnly });
+        await executeTests(absoluteConfigPath, {
+          testType: test,
+          extraArgs,
+          passWithNoTests,
+          failedOnly,
+        });
       },
     });
   } else {
-    await runTests(config, { testType: test, extraArgs, passWithNoTests, failedOnly });
+    clack.log.info(" Test Run\n");
+    await runTests(config, {
+      testType: test,
+      extraArgs,
+      passWithNoTests,
+      failedOnly,
+    });
   }
 };
 
