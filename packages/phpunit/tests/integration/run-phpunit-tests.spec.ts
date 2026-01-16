@@ -20,10 +20,10 @@ describe("runPhpunitTests integration", () => {
 
 			// Validate that tests actually ran
 			expect(report.results.summary.tests).toBeGreaterThan(0);
-			expect(report.results.summary.tests).toBe(5); // Plugin has 5 tests
+			expect(report.results.summary.tests).toBe(10); // Plugin has 5 tests × 2 PHP versions
 
 			// Validate all plugin tests passed
-			expect(report.results.summary.passed).toBe(5);
+			expect(report.results.summary.passed).toBe(10);
 			expect(report.results.summary.failed).toBe(0);
 			expect(report.results.summary.skipped).toBe(0);
 
@@ -107,12 +107,12 @@ describe("runPhpunitTests integration", () => {
 			expect(report.results).toBeDefined();
 			expect(report.results.summary).toBeDefined();
 
-			// With --filter WordPressTest, only 3 tests should run (from WordPressTest.php)
+			// With --filter WordPressTest, only 3 tests should run (from WordPressTest.php) × 2 PHP versions
 			// Without the filter, all 5 tests run (2 from UnitTest.php + 3 from WordPressTest.php)
-			expect(report.results.summary.tests).toBe(3);
+			expect(report.results.summary.tests).toBe(6);
 
 			// Validate all filtered tests passed
-			expect(report.results.summary.passed).toBe(3);
+			expect(report.results.summary.passed).toBe(6);
 			expect(report.results.summary.failed).toBe(0);
 			expect(report.results.summary.skipped).toBe(0);
 
@@ -144,10 +144,10 @@ describe("runPhpunitTests integration", () => {
 			expect(report.results).toBeDefined();
 			expect(report.results.summary).toBeDefined();
 
-			// Only WordPressTest.php should run (3 tests)
+			// Only WordPressTest.php should run (3 tests × 2 PHP versions)
 			// Not UnitTest.php (2 tests)
-			expect(report.results.summary.tests).toBe(3);
-			expect(report.results.summary.passed).toBe(3);
+			expect(report.results.summary.tests).toBe(6);
+			expect(report.results.summary.passed).toBe(6);
 			expect(report.results.summary.failed).toBe(0);
 
 			// Verify only WordPressTest tests are present
@@ -178,9 +178,9 @@ describe("runPhpunitTests integration", () => {
 			expect(report.results).toBeDefined();
 			expect(report.results.summary).toBeDefined();
 
-			// All tests should run (5 tests total)
-			expect(report.results.summary.tests).toBe(5);
-			expect(report.results.summary.passed).toBe(5);
+			// All tests should run (5 tests × 2 PHP versions = 10 tests total)
+			expect(report.results.summary.tests).toBe(10);
+			expect(report.results.summary.passed).toBe(10);
 			expect(report.results.summary.failed).toBe(0);
 		}
 	);
@@ -196,9 +196,9 @@ describe("runPhpunitTests integration", () => {
 				["--filter", "WordPressTest"]
 			);
 
-			// Should only run WordPressTest (3 tests)
-			expect(report.results.summary.tests).toBe(3);
-			expect(report.results.summary.passed).toBe(3);
+			// Should only run WordPressTest (3 tests × 2 PHP versions)
+			expect(report.results.summary.tests).toBe(6);
+			expect(report.results.summary.passed).toBe(6);
 
 			// Verify only WordPressTest tests ran
 			const testNames = report.results.tests.map((test) => test.name);
@@ -219,9 +219,9 @@ describe("runPhpunitTests integration", () => {
 			);
 
 			// Should only run tests matching filter in the specified file
-			// WordPressTest.php has 3 tests, 2 match "test_wordpress" filter
-			expect(report.results.summary.tests).toBe(2);
-			expect(report.results.summary.passed).toBe(2);
+			// WordPressTest.php has 3 tests, 2 match "test_wordpress" filter × 2 PHP versions
+			expect(report.results.summary.tests).toBe(4);
+			expect(report.results.summary.passed).toBe(4);
 
 			const testNames = report.results.tests.map((test) => test.name);
 			expect(testNames.some(name => name.includes("test_wordpress_sanitize_functions"))).toBe(true);
@@ -242,9 +242,9 @@ describe("runPhpunitTests integration", () => {
 				["--stop-on-failure", "tests/WordPressTest.php"]
 			);
 
-			// Should run WordPressTest.php (3 tests)
-			expect(report.results.summary.tests).toBe(3);
-			expect(report.results.summary.passed).toBe(3);
+			// Should run WordPressTest.php (3 tests × 2 PHP versions)
+			expect(report.results.summary.tests).toBe(6);
+			expect(report.results.summary.passed).toBe(6);
 
 			const testNames = report.results.tests.map((test) => test.name);
 			expect(testNames.some(name => name.includes("test_can_create_and_retrieve_post"))).toBe(true);
@@ -264,9 +264,9 @@ describe("runPhpunitTests integration", () => {
 				["--no-coverage", "--stop-on-failure", "tests/WordPressTest.php"]
 			);
 
-			// Should run WordPressTest.php (3 tests)
-			expect(report.results.summary.tests).toBe(3);
-			expect(report.results.summary.passed).toBe(3);
+			// Should run WordPressTest.php (3 tests × 2 PHP versions)
+			expect(report.results.summary.tests).toBe(6);
+			expect(report.results.summary.passed).toBe(6);
 		}
 	);
 
@@ -281,9 +281,9 @@ describe("runPhpunitTests integration", () => {
 				["--colors=auto", "tests/WordPressTest.php"]
 			);
 
-			// Should run WordPressTest.php (3 tests)
-			expect(report.results.summary.tests).toBe(3);
-			expect(report.results.summary.passed).toBe(3);
+			// Should run WordPressTest.php (3 tests × 2 PHP versions)
+			expect(report.results.summary.tests).toBe(6);
+			expect(report.results.summary.passed).toBe(6);
 		}
 	);
 });

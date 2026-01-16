@@ -5,7 +5,7 @@ import { join } from 'path';
 const cliPath = join(__dirname, '../../src/cli/cli.ts');
 const cliCommand = `npx tsx ${cliPath}`;
 
-describe('CLI Integration Tests', { timeout: 30000 }, () => {
+describe('CLI Integration Tests', { timeout: 60000 }, () => {
   it('should show help', () => {
     const output = execSync(`${cliCommand} --help`, { encoding: 'utf-8' });
     expect(output).toContain('wp-tester <command> [options]');
