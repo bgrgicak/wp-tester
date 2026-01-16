@@ -136,6 +136,15 @@ export async function writeConfigFile(
  * @returns Absolute path to the config file
  */
 export function getConfigPath(config: string): string {
+  // Expand tilde (~) to home directory
+  if (config.startsWith('~/') || config === '~') {
+    const homeDir = process.env.HOME || process.env.USERPROFILE;
+    if (!homeDir) {
+      throw new Error('Unable to resolve home directory');
+    }
+    config = config === '~' ? homeDir : join(homeDir, config.slice(2));
+  }
+
   return isAbsolute(config) ? config : resolve(getWorkingDirectory(), config);
 }
 
@@ -274,8 +283,11 @@ async function expandEnvironments(
 
   for (const env of environments) {
     // Load blueprint if it's a string path (needed to check preferredVersions)
+    // If no blueprint is provided, use an empty object (defaults will be applied later)
     let blueprint: BlueprintV1Declaration;
-    if (typeof env.blueprint === "string") {
+    if (!env.blueprint) {
+      blueprint = {};
+    } else if (typeof env.blueprint === "string") {
       const blueprintPath = resolveAbsolute(env.blueprint, projectDir);
       const blueprintContent = await readFile(blueprintPath, "utf-8");
       blueprint = JSON.parse(blueprintContent) as BlueprintV1Declaration;
@@ -285,10 +297,11 @@ async function expandEnvironments(
 
     // Determine PHP versions to use
     // Blueprint preferredVersions.php overrides environment-level php
+    // However, "latest" is treated as unspecified, allowing matrix expansion
     const blueprintPhp = blueprint.preferredVersions?.php;
     let phpVersions: string[];
     let phpIsFromMatrix: boolean;
-    if (blueprintPhp) {
+    if (blueprintPhp && blueprintPhp !== "latest") {
       // Blueprint takes precedence - use only the blueprint version
       phpVersions = [blueprintPhp];
       phpIsFromMatrix = false; // Not from matrix, from blueprint
@@ -300,10 +313,11 @@ async function expandEnvironments(
 
     // Determine WP versions to use
     // Blueprint preferredVersions.wp overrides environment-level wp
+    // However, "latest" is treated as unspecified, allowing matrix expansion
     const blueprintWp = blueprint.preferredVersions?.wp;
     let wpVersions: string[];
     let wpIsFromMatrix: boolean;
-    if (blueprintWp) {
+    if (blueprintWp && blueprintWp !== "latest") {
       // Blueprint takes precedence - use only the blueprint version
       wpVersions = [blueprintWp];
       wpIsFromMatrix = false; // Not from matrix, from blueprint
@@ -482,8 +496,11 @@ export async function resolveConfig(
   const resolvedEnvironments: ResolvedEnvironment[] = await Promise.all(
     expandedEnvironments.map(async (env) => {
       // Resolve blueprint from string to BlueprintV1Declaration if needed
+      // If no blueprint is provided, use an empty object (defaults will be applied later)
       let blueprint: BlueprintV1Declaration;
-      if (typeof env.blueprint === "string") {
+      if (!env.blueprint) {
+        blueprint = {};
+      } else if (typeof env.blueprint === "string") {
         const blueprintPath = resolveAbsolute(env.blueprint, projectDir);
         const blueprintContent = await readFile(blueprintPath, "utf-8");
         blueprint = JSON.parse(blueprintContent) as BlueprintV1Declaration;
