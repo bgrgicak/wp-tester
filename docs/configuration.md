@@ -147,10 +147,93 @@ When not specified, the path is automatically determined based on `projectType`:
 
 Each environment is an object with:
 - `name` (optional string): A descriptive name for the environment
+- `php` (optional string or array): PHP version(s) to test against. Can be a single version string or an array of versions for matrix testing.
+- `wp` (optional string or array): WordPress version(s) to test against. Can be a single version string or an array of versions for matrix testing.
 - `blueprint` (required): Either an inline WordPress Playground Blueprint object or a string path to a Blueprint JSON file
 - `mounts` (optional): Array of mount configurations to map local filesystem paths into the WordPress Playground virtual filesystem
 - `env` (optional object): Environment variables to set when running PHPUnit tests. Key-value pairs where both keys and values are strings.
 - `skip` (optional boolean, default: false): When set to `true`, this environment will be skipped during test execution. Useful for temporarily excluding environments without removing them from the configuration file. Since JSON doesn't support comments, this provides a way to "comment out" environments.
+
+#### Matrix Testing with Array Syntax
+
+Instead of manually defining multiple environments for different version combinations, you can use arrays for `php` and `wp` properties to automatically generate all combinations (Cartesian product).
+
+**Example - Matrix expansion:**
+
+```json
+{
+  "environments": [
+    {
+      "name": "Matrix Test",
+      "php": ["8.1", "8.2"],
+      "wp": ["6.6", "6.7"],
+      "blueprint": {}
+    }
+  ]
+}
+```
+
+This single environment definition automatically expands into **4 test environments**:
+1. Matrix Test (PHP 8.1, WP 6.6)
+2. Matrix Test (PHP 8.1, WP 6.7)
+3. Matrix Test (PHP 8.2, WP 6.6)
+4. Matrix Test (PHP 8.2, WP 6.7)
+
+**Key behaviors:**
+
+- **Automatic naming**: Expanded environments receive descriptive names incorporating their version combinations (e.g., "Matrix Test (PHP 8.1, WP 6.6)")
+- **Single-element arrays**: Arrays containing only one version don't add version suffixes to environment names, keeping names clean for non-matrix scenarios
+- **Property preservation**: All other environment properties (mounts, env, blueprint settings) are retained across all expanded variants
+- **Blueprint precedence**: When `blueprint.preferredVersions` is specified, those values override environment-level `php` and `wp` array values
+
+**Example - Single-element array (no suffix):**
+
+```json
+{
+  "environments": [
+    {
+      "name": "My Tests",
+      "php": ["8.2"],
+      "wp": ["6.7"],
+      "blueprint": {}
+    }
+  ]
+}
+```
+
+This creates a single environment named "My Tests" (without version suffix) since both arrays have only one element.
+
+**Example - Mixed with other properties:**
+
+```json
+{
+  "environments": [
+    {
+      "name": "Full Matrix",
+      "php": ["8.1", "8.2", "8.3"],
+      "wp": ["6.5", "6.6", "6.7"],
+      "blueprint": {
+        "features": {
+          "networking": true
+        }
+      },
+      "env": {
+        "WP_DEBUG": "1"
+      },
+      "mounts": [
+        {
+          "hostPath": "./custom-plugin",
+          "vfsPath": "/wordpress/wp-content/plugins/custom-plugin"
+        }
+      ]
+    }
+  ]
+}
+```
+
+This generates **9 environments** (3 PHP × 3 WP versions), each with networking enabled, WP_DEBUG set, and the custom plugin mounted.
+
+#### Traditional Environment Definition
 
 **Example:**
 
@@ -305,7 +388,7 @@ The `env` property allows you to set environment variables that will be availabl
 {
   "environments": [
     {
-      "name": "Debug Environment",
+      "name": "Test Environment",
       "blueprint": {
         "preferredVersions": {
           "php": "8.2",
@@ -313,19 +396,18 @@ The `env` property allows you to set environment variables that will be availabl
         }
       },
       "env": {
-        "WP_DEBUG": "1",
-        "WP_DEBUG_LOG": "1",
-        "CUSTOM_TEST_VAR": "my-value"
+        "MY_API_KEY": "test-key-123",
+        "TEST_MODE": "integration",
+        "DATABASE_PREFIX": "test_"
       }
     }
   ]
 }
 ```
 
-**Common environment variables:**
-- `WP_DEBUG`: Enable WordPress debug mode
-- `WP_DEBUG_LOG`: Enable debug logging
-- `WP_TESTS_DIR`: Override the default WordPress tests library location (defaults to `/tmp/wordpress-tests-lib/`)
+Environment variables set here are available in your PHPUnit tests via `getenv('MY_API_KEY')` or `$_ENV['MY_API_KEY']`.
+
+> **Note:** To set PHP constants like `WP_DEBUG`, use the blueprint's `constants` property or `defineWpConfigConsts` step instead.
 
 **Default Versions:**
 

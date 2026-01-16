@@ -205,25 +205,12 @@ wp-tester test --test phpunit -- --filter MyTestClass --verbose
 | `--test` | `-t` | Type of test to run (wp, plugin, theme, phpunit) |
 | `--watch` | `-w` | Watch for file changes and re-run tests |
 | `--failed-only` | | Only display failed tests in output |
-| `--passWithNoTests` | | Allow test suite to pass when no tests are executed |
+| `--passWithNoTests` | | Allow test suite to pass when no tests are executed (see [passWithNoTests](configuration.md#testspasswithnotests)) |
+| `--` | | Pass extra arguments to test runner (requires `--test`) |
 
-#### Passing Extra Arguments
-
-You can pass additional arguments directly to the underlying test runner using `--` followed by the arguments. This requires specifying the test type with `--test`.
-
-**Examples:**
-
-```bash
-# Pass arguments to PHPUnit
-wp-tester test --test phpunit -- --filter TestClassName
-wp-tester test --test phpunit -- --group integration --verbose
-wp-tester test --test phpunit -- --stop-on-failure
-
-# Pass arguments to smoke tests
-wp-tester test --test plugin -- --reporter=verbose
-```
-
-Arguments after `--` are passed directly to the test runner without modification.
+Extra arguments after `--` are passed directly to the underlying test runner:
+- `phpunit` tests: [PHPUnit CLI arguments](https://docs.phpunit.de/en/10.5/textui.html)
+- `plugin`, `theme`, `wp` tests: [Vitest CLI arguments](https://vitest.dev/guide/cli.html)
 
 #### Watch Mode
 

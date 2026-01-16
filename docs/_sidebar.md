@@ -3,13 +3,12 @@
   - [Installation](/#installation)
   - [Quick Start](/#quick-start)
   - [CLI Commands](/#cli-commands)
-    - [Test Options](/#test-options)
-    - [Passing Extra Arguments](/#passing-extra-arguments)
 
 - Configuration
   - [Configuration Overview](configuration.md)
   - [Project Settings](configuration.md#project-settings)
   - [Environments](configuration.md#environments)
+    - [Matrix Testing](configuration.md#matrix-testing-with-array-syntax)
     - [Environment Variables](configuration.md#environment-variables)
     - [Default Versions](configuration.md#default-versions)
   - [Tests](configuration.md#tests)
