@@ -69,6 +69,9 @@ If validation fails, the command will display detailed error messages indicating
 
 ```json
 {
+  "projectHostPath": "./",
+  "projectVFSPath": "/wordpress/wp-content/plugins/my-plugin",
+  "projectType": "plugin",
   "environments": [],
   "tests": {},
   "reporters": {}
@@ -76,6 +79,65 @@ If validation fails, the command will display detailed error messages indicating
 ```
 
 ## Configuration Options
+
+### Project Settings
+
+These settings control how your project is mounted and identified in the test environments.
+
+#### `projectHostPath`
+
+**Type:** `string`
+**Required:** No
+**Default:** Current working directory (where `wp-tester.json` is located)
+**Description:** The local filesystem path to your project directory. All relative paths in the configuration are resolved from this directory.
+
+**Example:**
+```json
+{
+  "projectHostPath": "./my-project"
+}
+```
+
+#### `projectVFSPath`
+
+**Type:** `string`
+**Required:** No (but required when `projectType` is `"other"`)
+**Description:** The path where your project directory will be mounted in the WordPress Playground virtual filesystem.
+
+When not specified, the path is automatically determined based on `projectType`:
+- `plugin`: `/wordpress/wp-content/plugins/{directory-name}`
+- `theme`: `/wordpress/wp-content/themes/{directory-name}`
+- `wp-content`: `/wordpress/wp-content`
+- `wordpress`: `/wordpress`
+- `other`: **Required** - You must specify where your project should be mounted
+
+**Example:**
+```json
+{
+  "projectVFSPath": "/wordpress/wp-content/mu-plugins/my-mu-plugin"
+}
+```
+
+#### `projectType`
+
+**Type:** `"plugin" | "theme" | "wp-content" | "wordpress" | "other"`
+**Required:** No
+**Default:** Auto-detected during setup based on project structure
+**Description:** The type of WordPress project. This determines default mounting behavior and which tests are applicable.
+
+**Auto-detection rules:**
+- `plugin`: Detected when the project root contains a PHP file with a `Plugin Name:` header
+- `theme`: Detected when the project root contains a `style.css` with a `Theme Name:` header
+- `wp-content`: Detected when the project structure resembles `wp-content/` directory
+- `wordpress`: Detected when the project contains WordPress core files
+- `other`: Used when no WordPress project type is detected
+
+**Example:**
+```json
+{
+  "projectType": "plugin"
+}
+```
 
 ### `environments`
 
@@ -85,9 +147,93 @@ If validation fails, the command will display detailed error messages indicating
 
 Each environment is an object with:
 - `name` (optional string): A descriptive name for the environment
+- `php` (optional string or array): PHP version(s) to test against. Can be a single version string or an array of versions for matrix testing.
+- `wp` (optional string or array): WordPress version(s) to test against. Can be a single version string or an array of versions for matrix testing.
 - `blueprint` (required): Either an inline WordPress Playground Blueprint object or a string path to a Blueprint JSON file
 - `mounts` (optional): Array of mount configurations to map local filesystem paths into the WordPress Playground virtual filesystem
+- `env` (optional object): Environment variables to set when running PHPUnit tests. Key-value pairs where both keys and values are strings.
 - `skip` (optional boolean, default: false): When set to `true`, this environment will be skipped during test execution. Useful for temporarily excluding environments without removing them from the configuration file. Since JSON doesn't support comments, this provides a way to "comment out" environments.
+
+#### Matrix Testing with Array Syntax
+
+Instead of manually defining multiple environments for different version combinations, you can use arrays for `php` and `wp` properties to automatically generate all combinations (Cartesian product).
+
+**Example - Matrix expansion:**
+
+```json
+{
+  "environments": [
+    {
+      "name": "Matrix Test",
+      "php": ["8.1", "8.2"],
+      "wp": ["6.6", "6.7"],
+      "blueprint": {}
+    }
+  ]
+}
+```
+
+This single environment definition automatically expands into **4 test environments**:
+1. Matrix Test (PHP 8.1, WP 6.6)
+2. Matrix Test (PHP 8.1, WP 6.7)
+3. Matrix Test (PHP 8.2, WP 6.6)
+4. Matrix Test (PHP 8.2, WP 6.7)
+
+**Key behaviors:**
+
+- **Automatic naming**: Expanded environments receive descriptive names incorporating their version combinations (e.g., "Matrix Test (PHP 8.1, WP 6.6)")
+- **Single-element arrays**: Arrays containing only one version don't add version suffixes to environment names, keeping names clean for non-matrix scenarios
+- **Property preservation**: All other environment properties (mounts, env, blueprint settings) are retained across all expanded variants
+- **Blueprint precedence**: When `blueprint.preferredVersions` is specified, those values override environment-level `php` and `wp` array values
+
+**Example - Single-element array (no suffix):**
+
+```json
+{
+  "environments": [
+    {
+      "name": "My Tests",
+      "php": ["8.2"],
+      "wp": ["6.7"],
+      "blueprint": {}
+    }
+  ]
+}
+```
+
+This creates a single environment named "My Tests" (without version suffix) since both arrays have only one element.
+
+**Example - Mixed with other properties:**
+
+```json
+{
+  "environments": [
+    {
+      "name": "Full Matrix",
+      "php": ["8.1", "8.2", "8.3"],
+      "wp": ["6.5", "6.6", "6.7"],
+      "blueprint": {
+        "features": {
+          "networking": true
+        }
+      },
+      "env": {
+        "WP_DEBUG": "1"
+      },
+      "mounts": [
+        {
+          "hostPath": "./custom-plugin",
+          "vfsPath": "/wordpress/wp-content/plugins/custom-plugin"
+        }
+      ]
+    }
+  ]
+}
+```
+
+This generates **9 environments** (3 PHP × 3 WP versions), each with networking enabled, WP_DEBUG set, and the custom plugin mounted.
+
+#### Traditional Environment Definition
 
 **Example:**
 
@@ -232,6 +378,70 @@ Each mount object contains:
 
 See [WordPress Playground CLI mounting documentation](https://wordpress.github.io/wordpress-playground/developers/local-development/wp-playground-cli#mounting-a-plugin-programmatically) for more details on how mounting works.
 
+**Environment Variables:**
+
+The `env` property allows you to set environment variables that will be available during PHPUnit test execution. This is useful for configuring test behavior or passing custom settings to your test suite.
+
+**Example with environment variables:**
+
+```json
+{
+  "environments": [
+    {
+      "name": "Test Environment",
+      "blueprint": {
+        "preferredVersions": {
+          "php": "8.2",
+          "wp": "6.7"
+        }
+      },
+      "env": {
+        "MY_API_KEY": "test-key-123",
+        "TEST_MODE": "integration",
+        "DATABASE_PREFIX": "test_"
+      }
+    }
+  ]
+}
+```
+
+Environment variables set here are available in your PHPUnit tests via `getenv('MY_API_KEY')` or `$_ENV['MY_API_KEY']`.
+
+> **Note:** To set PHP constants like `WP_DEBUG`, use the blueprint's `constants` property or `defineWpConfigConsts` step instead.
+
+**Default Versions:**
+
+When `preferredVersions` is not specified in a blueprint, or when individual version properties are omitted, wp-tester defaults to `"latest"` for both PHP and WordPress versions.
+
+```json
+{
+  "environments": [
+    {
+      "name": "Latest everything",
+      "blueprint": {}
+    }
+  ]
+}
+```
+
+This is equivalent to:
+
+```json
+{
+  "environments": [
+    {
+      "name": "Latest everything",
+      "blueprint": {
+        "preferredVersions": {
+          "php": "latest",
+          "wp": "latest"
+        }
+      }
+    }
+  ]
+}
+```
+
 ### `tests`
 
 **Type:** `Object`
@@ -250,12 +460,33 @@ See [WordPress Playground CLI mounting documentation](https://wordpress.github.i
       "phpunitPath": "vendor/bin/phpunit",
       "configPath": "phpunit.xml.dist",
       "bootstrapPath": "tests/bootstrap.php"
-    }
+    },
+    "passWithNoTests": false
   }
 }
 ```
 
 **Options:**
+
+#### `tests.passWithNoTests`
+
+**Type:** `boolean`
+**Default:** `false`
+**Description:** Allow the test suite to pass when no tests are executed. By default, wp-tester exits with code 1 when no tests are found. Set to `true` to exit with code 0 instead (similar to Jest's `--passWithNoTests` flag).
+
+This is useful in CI/CD pipelines where you want the build to pass even if no tests match the current filter or if test files haven't been created yet.
+
+**Example:**
+```json
+{
+  "tests": {
+    "plugin": "my-plugin",
+    "passWithNoTests": true
+  }
+}
+```
+
+This option can also be set via the CLI flag `--passWithNoTests` when running tests.
 
 #### `tests.plugin`
 
@@ -463,10 +694,20 @@ The WordPress test library is the official WordPress testing framework used by W
 
 When you run PHPUnit unit tests, WP Tester automatically:
 1. Detects the WordPress version from your environment configuration
-2. Downloads the matching test library from GitHub (cached at `~/.wp-tester/cache/test-lib/`)
+2. Downloads the matching test library from GitHub
 3. Mounts it in Playground at `/tmp/wordpress-tests-lib/` (standard location)
 4. Generates `wp-tests-config.php` with proper database and path settings
 5. Sets the `WP_TESTS_DIR` environment variable
+
+**Cache Location:**
+
+The WordPress test library is cached locally to avoid re-downloading for each test run:
+
+- **Cache directory**: `~/.wp-tester/cache/test-lib/`
+- **Structure**: Each WordPress version gets its own subdirectory (e.g., `~/.wp-tester/cache/test-lib/6.7.0/`)
+- **Contents**: Only the `tests/phpunit/` directory from `wordpress-develop` is extracted
+
+The cache is automatically managed and updated when a new version is requested. You can safely delete the cache directory to force a fresh download if needed.
 
 **Your test bootstrap** only needs to handle unit mode (integration mode is handled by wp-tester):
 
@@ -543,6 +784,21 @@ Or simply omit the property to use defaults.
 
 Outputs test results in CTRF (Common Test Report Format) JSON format to a file.
 
+**What is CTRF?**
+
+[CTRF (Common Test Report Format)](https://ctrf.io/) is a standardized JSON format for test results that enables interoperability between different testing tools and CI/CD systems. The format provides a consistent structure for reporting test outcomes regardless of the underlying test framework.
+
+CTRF reports include:
+- **Summary**: Aggregate counts of passed, failed, skipped, and pending tests
+- **Tests**: Detailed information about each test including name, status, duration, and failure messages
+- **Tool**: Information about the test runner that generated the report
+
+This format is particularly useful for:
+- CI/CD pipeline integrations (GitHub Actions, GitLab CI, Jenkins, etc.)
+- Test result aggregation across multiple test suites
+- Historical test tracking and analysis
+- Custom reporting dashboards
+
 **Example:**
 ```json
 {
@@ -556,6 +812,36 @@ Outputs test results in CTRF (Common Test Report Format) JSON format to a file.
 
 **Options:**
 - `outputFile` (string, required): Path where the JSON file should be written
+
+**Example CTRF output structure:**
+```json
+{
+  "reportFormat": "CTRF",
+  "specVersion": "0.0.4",
+  "results": {
+    "tool": {
+      "name": "wp-tester"
+    },
+    "summary": {
+      "tests": 10,
+      "passed": 8,
+      "failed": 1,
+      "skipped": 1,
+      "pending": 0,
+      "other": 0,
+      "start": 1704067200000,
+      "stop": 1704067210000
+    },
+    "tests": [
+      {
+        "name": "Plugin activates successfully",
+        "status": "passed",
+        "duration": 150
+      }
+    ]
+  }
+}
+```
 
 **Default Behavior:**
 

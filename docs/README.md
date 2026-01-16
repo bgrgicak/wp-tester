@@ -186,7 +186,31 @@ wp-tester test --config /path/to/project
 
 # Watch mode - re-run tests on file changes
 wp-tester test --watch
+
+# Only show failed tests in output
+wp-tester test --failed-only
+
+# Allow tests to pass when no tests are found
+wp-tester test --passWithNoTests
+
+# Pass extra arguments to the test runner (requires --test)
+wp-tester test --test phpunit -- --filter MyTestClass --verbose
 ```
+
+#### Test Options
+
+| Option | Alias | Description |
+|--------|-------|-------------|
+| `--config` | `-c` | Path to wp-tester.json config file |
+| `--test` | `-t` | Type of test to run (wp, plugin, theme, phpunit) |
+| `--watch` | `-w` | Watch for file changes and re-run tests |
+| `--failed-only` | | Only display failed tests in output |
+| `--passWithNoTests` | | Allow test suite to pass when no tests are executed (see [passWithNoTests](configuration.md#testspasswithnotests)) |
+| `--` | | Pass extra arguments to test runner (requires `--test`) |
+
+Extra arguments after `--` are passed directly to the underlying test runner:
+- `phpunit` tests: [PHPUnit CLI arguments](https://docs.phpunit.de/en/10.5/textui.html)
+- `plugin`, `theme`, `wp` tests: [Vitest CLI arguments](https://vitest.dev/guide/cli.html)
 
 #### Watch Mode
 
