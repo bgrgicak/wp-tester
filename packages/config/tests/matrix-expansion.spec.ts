@@ -9,7 +9,7 @@ describe("Matrix Expansion - Environment Version Arrays", () => {
         environments: [
           {
             name: "Test",
-            php: "8.2",
+            php: ["8.2"],
             blueprint: {},
           },
         ],
@@ -20,8 +20,12 @@ describe("Matrix Expansion - Environment Version Arrays", () => {
 
       expect(resolved.environments).toHaveLength(1);
       expect(resolved.environments[0].name).toBe("Test");
-      expect(resolved.environments[0].blueprint.preferredVersions.php).toBe("8.2");
-      expect(resolved.environments[0].blueprint.preferredVersions.wp).toBe("latest");
+      expect(resolved.environments[0].blueprint.preferredVersions.php).toBe(
+        "8.2"
+      );
+      expect(resolved.environments[0].blueprint.preferredVersions.wp).toBe(
+        "latest"
+      );
     });
 
     it("should handle single wp version string", async () => {
@@ -29,7 +33,7 @@ describe("Matrix Expansion - Environment Version Arrays", () => {
         environments: [
           {
             name: "Test",
-            wp: "6.7",
+            wp: ["6.7"],
             blueprint: {},
           },
         ],
@@ -40,8 +44,12 @@ describe("Matrix Expansion - Environment Version Arrays", () => {
 
       expect(resolved.environments).toHaveLength(1);
       expect(resolved.environments[0].name).toBe("Test");
-      expect(resolved.environments[0].blueprint.preferredVersions.php).toBe("latest");
-      expect(resolved.environments[0].blueprint.preferredVersions.wp).toBe("6.7");
+      expect(resolved.environments[0].blueprint.preferredVersions.php).toBe(
+        "latest"
+      );
+      expect(resolved.environments[0].blueprint.preferredVersions.wp).toBe(
+        "6.7"
+      );
     });
 
     it("should handle single php and wp version strings", async () => {
@@ -49,8 +57,8 @@ describe("Matrix Expansion - Environment Version Arrays", () => {
         environments: [
           {
             name: "Test",
-            php: "8.2",
-            wp: "6.7",
+            php: ["8.2"],
+            wp: ["6.7"],
             blueprint: {},
           },
         ],
@@ -61,8 +69,12 @@ describe("Matrix Expansion - Environment Version Arrays", () => {
 
       expect(resolved.environments).toHaveLength(1);
       expect(resolved.environments[0].name).toBe("Test");
-      expect(resolved.environments[0].blueprint.preferredVersions.php).toBe("8.2");
-      expect(resolved.environments[0].blueprint.preferredVersions.wp).toBe("6.7");
+      expect(resolved.environments[0].blueprint.preferredVersions.php).toBe(
+        "8.2"
+      );
+      expect(resolved.environments[0].blueprint.preferredVersions.wp).toBe(
+        "6.7"
+      );
     });
   });
 
@@ -83,11 +95,17 @@ describe("Matrix Expansion - Environment Version Arrays", () => {
 
       expect(resolved.environments).toHaveLength(3);
       expect(resolved.environments[0].name).toBe("Test (PHP 8.1)");
-      expect(resolved.environments[0].blueprint.preferredVersions.php).toBe("8.1");
+      expect(resolved.environments[0].blueprint.preferredVersions.php).toBe(
+        "8.1"
+      );
       expect(resolved.environments[1].name).toBe("Test (PHP 8.2)");
-      expect(resolved.environments[1].blueprint.preferredVersions.php).toBe("8.2");
+      expect(resolved.environments[1].blueprint.preferredVersions.php).toBe(
+        "8.2"
+      );
       expect(resolved.environments[2].name).toBe("Test (PHP 8.3)");
-      expect(resolved.environments[2].blueprint.preferredVersions.php).toBe("8.3");
+      expect(resolved.environments[2].blueprint.preferredVersions.php).toBe(
+        "8.3"
+      );
     });
 
     it("should expand environment without base name", async () => {
@@ -126,9 +144,13 @@ describe("Matrix Expansion - Environment Version Arrays", () => {
 
       expect(resolved.environments).toHaveLength(2);
       expect(resolved.environments[0].name).toBe("Test (WP 6.6)");
-      expect(resolved.environments[0].blueprint.preferredVersions.wp).toBe("6.6");
+      expect(resolved.environments[0].blueprint.preferredVersions.wp).toBe(
+        "6.6"
+      );
       expect(resolved.environments[1].name).toBe("Test (WP 6.7)");
-      expect(resolved.environments[1].blueprint.preferredVersions.wp).toBe("6.7");
+      expect(resolved.environments[1].blueprint.preferredVersions.wp).toBe(
+        "6.7"
+      );
     });
   });
 
@@ -151,25 +173,33 @@ describe("Matrix Expansion - Environment Version Arrays", () => {
       expect(resolved.environments).toHaveLength(4);
 
       // Check all 4 combinations
-      expect(resolved.environments[0].name).toBe("Matrix Test (PHP 8.1, WP 6.6)");
+      expect(resolved.environments[0].name).toBe(
+        "Matrix Test (PHP 8.1, WP 6.6)"
+      );
       expect(resolved.environments[0].blueprint.preferredVersions).toEqual({
         php: "8.1",
         wp: "6.6",
       });
 
-      expect(resolved.environments[1].name).toBe("Matrix Test (PHP 8.1, WP 6.7)");
+      expect(resolved.environments[1].name).toBe(
+        "Matrix Test (PHP 8.1, WP 6.7)"
+      );
       expect(resolved.environments[1].blueprint.preferredVersions).toEqual({
         php: "8.1",
         wp: "6.7",
       });
 
-      expect(resolved.environments[2].name).toBe("Matrix Test (PHP 8.2, WP 6.6)");
+      expect(resolved.environments[2].name).toBe(
+        "Matrix Test (PHP 8.2, WP 6.6)"
+      );
       expect(resolved.environments[2].blueprint.preferredVersions).toEqual({
         php: "8.2",
         wp: "6.6",
       });
 
-      expect(resolved.environments[3].name).toBe("Matrix Test (PHP 8.2, WP 6.7)");
+      expect(resolved.environments[3].name).toBe(
+        "Matrix Test (PHP 8.2, WP 6.7)"
+      );
       expect(resolved.environments[3].blueprint.preferredVersions).toEqual({
         php: "8.2",
         wp: "6.7",
@@ -205,6 +235,7 @@ describe("Matrix Expansion - Environment Version Arrays", () => {
             blueprint: {
               preferredVersions: {
                 php: "8.0",
+                wp: "latest",
               },
             },
           },
@@ -217,7 +248,9 @@ describe("Matrix Expansion - Environment Version Arrays", () => {
       // Blueprint overrides, so only 1 environment
       expect(resolved.environments).toHaveLength(1);
       expect(resolved.environments[0].name).toBe("Test");
-      expect(resolved.environments[0].blueprint.preferredVersions.php).toBe("8.0");
+      expect(resolved.environments[0].blueprint.preferredVersions.php).toBe(
+        "8.0"
+      );
     });
 
     it("should use blueprint wp version instead of environment wp array", async () => {
@@ -228,6 +261,7 @@ describe("Matrix Expansion - Environment Version Arrays", () => {
             wp: ["6.6", "6.7"],
             blueprint: {
               preferredVersions: {
+                php: "latest",
                 wp: "6.5",
               },
             },
@@ -241,7 +275,9 @@ describe("Matrix Expansion - Environment Version Arrays", () => {
       // Blueprint overrides, so only 1 environment
       expect(resolved.environments).toHaveLength(1);
       expect(resolved.environments[0].name).toBe("Test");
-      expect(resolved.environments[0].blueprint.preferredVersions.wp).toBe("6.5");
+      expect(resolved.environments[0].blueprint.preferredVersions.wp).toBe(
+        "6.5"
+      );
     });
 
     it("should partially override when only one version is in blueprint", async () => {
@@ -254,7 +290,7 @@ describe("Matrix Expansion - Environment Version Arrays", () => {
             blueprint: {
               preferredVersions: {
                 php: "8.0",
-                // wp not specified, so wp array should be used
+                wp: "latest",
               },
             },
           },
@@ -267,12 +303,20 @@ describe("Matrix Expansion - Environment Version Arrays", () => {
       // Blueprint php overrides (1), but wp array expands (2)
       expect(resolved.environments).toHaveLength(2);
       expect(resolved.environments[0].name).toBe("Test (WP 6.6)");
-      expect(resolved.environments[0].blueprint.preferredVersions.php).toBe("8.0");
-      expect(resolved.environments[0].blueprint.preferredVersions.wp).toBe("6.6");
+      expect(resolved.environments[0].blueprint.preferredVersions.php).toBe(
+        "8.0"
+      );
+      expect(resolved.environments[0].blueprint.preferredVersions.wp).toBe(
+        "6.6"
+      );
 
       expect(resolved.environments[1].name).toBe("Test (WP 6.7)");
-      expect(resolved.environments[1].blueprint.preferredVersions.php).toBe("8.0");
-      expect(resolved.environments[1].blueprint.preferredVersions.wp).toBe("6.7");
+      expect(resolved.environments[1].blueprint.preferredVersions.php).toBe(
+        "8.0"
+      );
+      expect(resolved.environments[1].blueprint.preferredVersions.wp).toBe(
+        "6.7"
+      );
     });
 
     it("should not expand when both blueprint versions are set", async () => {
@@ -452,6 +496,29 @@ describe("Matrix Expansion - Environment Version Arrays", () => {
   });
 
   describe("Edge cases", () => {
+    it("should handle environment without blueprint property", async () => {
+      const config: WPTesterConfig = {
+        environments: [
+          {
+            name: "Test",
+            php: ["8.1", "8.2"],
+          },
+        ],
+        tests: {},
+      };
+
+      const resolved = await resolveConfig(config);
+
+      // Should expand based on php array and create default blueprint
+      expect(resolved.environments).toHaveLength(2);
+      expect(resolved.environments[0].name).toBe("Test (PHP 8.1)");
+      expect(resolved.environments[0].blueprint.preferredVersions.php).toBe("8.1");
+      expect(resolved.environments[0].blueprint.preferredVersions.wp).toBe("latest");
+      expect(resolved.environments[1].name).toBe("Test (PHP 8.2)");
+      expect(resolved.environments[1].blueprint.preferredVersions.php).toBe("8.2");
+      expect(resolved.environments[1].blueprint.preferredVersions.wp).toBe("latest");
+    });
+
     it("should handle empty version arrays", async () => {
       const config: WPTesterConfig = {
         environments: [

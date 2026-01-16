@@ -225,22 +225,6 @@ export interface Reporters {
 export type EnvironmentVariables = Record<string, string>;
 
 /**
- * PHP version specification for matrix testing.
- * Can be a single version string or an array of versions for matrix expansion.
- * @example "8.2"
- * @example ["8.1", "8.2", "8.3"]
- */
-export type PHPVersionSpec = string | string[];
-
-/**
- * WordPress version specification for matrix testing.
- * Can be a single version string or an array of versions for matrix expansion.
- * @example "6.7"
- * @example ["6.6", "6.7"]
- */
-export type WPVersionSpec = string | string[];
-
-/**
  * Test environment configuration.
  * Defines a WordPress environment with specific versions and setup.
  */
@@ -261,7 +245,7 @@ export interface Environment {
    * @example "8.2"
    * @example ["8.1", "8.2", "8.3"]
    */
-  php?: PHPVersionSpec;
+  php?: NonNullable<BlueprintV1Declaration["preferredVersions"]>["php"][];
 
   /**
    * WordPress version(s) for this environment.
@@ -272,13 +256,14 @@ export interface Environment {
    * @example "6.7"
    * @example ["6.6", "6.7"]
    */
-  wp?: WPVersionSpec;
+  wp?: NonNullable<BlueprintV1Declaration["preferredVersions"]>["wp"][];
 
   /**
    * WordPress Playground Blueprint configuration.
    * Can be an inline blueprint object or a file path to a blueprint JSON file.
+   * If not specified, a default blueprint will be created using the php and wp version settings.
    */
-  blueprint: Blueprint;
+  blueprint?: Blueprint;
 
   /**
    * Filesystem mounts to apply to this environment
