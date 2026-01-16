@@ -186,7 +186,44 @@ wp-tester test --config /path/to/project
 
 # Watch mode - re-run tests on file changes
 wp-tester test --watch
+
+# Only show failed tests in output
+wp-tester test --failed-only
+
+# Allow tests to pass when no tests are found
+wp-tester test --passWithNoTests
+
+# Pass extra arguments to the test runner (requires --test)
+wp-tester test --test phpunit -- --filter MyTestClass --verbose
 ```
+
+#### Test Options
+
+| Option | Alias | Description |
+|--------|-------|-------------|
+| `--config` | `-c` | Path to wp-tester.json config file |
+| `--test` | `-t` | Type of test to run (wp, plugin, theme, phpunit) |
+| `--watch` | `-w` | Watch for file changes and re-run tests |
+| `--failed-only` | | Only display failed tests in output |
+| `--passWithNoTests` | | Allow test suite to pass when no tests are executed |
+
+#### Passing Extra Arguments
+
+You can pass additional arguments directly to the underlying test runner using `--` followed by the arguments. This requires specifying the test type with `--test`.
+
+**Examples:**
+
+```bash
+# Pass arguments to PHPUnit
+wp-tester test --test phpunit -- --filter TestClassName
+wp-tester test --test phpunit -- --group integration --verbose
+wp-tester test --test phpunit -- --stop-on-failure
+
+# Pass arguments to smoke tests
+wp-tester test --test plugin -- --reporter=verbose
+```
+
+Arguments after `--` are passed directly to the test runner without modification.
 
 #### Watch Mode
 
