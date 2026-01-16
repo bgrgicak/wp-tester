@@ -6,10 +6,13 @@ export type {
   Tests,
   PHPUnitConfig,
   TestType,
-  Reporter,
+  Reporters,
+  BaseReporterOptions,
+  DefaultReporterOptions,
   Mount,
   Blueprint,
   JsonReporterOptions,
+  WatchConfig,
 } from "./types";
 
 // Resolved types (after resolveConfig())
@@ -19,6 +22,7 @@ export type {
   ResolvedPHPUnitConfig,
   ResolvedTests,
   ResolvedBlueprint,
+  ResolvedReporters,
 } from './resolved-types';
 
 // Functions
@@ -33,7 +37,9 @@ export {
   getProjectDir,
   getConfigDir,
   getConfigPath,
+  normalizeConfigPath,
   resolveAbsolute,
+  getWorkingDirectory,
 } from "./config";
 
 export { getProjectRootMount } from './auto-mount';

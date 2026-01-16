@@ -1,8 +1,8 @@
 import type { WPTesterConfig, Tests, Environment } from "./wp-tester-config";
-import type { ResolvedWPTesterConfig, ResolvedEnvironment, ResolvedTests, ResolvedPHPUnitConfig, ResolvedBlueprint } from "./resolved-types";
+import type { ResolvedWPTesterConfig, ResolvedEnvironment, ResolvedTests, ResolvedPHPUnitConfig, ResolvedBlueprint, ResolvedReporters } from "./resolved-types";
 import type { BlueprintV1Declaration } from "@wp-playground/blueprints";
 import { readFile, writeFile, access, constants as fsConstants } from "fs/promises";
-import { existsSync } from "fs";
+import { existsSync, statSync } from "fs";
 import { join, dirname, resolve, isAbsolute } from "path";
 import { fileURLToPath } from "url";
 import { getProjectRootMount } from "./auto-mount";
@@ -22,6 +22,14 @@ interface ExpandedEnvironment extends Environment {
 export type { WPTesterConfig } from "./wp-tester-config";
 
 /**
+ * Get the actual working directory, accounting for tools like tsx that may change process.cwd()
+ * When running via npx or tsx, INIT_CWD contains the original directory where the command was invoked
+ */
+export function getWorkingDirectory(): string {
+  return process.env.INIT_CWD || process.cwd();
+}
+
+/**
  * Resolve a path to an absolute path.
  * If the path is already absolute, return it as-is.
  * Otherwise, resolve it relative to the base directory.
@@ -35,7 +43,7 @@ export function resolveAbsolute(path: string, baseDir: string): string {
 }
 
 export function configPath(): string {
-  return join(process.cwd(), "wp-tester.json");
+  return join(getWorkingDirectory(), "wp-tester.json");
 }
 
 export function getSchemaPath(importMetaUrl?: string): string {
@@ -87,7 +95,6 @@ export function getDefaultConfig(): WPTesterConfig {
       },
     ],
     tests: {},
-    reporters: ["default"],
   };
 }
 
@@ -104,6 +111,10 @@ export async function readConfigFile(path?: string): Promise<WPTesterConfig> {
   if (!path) {
     path = configPath();
   }
+
+  // Normalize the path (handles directory paths)
+  path = normalizeConfigPath(path);
+
   const content = await readFile(path, "utf8");
   return JSON.parse(content) as WPTesterConfig;
 }
@@ -125,7 +136,32 @@ export async function writeConfigFile(
  * @returns Absolute path to the config file
  */
 export function getConfigPath(config: string): string {
-  return isAbsolute(config) ? config : resolve(process.cwd(), config);
+  return isAbsolute(config) ? config : resolve(getWorkingDirectory(), config);
+}
+
+/**
+ * Normalize a config path to ensure it points to a file, not a directory.
+ * If the path is a directory, appends 'wp-tester.json' to it.
+ * Used by readConfigFile, resolveConfig, and the test watcher to handle
+ * directory paths passed via --config flag.
+ *
+ * @param configPath - Path to config file or directory (relative or absolute)
+ * @returns Absolute path to the config file
+ */
+export function normalizeConfigPath(configPath: string): string {
+  const absolutePath = getConfigPath(configPath);
+
+  // Check if path is a directory (synchronous)
+  try {
+    const stats = statSync(absolutePath);
+    if (stats.isDirectory()) {
+      return join(absolutePath, 'wp-tester.json');
+    }
+  } catch {
+    // If stat fails, assume it's a file path
+  }
+
+  return absolutePath;
 }
 
 /**
@@ -148,9 +184,12 @@ export function getConfigDir(configPath: string): string {
  * @param configPath - Optional path to config file (needed to resolve relative projectHostPath)
  * @returns Absolute path to the project root directory
  */
-export function getProjectDir(config: WPTesterConfig, configPath?: string): string {
+export function getProjectDir(
+  config: WPTesterConfig,
+  configPath?: string
+): string {
   // Get base directory: config file location or cwd
-  const baseDir = configPath ? getConfigDir(configPath) : process.cwd();
+  const baseDir = configPath ? getConfigDir(configPath) : getWorkingDirectory();
 
   // If projectHostPath is specified, resolve it relative to base directory
   if (config.projectHostPath) {
@@ -324,6 +363,7 @@ function resolveTests(tests: Tests, projectDir: string): ResolvedTests {
       plugin: tests.plugin,
       theme: tests.theme,
       wp: tests.wp,
+      passWithNoTests: tests.passWithNoTests,
     };
   }
 
@@ -337,7 +377,10 @@ function resolveTests(tests: Tests, projectDir: string): ResolvedTests {
 
   // Add optional bootstrapPath if present
   if (phpunit.bootstrapPath) {
-    resolvedPhpunit.bootstrapPath = resolveAbsolute(phpunit.bootstrapPath, projectDir);
+    resolvedPhpunit.bootstrapPath = resolveAbsolute(
+      phpunit.bootstrapPath,
+      projectDir
+    );
   }
 
   // Preserve phpunitArgs if present
@@ -350,6 +393,7 @@ function resolveTests(tests: Tests, projectDir: string): ResolvedTests {
     theme: tests.theme,
     wp: tests.wp,
     phpunit: resolvedPhpunit,
+    passWithNoTests: tests.passWithNoTests,
   };
 }
 
@@ -365,7 +409,9 @@ export async function resolveConfig(
   let configPath: string | undefined;
 
   if (typeof config === "string") {
-    configPath = getConfigPath(config);
+    // Normalize the path (handles directory paths)
+    configPath = normalizeConfigPath(config);
+
     const content = await readFile(configPath, "utf8");
     resolvedConfig = JSON.parse(content) as WPTesterConfig;
   } else {
@@ -393,8 +439,38 @@ export async function resolveConfig(
     projectType = 'other';
   }
 
-  // Ensure reporters is set
-  const reporters = resolvedConfig.reporters || ["default"];
+  // Ensure reporters is set with defaults
+  // If no reporters configured, default to showing all test statuses
+  const defaultReporterOptions = {
+    passed: true,
+    failed: true,
+    skipped: true,
+    pending: true,
+    other: true,
+  };
+
+  const reporters: ResolvedReporters = {
+    ...(resolvedConfig.reporters ?? {}),
+    default: undefined, // Will be set below
+  };
+
+  // Normalize default reporter:
+  // - `true` or empty object `{}` -> apply default options (show all)
+  // - `false` -> disable default reporter (remove it)
+  // - object with options -> use as-is
+  const inputDefault = resolvedConfig.reporters?.default;
+  if (inputDefault === true || inputDefault === undefined || (typeof inputDefault === 'object' && Object.keys(inputDefault).length === 0)) {
+    // true, undefined, or empty object -> use defaults (show all)
+    if (inputDefault !== undefined || !resolvedConfig.reporters?.json) {
+      reporters.default = defaultReporterOptions;
+    }
+  } else if (inputDefault === false) {
+    // false -> disable default reporter
+    reporters.default = undefined;
+  } else {
+    // Object with specific options -> use as-is
+    reporters.default = inputDefault;
+  }
 
   // Expand environments with version arrays into multiple environments
   const expandedEnvironments = await expandEnvironments(
@@ -482,6 +558,7 @@ export async function resolveConfig(
         blueprint: resolvedBlueprint,
         mounts: resolvedMounts,
         env: env.env || {},
+        skip: env.skip ?? false,
       };
     })
   );

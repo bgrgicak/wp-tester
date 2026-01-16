@@ -1,12 +1,11 @@
 <?php
 
-use PHPUnit\Framework\TestCase;
-use Yoast\PHPUnitPolyfills\TestCases\TestCase as PolyfillTestCase;
+use Yoast\PHPUnitPolyfills\TestCases\TestCase;
 
 /**
  * Unit tests that don't require WordPress.
  */
-class UnitTest extends PolyfillTestCase {
+class UnitTest extends TestCase {
 
 	/**
 	 * Test that the sanitize function removes extra whitespace.

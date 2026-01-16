@@ -14,7 +14,7 @@ export type {
   Test,
   TestStatus,
   Tool,
-} from 'ctrf';
+} from "ctrf";
 
 export { vitestToCTRF } from './parsers/vitest.js';
 export { mergeReports } from './merge.js';
@@ -28,7 +28,15 @@ export {
   type RunEvent,
   type StreamWriter,
   type StreamingReporterOptions,
+  type ReporterFilterOptions,
 } from './streaming.js';
+export {
+  VitestStreamingBase,
+} from './vitest-streaming.js';
+export { applyDiffHighlighting, highlightStringDiff } from './diff-utils.js';
+export {
+  PHPUnitStreamingReporter,
+} from './phpunit-streaming-reporter.js';
 export {
   VitestStreamingReporter,
   createVitestStreamingReporter,
@@ -38,7 +46,7 @@ export {
   createTeamCityParserStream,
   parseTeamCityOutput,
 } from './teamcity-parser.js';
-export { printSummary } from './summary.js';
+export { printSummary, type SummaryOptions } from './summary.js';
 
 export const EMPTY_REPORT: Report = {
   results: {

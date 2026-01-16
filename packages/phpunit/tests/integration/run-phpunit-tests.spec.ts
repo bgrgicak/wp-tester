@@ -10,8 +10,8 @@ describe("runPhpunitTests integration", () => {
 	it(
 		"should run plugin PHPUnit tests and return CTRF report",
 		async () => {
-			// Pass the config path string directly so the runner can determine project root
-			const report = await runPhpunitTests(TEST_PLUGIN_CONFIG_PATH);
+			const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
+			const report = await runPhpunitTests(config);
 
 			// Validate report structure
 			expect(report).toBeDefined();
@@ -49,17 +49,7 @@ describe("runPhpunitTests integration", () => {
 	it(
 		"should run theme PHPUnit tests and return CTRF report",
 		async () => {
-			// Load config, enable PHPUnit, set projectHostPath
 			const config = await resolveConfig(TEST_THEME_CONFIG_PATH);
-			config.tests.phpunit = {
-				phpunitPath: "vendor/bin/phpunit",
-				configPath: "phpunit.xml.dist",
-				bootstrapPath: "tests/bootstrap.php",
-				testMode: "integration",
-			};
-			// Set projectHostPath to theme fixture path so runner can find phpunit.xml.dist
-			config.projectHostPath = TEST_THEME_CONFIG_PATH.replace("/wp-tester.json", "");
-
 			const report = await runPhpunitTests(config);
 
 			// Validate report structure
@@ -93,8 +83,8 @@ describe("runPhpunitTests integration", () => {
 	);
 
 	it("should handle multiple environments correctly", async () => {
-		// Pass config path so runner can determine project root
-		const report = await runPhpunitTests(TEST_PLUGIN_CONFIG_PATH);
+		const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
+		const report = await runPhpunitTests(config);
 
 		expect(report.results.tests).toBeDefined();
 
@@ -137,6 +127,165 @@ describe("runPhpunitTests integration", () => {
 			expect(testNames.some(name => name.includes("test_custom_content_filter_is_registered"))).toBe(false);
 		}
 	);
+
+	it(
+		"should run single test file when passed as phpunitArg",
+		async () => {
+			// Test passing a single test file path as an argument
+			// This simulates: wp-tester test -- tests/WordPressTest.php
+			const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
+			const report = await runPhpunitTests(
+				config,
+				["tests/WordPressTest.php"]
+			);
+
+			// Validate report structure
+			expect(report).toBeDefined();
+			expect(report.results).toBeDefined();
+			expect(report.results.summary).toBeDefined();
+
+			// Only WordPressTest.php should run (3 tests)
+			// Not UnitTest.php (2 tests)
+			expect(report.results.summary.tests).toBe(3);
+			expect(report.results.summary.passed).toBe(3);
+			expect(report.results.summary.failed).toBe(0);
+
+			// Verify only WordPressTest tests are present
+			const testNames = report.results.tests.map((test) => test.name);
+			expect(testNames.some(name => name.includes("test_can_create_and_retrieve_post"))).toBe(true);
+			expect(testNames.some(name => name.includes("test_wordpress_sanitize_functions"))).toBe(true);
+			expect(testNames.some(name => name.includes("test_wordpress_options"))).toBe(true);
+
+			// UnitTest tests should NOT be present
+			expect(testNames.some(name => name.includes("test_sanitize_text_removes_extra_whitespace"))).toBe(false);
+			expect(testNames.some(name => name.includes("test_custom_content_filter_is_registered"))).toBe(false);
+		}
+	);
+
+	it(
+		"should run tests from directory when passed as phpunitArg",
+		async () => {
+			// Test passing a directory path as an argument
+			// This simulates: wp-tester test -- tests/
+			const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
+			const report = await runPhpunitTests(
+				config,
+				["tests/"]
+			);
+
+			// Validate report structure
+			expect(report).toBeDefined();
+			expect(report.results).toBeDefined();
+			expect(report.results.summary).toBeDefined();
+
+			// All tests should run (5 tests total)
+			expect(report.results.summary.tests).toBe(5);
+			expect(report.results.summary.passed).toBe(5);
+			expect(report.results.summary.failed).toBe(0);
+		}
+	);
+
+	it(
+		"should handle phpunitArgs with flags that have path-like values",
+		async () => {
+			// Test that flag values are NOT resolved even if they look like paths
+			// Example: --filter could have a value like "MyNamespace\Tests"
+			const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
+			const report = await runPhpunitTests(
+				config,
+				["--filter", "WordPressTest"]
+			);
+
+			// Should only run WordPressTest (3 tests)
+			expect(report.results.summary.tests).toBe(3);
+			expect(report.results.summary.passed).toBe(3);
+
+			// Verify only WordPressTest tests ran
+			const testNames = report.results.tests.map((test) => test.name);
+			expect(testNames.some(name => name.includes("test_can_create_and_retrieve_post"))).toBe(true);
+			expect(testNames.some(name => name.includes("test_sanitize_text_removes_extra_whitespace"))).toBe(false);
+		}
+	);
+
+	it(
+		"should handle mixed flags and file paths",
+		async () => {
+			// Test combining flags with file paths
+			// This simulates: wp-tester test -- --filter test_wordpress tests/WordPressTest.php
+			const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
+			const report = await runPhpunitTests(
+				config,
+				["--filter", "test_wordpress", "tests/WordPressTest.php"]
+			);
+
+			// Should only run tests matching filter in the specified file
+			// WordPressTest.php has 3 tests, 2 match "test_wordpress" filter
+			expect(report.results.summary.tests).toBe(2);
+			expect(report.results.summary.passed).toBe(2);
+
+			const testNames = report.results.tests.map((test) => test.name);
+			expect(testNames.some(name => name.includes("test_wordpress_sanitize_functions"))).toBe(true);
+			expect(testNames.some(name => name.includes("test_wordpress_options"))).toBe(true);
+			// This test doesn't match the filter
+			expect(testNames.some(name => name.includes("test_can_create_and_retrieve_post"))).toBe(false);
+		}
+	);
+
+	it(
+		"should handle boolean flags before file paths",
+		async () => {
+			// Test that boolean flags don't prevent path resolution
+			// This simulates: wp-tester test -- --stop-on-failure tests/WordPressTest.php
+			const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
+			const report = await runPhpunitTests(
+				config,
+				["--stop-on-failure", "tests/WordPressTest.php"]
+			);
+
+			// Should run WordPressTest.php (3 tests)
+			expect(report.results.summary.tests).toBe(3);
+			expect(report.results.summary.passed).toBe(3);
+
+			const testNames = report.results.tests.map((test) => test.name);
+			expect(testNames.some(name => name.includes("test_can_create_and_retrieve_post"))).toBe(true);
+			expect(testNames.some(name => name.includes("test_wordpress_sanitize_functions"))).toBe(true);
+			expect(testNames.some(name => name.includes("test_wordpress_options"))).toBe(true);
+		}
+	);
+
+	it(
+		"should handle path after multiple boolean flags",
+		async () => {
+			// Test path resolution after multiple boolean flags
+			// This simulates: wp-tester test -- --no-coverage --stop-on-failure tests/WordPressTest.php
+			const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
+			const report = await runPhpunitTests(
+				config,
+				["--no-coverage", "--stop-on-failure", "tests/WordPressTest.php"]
+			);
+
+			// Should run WordPressTest.php (3 tests)
+			expect(report.results.summary.tests).toBe(3);
+			expect(report.results.summary.passed).toBe(3);
+		}
+	);
+
+	it(
+		"should handle flag with equals syntax followed by path",
+		async () => {
+			// Test that = syntax doesn't prevent next path resolution
+			// This simulates: wp-tester test -- --colors=auto tests/WordPressTest.php
+			const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
+			const report = await runPhpunitTests(
+				config,
+				["--colors=auto", "tests/WordPressTest.php"]
+			);
+
+			// Should run WordPressTest.php (3 tests)
+			expect(report.results.summary.tests).toBe(3);
+			expect(report.results.summary.passed).toBe(3);
+		}
+	);
 });
 
 describe("shouldRunPhpunitTests", () => {
@@ -162,7 +311,7 @@ describe("shouldRunPhpunitTests", () => {
 		expect(result).toBe(true);
 	});
 
-	it("should return false when phpunit is disabled", async () => {
+	it("should return false when phpunit is undefined", async () => {
 		const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
 		config.tests.phpunit = undefined;
 

@@ -4,13 +4,12 @@ import type {
   ResolvedEnvironment,
 } from "@wp-tester/config";
 import {
-  resolveConfig,
   parseBootstrapPath,
   hostToVfs,
   resolveAbsolute,
 } from "@wp-tester/config";
 import type { Report } from "@wp-tester/results";
-import { EMPTY_REPORT, mergeReports, StreamingReporter, TeamCityParser } from "@wp-tester/results";
+import { EMPTY_REPORT, mergeReports, PHPUnitStreamingReporter, TeamCityParser } from "@wp-tester/results";
 import { startPlayground } from "@wp-tester/runtime";
 import { mountWordPressTestLibrary } from "./wordpress-test-lib";
 import { access } from "fs/promises";
@@ -125,17 +124,28 @@ async function runPhpunitTestsForEnvironment(
     }
 
     // Append additional PHPUnit arguments from config
+    // Resolve file/directory paths from host to VFS
     const phpunitArgs = config.tests.phpunit!.phpunitArgs;
     if (phpunitArgs && phpunitArgs.length > 0) {
-      cliArgs.push(...phpunitArgs);
+      // Use the helper to resolve arguments
+      const resolvedArgs = await resolvePhpunitArgs(phpunitArgs, config, playground);
+
+      cliArgs.push(...resolvedArgs);
     }
 
     // Create streaming reporter
     // Disable summary since the CLI will print a combined summary
-    const useStreaming = config.reporters?.includes("default") ?? true;
-    const reporter = new StreamingReporter({
+    const useStreaming = config.reporters?.default !== undefined;
+
+    // Get filter options from config reporters (only if it's an object, not boolean)
+    const filter = typeof config.reporters?.default === 'object'
+      ? config.reporters.default
+      : undefined;
+
+    const reporter = new PHPUnitStreamingReporter({
       enabled: useStreaming,
       showSummary: false,
+      filter,
     });
 
     // Signal test run start to initialize timing
@@ -146,7 +156,7 @@ async function runPhpunitTestsForEnvironment(
 
     reporter.onEvent({
       type: "suite:start",
-      name: `PHPUnit ${testMode} tests - '${environment.name}'`,
+      name: `${environment.name} - PHPUnit ${testMode} tests`,
     });
 
     // Create TeamCity parser connected to the reporter
@@ -205,7 +215,7 @@ async function runPhpunitTestsForEnvironment(
     // Close the outer suite that was started earlier
     reporter.onEvent({
       type: "suite:end",
-      name: `PHPUnit ${testMode} tests - '${environment.name}'`,
+      name: `${environment.name} - PHPUnit ${testMode} tests`,
     });
 
     // Signal test run end to finalize timing
@@ -251,16 +261,25 @@ async function runPhpunitTestsForEnvironment(
     // Add error output to CTRF results if present and no tests ran
     // This handles both bad exit codes (from above) and acceptable exit codes with errors
     if (errorOutput && report.results.tests.length === 0) {
-      // Bootstrap failure - create a synthetic test with the error
-      report.results.tests.push({
-        name: 'PHPUnit Bootstrap',
-        status: 'failed',
-        duration: 0,
-        message: 'Bootstrap failed - see trace for details',
-        trace: errorOutput,
-      });
-      report.results.summary.tests = 1;
-      report.results.summary.failed = 1;
+      // Check if this is a "no tests executed" scenario vs an actual error
+      // PHPUnit outputs "No tests executed!" when no tests match the filter
+      const noTestsPattern = /No tests executed!?/i;
+      const isNoTestsExecuted = noTestsPattern.test(errorOutput) && exitCode === 0;
+
+      if (false === isNoTestsExecuted) {
+        // Bootstrap failure - create a synthetic test with the error
+        report.results.tests.push({
+          name: 'PHPUnit Bootstrap',
+          status: 'failed',
+          duration: 0,
+          message: 'Bootstrap failed - see trace for details',
+          trace: errorOutput,
+        });
+        report.results.summary.tests = 1;
+        report.results.summary.failed = 1;
+      }
+      // If no tests executed (isNoTestsExecuted === true), return empty report
+      // The runner will handle this based on passWithNoTests option
     } else if (stderrCapture.trim()) {
       // Tests ran but there's stderr - add it to extra field
       report.results.extra = {
@@ -292,20 +311,32 @@ async function runPhpunitTestsForEnvironment(
 }
 
 /**
+ * Options for running PHPUnit tests
+ */
+export interface RunPhpunitTestsOptions {
+  /** Additional PHPUnit arguments to append */
+  phpunitArgs?: string[];
+}
+
+/**
  * Run PHPUnit tests in WordPress Playground environment
  *
- * @param config - Test configuration or path to config file
- * @param phpunitArgs - Additional PHPUnit arguments to append
+ * @param config - Resolved test configuration
+ * @param phpunitArgsOrOptions - Additional PHPUnit arguments or options object
  * @returns CTRF report with test results
  */
 export async function runPhpunitTests(
-  config: WPTesterConfig | string,
-  phpunitArgs?: string[]
+  config: ResolvedWPTesterConfig,
+  phpunitArgsOrOptions?: string[] | RunPhpunitTestsOptions
 ): Promise<Report> {
-  // Resolve config (loads from path if string, resolves paths)
-  let resolvedConfig = await resolveConfig(config);
+  // Support both old signature (string[]) and new signature (options object)
+  const options: RunPhpunitTestsOptions = Array.isArray(phpunitArgsOrOptions)
+    ? { phpunitArgs: phpunitArgsOrOptions }
+    : phpunitArgsOrOptions || {};
+  const { phpunitArgs } = options;
 
   // Merge additional PHPUnit args if provided
+  let resolvedConfig = { ...config };
   if (phpunitArgs && phpunitArgs.length > 0) {
     const configArgs = resolvedConfig.tests.phpunit?.phpunitArgs || [];
     const mergedArgs = [...configArgs, ...phpunitArgs];
@@ -314,10 +345,12 @@ export async function runPhpunitTests(
       ...resolvedConfig,
       tests: {
         ...resolvedConfig.tests,
-        phpunit: resolvedConfig.tests.phpunit ? {
-          ...resolvedConfig.tests.phpunit,
-          phpunitArgs: mergedArgs,
-        } : undefined,
+        phpunit: resolvedConfig.tests.phpunit
+          ? {
+              ...resolvedConfig.tests.phpunit,
+              phpunitArgs: mergedArgs,
+            }
+          : undefined,
       },
     };
   }
@@ -338,14 +371,18 @@ export async function runPhpunitTests(
     return Promise.resolve(EMPTY_REPORT);
   }
 
-  // Run tests for all environments
+  // Run tests for all enabled environments (skip those marked with skip: true)
   const reports: Report[] = [];
-  for (const environment of resolvedConfig.environments) {
+  const enabledEnvironments = resolvedConfig.environments.filter(
+    (env) => !env.skip
+  );
+  for (const environment of enabledEnvironments) {
     const report = await runPhpunitTestsForEnvironment(
       resolvedConfig,
       environment,
       hostPhpunitConfigPath
     );
+    // Include report only if it has tests
     if (report.results.summary.tests > 0) {
       reports.push(report);
     }
@@ -364,3 +401,101 @@ export async function runPhpunitTests(
   // Import mergeReports for multiple environments
   return mergeReports(reports);
 }
+
+/**
+ * PHPUnit flags that are boolean (do not take a value).
+ * If a flag is NOT in this list, we assume it takes a value,
+ * and therefore the next argument should NOT be resolved as a path.
+ */
+const booleanFlags = new Set([
+  '--teamcity', '--debug', '--verbose', '--testdox',
+  '--stderr', '--stop-on-error', '--stop-on-failure', '--stop-on-warning',
+  '--stop-on-defect', '--stop-on-risky', '--stop-on-skipped', '--stop-on-incomplete',
+  '--stop-on-deprecation', '--stop-on-notice', // Added in recent versions
+  '--fail-on-warning', '--fail-on-risky', '--fail-on-incomplete', '--fail-on-skipped',
+  '--fail-on-deprecation', '--fail-on-notice', // Added in recent versions
+  '--strict-coverage', '--strict-global-state', '--disallow-test-output',
+  '--disallow-resource-usage', '--enforce-time-limit',
+  '--process-isolation', '--no-globals-backup', '--static-backup',
+  '--no-configuration', '--no-coverage', '--no-logging', '--no-interaction',
+  '--no-extensions', '--no-output', '--dont-report-useless-tests',
+  '--no-progress', // Added
+  '--display-deprecations', '--display-errors', '--display-incomplete', // Added
+  '--display-notices', '--display-skipped', '--display-warnings', // Added
+  '--strict',
+  '--help', '--version',
+  '--list-groups', '--list-suites', '--list-tests', '--list-tests-xml',
+  // Colors often handled as boolean in simple usage
+]);
+
+// Minimal interface for Playground client
+interface PlaygroundClient {
+  fileExists(path: string): Promise<boolean>;
+}
+
+/**
+ * Resolve PHPUnit arguments to map host paths to VFS paths
+ *
+ * @param args - Original arguments
+ * @param config - Resolved configuration
+ * @param playground - Playground client for checking VFS file existence
+ * @returns Resolved arguments
+ */
+export async function resolvePhpunitArgs(
+  args: string[],
+  config: ResolvedWPTesterConfig,
+  playground: PlaygroundClient
+): Promise<string[]> {
+  const resolvedArgs: string[] = [];
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+
+    // Don't resolve flags
+    if (arg.startsWith('-')) {
+      resolvedArgs.push(arg);
+      continue;
+    }
+
+    // Check if the previous argument was a flag that takes a value
+    const prevArg = args[i - 1];
+    if (prevArg?.startsWith('-') && !prevArg.includes('=')) {
+      // If the previous flag is NOT a known boolean flag, assume it takes a value
+      const flagName = prevArg.split('=')[0];
+      if (!booleanFlags.has(flagName)) {
+        resolvedArgs.push(arg); // This is the flag's value, not a path
+        continue;
+      }
+    }
+
+    // Resolve arguments that look like file/directory paths
+    const looksLikePath = arg.includes('/') ||
+                          arg.endsWith('.php') ||
+                          arg === 'tests' || arg === 'test';
+
+    if (looksLikePath) {
+      const absoluteHostPath = resolveAbsolute(arg, config.projectHostPath);
+      const vfsPath = hostToVfs(absoluteHostPath, config);
+
+      try {
+        // Validate that the file actually exists in the VFS
+        const exists = await playground.fileExists(vfsPath);
+        if (exists) {
+            resolvedArgs.push(vfsPath);
+            continue;
+        }
+      } catch {
+        // Ignore validation errors and fallback to original arg (or should we?)
+        // If file check fails, it's safer to probably not resolve it if we are strict,
+        // but existing behavior was "looksLikePath -> resolve".
+        // If we add this check, we might break things that "look like path" but aren't files YET?
+        // But for running tests, the files must exist.
+      }
+    }
+
+    resolvedArgs.push(arg);
+  }
+
+  return resolvedArgs;
+}
+

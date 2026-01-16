@@ -39,9 +39,9 @@ export async function projectTypeOption(
     const selectedType = await clack.select({
       message: "Select project type:",
       options: [
-        { value: 'plugin', label: 'plugin' },
-        { value: 'theme', label: 'theme' },
-        { value: 'other', label: 'other' },
+        { value: 'plugin', label: 'Plugin' },
+        { value: 'theme', label: 'Theme' },
+        { value: 'other', label: 'Other' },
       ],
     });
 

@@ -43,7 +43,7 @@
     },
     "ArrayBuffer": {
       "properties": {
-        "__@toStringTag@642": {
+        "__@toStringTag@686": {
           "type": "string"
         },
         "byteLength": {
@@ -51,7 +51,7 @@
         }
       },
       "required": [
-        "__@toStringTag@642",
+        "__@toStringTag@686",
         "byteLength"
       ],
       "type": "object"
@@ -65,6 +65,37 @@
           "$ref": "#/definitions/SharedArrayBuffer"
         }
       ]
+    },
+    "BaseReporterOptions": {
+      "description": "Base reporter options for filtering test results by status.\nAll options default to false - only explicitly enabled statuses are shown.",
+      "properties": {
+        "failed": {
+          "default": false,
+          "description": "Show failed tests in output",
+          "type": "boolean"
+        },
+        "other": {
+          "default": false,
+          "description": "Show other test statuses in output",
+          "type": "boolean"
+        },
+        "passed": {
+          "default": false,
+          "description": "Show passed tests in output",
+          "type": "boolean"
+        },
+        "pending": {
+          "default": false,
+          "description": "Show pending tests in output",
+          "type": "boolean"
+        },
+        "skipped": {
+          "default": false,
+          "description": "Show skipped tests in output",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
     },
     "Blueprint": {
       "anyOf": [
@@ -193,7 +224,7 @@
                               "BYTES_PER_ELEMENT": {
                                 "type": "number"
                               },
-                              "__@toStringTag@642": {
+                              "__@toStringTag@686": {
                                 "const": "Uint8Array",
                                 "type": "string"
                               },
@@ -212,7 +243,7 @@
                             },
                             "required": [
                               "BYTES_PER_ELEMENT",
-                              "__@toStringTag@642",
+                              "__@toStringTag@686",
                               "buffer",
                               "byteLength",
                               "byteOffset",
@@ -1294,12 +1325,37 @@
           "type": "string"
         },
         "php": {
-          "$ref": "#/definitions/PHPVersionSpec",
-          "description": "PHP version(s) for this environment. Can be a single version string or an array of versions for matrix testing. When an array is provided, tests will run for each PHP version combined with each WP version. If blueprint.preferredVersions.php is also set, the blueprint value takes precedence."
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "PHP version(s) for this environment.\nCan be a single version string or an array of versions for matrix testing.\nWhen an array is provided, tests will run for each PHP version combined with each WP version.\nIf blueprint.preferredVersions.php is also set, the blueprint value takes precedence\nand only that single version will be used."
+        },
+        "skip": {
+          "default": false,
+          "description": "Whether this environment should be skipped.\nSkipped environments are excluded from test execution.\nUseful for temporarily excluding environments without removing them from configuration.",
+          "type": "boolean"
         },
         "wp": {
-          "$ref": "#/definitions/WPVersionSpec",
-          "description": "WordPress version(s) for this environment. Can be a single version string or an array of versions for matrix testing. When an array is provided, tests will run for each WP version combined with each PHP version. If blueprint.preferredVersions.wp is also set, the blueprint value takes precedence."
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "WordPress version(s) for this environment.\nCan be a single version string or an array of versions for matrix testing.\nWhen an array is provided, tests will run for each WP version combined with each PHP version.\nIf blueprint.preferredVersions.wp is also set, the blueprint value takes precedence\nand only that single version will be used."
         }
       },
       "required": [
@@ -1311,42 +1367,6 @@
       "default": {},
       "description": "Environment variables for WordPress Playground.\nKey-value pairs of environment variable names and values.",
       "type": "object"
-    },
-    "PHPVersionSpec": {
-      "description": "PHP version specification for matrix testing. Can be a single version string or an array of versions for matrix expansion.",
-      "oneOf": [
-        {
-          "type": "string",
-          "description": "Single PHP version",
-          "examples": ["8.2", "8.1", "latest"]
-        },
-        {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Array of PHP versions for matrix testing",
-          "examples": [["8.1", "8.2", "8.3"]]
-        }
-      ]
-    },
-    "WPVersionSpec": {
-      "description": "WordPress version specification for matrix testing. Can be a single version string or an array of versions for matrix expansion.",
-      "oneOf": [
-        {
-          "type": "string",
-          "description": "Single WordPress version",
-          "examples": ["6.7", "6.6", "latest"]
-        },
-        {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Array of WordPress versions for matrix testing",
-          "examples": [["6.6", "6.7"]]
-        }
-      ]
     },
     "FileReference": {
       "anyOf": [
@@ -1383,7 +1403,7 @@
                     "BYTES_PER_ELEMENT": {
                       "type": "number"
                     },
-                    "__@toStringTag@642": {
+                    "__@toStringTag@686": {
                       "const": "Uint8Array",
                       "type": "string"
                     },
@@ -1402,7 +1422,7 @@
                   },
                   "required": [
                     "BYTES_PER_ELEMENT",
-                    "__@toStringTag@642",
+                    "__@toStringTag@686",
                     "buffer",
                     "byteLength",
                     "byteOffset",
@@ -1644,7 +1664,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@642": {
+                        "__@toStringTag@686": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -1663,7 +1683,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@642",
+                        "__@toStringTag@686",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -1852,7 +1872,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@642": {
+                        "__@toStringTag@686": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -1871,7 +1891,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@642",
+                        "__@toStringTag@686",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -2065,7 +2085,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@642": {
+                        "__@toStringTag@686": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -2084,7 +2104,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@642",
+                        "__@toStringTag@686",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -2273,7 +2293,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@642": {
+                        "__@toStringTag@686": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -2292,7 +2312,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@642",
+                        "__@toStringTag@686",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -2411,9 +2431,34 @@
     "JsonReporterOptions": {
       "description": "JSON reporter configuration options",
       "properties": {
+        "failed": {
+          "default": false,
+          "description": "Show failed tests in output",
+          "type": "boolean"
+        },
+        "other": {
+          "default": false,
+          "description": "Show other test statuses in output",
+          "type": "boolean"
+        },
         "outputFile": {
           "description": "Path where the JSON report file should be written",
           "type": "string"
+        },
+        "passed": {
+          "default": false,
+          "description": "Show passed tests in output",
+          "type": "boolean"
+        },
+        "pending": {
+          "default": false,
+          "description": "Show pending tests in output",
+          "type": "boolean"
+        },
+        "skipped": {
+          "default": false,
+          "description": "Show skipped tests in output",
+          "type": "boolean"
         }
       },
       "required": [
@@ -2503,7 +2548,7 @@
                 "BYTES_PER_ELEMENT": {
                   "type": "number"
                 },
-                "__@toStringTag@642": {
+                "__@toStringTag@686": {
                   "const": "Uint8Array",
                   "type": "string"
                 },
@@ -2522,7 +2567,7 @@
               },
               "required": [
                 "BYTES_PER_ELEMENT",
-                "__@toStringTag@642",
+                "__@toStringTag@686",
                 "buffer",
                 "byteLength",
                 "byteOffset",
@@ -2588,7 +2633,7 @@
                 "BYTES_PER_ELEMENT": {
                   "type": "number"
                 },
-                "__@toStringTag@642": {
+                "__@toStringTag@686": {
                   "const": "Uint8Array",
                   "type": "string"
                 },
@@ -2607,7 +2652,7 @@
               },
               "required": [
                 "BYTES_PER_ELEMENT",
-                "__@toStringTag@642",
+                "__@toStringTag@686",
                 "buffer",
                 "byteLength",
                 "byteOffset",
@@ -2708,28 +2753,26 @@
     "Record<string,unknown>": {
       "type": "object"
     },
-    "Reporter": {
-      "anyOf": [
-        {
-          "items": [
+    "Reporters": {
+      "description": "Reporter configuration object.\nEach key is a reporter name, and the value is its options.",
+      "properties": {
+        "default": {
+          "anyOf": [
             {
-              "const": "json",
-              "type": "string"
+              "$ref": "#/definitions/BaseReporterOptions"
             },
             {
-              "$ref": "#/definitions/JsonReporterOptions"
+              "type": "boolean"
             }
           ],
-          "maxItems": 2,
-          "minItems": 2,
-          "type": "array"
+          "description": "Default console reporter options.\nUse `true` to enable with defaults, or an object for custom options."
         },
-        {
-          "const": "default",
-          "type": "string"
+        "json": {
+          "$ref": "#/definitions/JsonReporterOptions",
+          "description": "JSON file reporter options"
         }
-      ],
-      "description": "Reporter configuration.\nCan be a simple string for reporters without options,\nor a tuple of [reporter name, options] for configurable reporters."
+      },
+      "type": "object"
     },
     "RequestStep": {
       "description": "request",
@@ -2910,10 +2953,10 @@
     },
     "SharedArrayBuffer": {
       "properties": {
-        "__@species@709": {
+        "__@species@764": {
           "$ref": "#/definitions/SharedArrayBuffer"
         },
-        "__@toStringTag@642": {
+        "__@toStringTag@686": {
           "const": "SharedArrayBuffer",
           "type": "string"
         },
@@ -2922,8 +2965,8 @@
         }
       },
       "required": [
-        "__@species@709",
-        "__@toStringTag@642",
+        "__@species@764",
+        "__@toStringTag@686",
         "byteLength"
       ],
       "type": "object"
@@ -2931,9 +2974,14 @@
     "Tests": {
       "description": "Test configuration specifying which test suites to run.",
       "properties": {
+        "passWithNoTests": {
+          "default": false,
+          "description": "Allow the test suite to pass when no tests are executed.\nBy default, wp-tester exits with code 1 when no tests are found.\nSet to true to exit with code 0 instead (similar to Jest's --passWithNoTests).",
+          "type": "boolean"
+        },
         "phpunit": {
           "$ref": "#/definitions/PHPUnitConfig",
-          "description": "PHPUnit test configuration.\nWhen provided, runs PHPUnit tests with the specified paths.\nWhen undefined, PHPUnit tests are disabled."
+          "description": "PHPUnit test configuration.\nWhen provided, runs PHPUnit tests with the specified paths.\nWhen undefined, PHPUnit tests are not run."
         },
         "plugin": {
           "description": "Plugin slug to test.\nWhen provided, runs plugin-specific tests including activation, deactivation, and load tests.",
@@ -2942,6 +2990,10 @@
         "theme": {
           "description": "Theme slug to test.\nWhen provided, runs theme-specific tests including activation and homepage load tests.",
           "type": "string"
+        },
+        "watch": {
+          "$ref": "#/definitions/WatchConfig",
+          "description": "Watch mode configuration.\nControls which files are watched when using --watch flag."
         },
         "wp": {
           "default": false,
@@ -2997,7 +3049,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@642": {
+                        "__@toStringTag@686": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -3016,7 +3068,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@642",
+                        "__@toStringTag@686",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -3193,6 +3245,26 @@
       ],
       "type": "object"
     },
+    "WatchConfig": {
+      "description": "Watch mode configuration for automatic test re-runs.",
+      "properties": {
+        "exclude": {
+          "description": "Glob patterns to exclude from watching.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "include": {
+          "description": "Glob patterns for files/directories to watch (relative to projectHostPath).\nIf not specified, watches all files in the projectHostPath directory.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
     "WordPressInstallationOptions": {
       "properties": {
         "adminPassword": {
@@ -3220,7 +3292,7 @@
                 "BYTES_PER_ELEMENT": {
                   "type": "number"
                 },
-                "__@toStringTag@642": {
+                "__@toStringTag@686": {
                   "const": "Uint8Array",
                   "type": "string"
                 },
@@ -3239,7 +3311,7 @@
               },
               "required": [
                 "BYTES_PER_ELEMENT",
-                "__@toStringTag@642",
+                "__@toStringTag@686",
                 "buffer",
                 "byteLength",
                 "byteOffset",
@@ -3280,7 +3352,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@642": {
+                        "__@toStringTag@686": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -3299,7 +3371,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@642",
+                        "__@toStringTag@686",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -3487,14 +3559,17 @@
       "type": "string"
     },
     "reporters": {
-      "default": [
-        "default"
-      ],
-      "description": "Output reporters for test results",
-      "items": {
-        "$ref": "#/definitions/Reporter"
+      "$ref": "#/definitions/Reporters",
+      "default": {
+        "default": {
+          "failed": true,
+          "other": true,
+          "passed": true,
+          "pending": true,
+          "skipped": true
+        }
       },
-      "type": "array"
+      "description": "Output reporters for test results.\nEach reporter can be configured with filtering options."
     },
     "tests": {
       "$ref": "#/definitions/Tests",

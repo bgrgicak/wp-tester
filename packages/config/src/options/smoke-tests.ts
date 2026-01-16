@@ -22,8 +22,12 @@ export async function smokeTestsOption(
   const defaultSlug = projectHostPath.split('/').pop() || '';
 
   // Ask about WordPress smoke tests
-  const runWpTests = await clack.confirm({
-    message: "Do you want to run WordPress smoke tests?",
+  const runWpTests = await clack.select({
+    message: "Run WordPress smoke tests?",
+    options: [
+      { value: true, label: "Yes", hint: "Verifies WordPress doesn't crash with your code" },
+      { value: false, label: "No" },
+    ],
     initialValue: true,
   });
 
@@ -38,8 +42,12 @@ export async function smokeTestsOption(
 
   // Ask about plugin tests if project type is plugin
   if (config.projectType === 'plugin') {
-    const runPluginTests = await clack.confirm({
-      message: "Do you want to run Plugin smoke tests?",
+    const runPluginTests = await clack.select({
+      message: "Run plugin smoke tests?",
+      options: [
+        { value: true, label: "Yes", hint: "Verifies your plugin doesn't crash on activation" },
+        { value: false, label: "No" },
+      ],
       initialValue: true,
     });
 
@@ -66,8 +74,12 @@ export async function smokeTestsOption(
 
   // Ask about theme tests if project type is theme
   if (config.projectType === 'theme') {
-    const runThemeTests = await clack.confirm({
-      message: "Do you want to run Theme smoke tests?",
+    const runThemeTests = await clack.select({
+      message: "Run theme smoke tests?",
+      options: [
+        { value: true, label: "Yes", hint: "Verifies your theme doesn't crash on activation" },
+        { value: false, label: "No" },
+      ],
       initialValue: true,
     });
 

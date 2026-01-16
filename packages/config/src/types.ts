@@ -6,10 +6,13 @@ export type {
   Environment,
   Tests,
   PHPUnitConfig,
-  Reporter,
+  Reporters,
+  BaseReporterOptions,
+  DefaultReporterOptions,
   Mount,
   Blueprint,
   JsonReporterOptions,
+  WatchConfig,
 } from "./wp-tester-config";
 
 export type {

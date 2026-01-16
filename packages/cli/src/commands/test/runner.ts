@@ -4,49 +4,67 @@ import * as clack from '../../cli/theme';
 import { runSmokeTests } from "@wp-tester/smoke-tests";
 import { runPhpunitTests } from "@wp-tester/phpunit";
 import { mergeReports, printSummary, type Report } from "@wp-tester/results";
-import type { TestType } from "@wp-tester/config";
-import { validateConfig } from '../config/validate';
-import { setupHandler } from "../setup";
+import type { TestType, ResolvedWPTesterConfig } from "@wp-tester/config";
+import { resolveConfig } from "@wp-tester/config";
+import { validateConfig } from "../config/validate";
+import { getWorkingDirectory } from "@wp-tester/config";
 
 /**
- * Prompt the user to run setup when no configuration file is found.
- * Returns the path to the config file after setup, or exits if the user cancels.
+ * Options for the test runner
  */
-async function promptSetupOnMissingConfig(): Promise<string> {
-  clack.log.error("No configuration found. Run `wp-tester setup` to create one.");
+export interface RunTestsOptions {
+  /** Type of test to run (phpunit, wp, plugin, theme) */
+  testType?: TestType;
+  /** Additional arguments to pass to test runners */
+  extraArgs?: string[];
+  /** Allow the test suite to pass when no tests are executed (CLI override) */
+  passWithNoTests?: boolean;
+  /** Only display failed tests in output (CLI override) */
+  failedOnly?: boolean;
+}
 
-  const runSetup = await clack.confirm({
-    message: "Would you like to run setup now?",
-  });
+/**
+ * Apply --failed-only CLI override to config reporters.
+ * Sets all filter options to false except failed: true.
+ */
+function applyFailedOnlyOverride(
+  config: ResolvedWPTesterConfig
+): ResolvedWPTesterConfig {
+  const failedOnlyFilter = {
+    passed: false,
+    failed: true,
+    skipped: false,
+    pending: false,
+    other: false,
+  };
 
-  if (clack.isCancel(runSetup) || !runSetup) {
-    clack.cancel("Test cancelled.");
-    process.exit(0);
-  }
-
-  await setupHandler();
-
-  return path.resolve(process.cwd(), "wp-tester.json");
+  return {
+    ...config,
+    reporters: {
+      ...config.reporters,
+      default:
+        config.reporters?.default !== undefined
+          ? typeof config.reporters.default === "object"
+            ? { ...config.reporters.default, ...failedOnlyFilter }
+            : failedOnlyFilter
+          : failedOnlyFilter,
+    },
+  };
 }
 
 async function resolveConfigPath(configPath: string): Promise<string> {
-  const resolvedPath = path.resolve(process.cwd(), configPath);
+  const cwd = getWorkingDirectory();
+  const resolvedPath = path.resolve(cwd, configPath);
 
   try {
     const stats = await stat(resolvedPath);
 
     if (stats.isDirectory()) {
-      const configFile = path.join(resolvedPath, "wp-tester.json");
-
-      try {
-        await access(configFile, constants.F_OK);
-        return configFile;
-      } catch {
-        return promptSetupOnMissingConfig();
-      }
+      return path.join(resolvedPath, "wp-tester.json");
     }
   } catch {
-    return promptSetupOnMissingConfig();
+    // File doesn't exist yet, but that's ok - return the resolved path
+    // The caller will handle the missing file case
   }
 
   return resolvedPath;
@@ -54,7 +72,8 @@ async function resolveConfigPath(configPath: string): Promise<string> {
 
 async function checkConfigExists(configPath: string): Promise<boolean> {
   try {
-    const resolvedPath = path.resolve(process.cwd(), configPath);
+    const cwd = getWorkingDirectory();
+    const resolvedPath = path.resolve(cwd, configPath);
     await access(resolvedPath, constants.F_OK);
     return true;
   } catch {
@@ -76,16 +95,103 @@ function getSmokeTestFilter(testType?: TestType): TestType | undefined | false {
   return smokeTestTypes.includes(testType) ? testType : false;
 }
 
+export interface TestResult {
+  success: boolean;
+  hasTests: boolean;
+}
+
+/**
+ * Execute tests and return results without exiting the process.
+ * Used internally and by watch mode.
+ */
+export const executeTests = async (
+  configPath: string,
+  options?: RunTestsOptions
+): Promise<TestResult> => {
+  const { testType, extraArgs, failedOnly } = options || {};
+  const finalConfigPath = await resolveConfigPath(configPath);
+
+  // Validate configuration before running tests
+  const isValid = await validateConfig(finalConfigPath);
+  if (!isValid) {
+    process.exit(1);
+  }
+
+  // Resolve config and apply CLI overrides
+  let resolvedConfig = await resolveConfig(finalConfigPath);
+  if (failedOnly) {
+    resolvedConfig = applyFailedOnlyOverride(resolvedConfig);
+  }
+
+  // Run all test suites and collect results
+  const reports: Report[] = [];
+
+  // Determine which tests to run based on testType parameter
+  const shouldRunPhpUnit = !testType || testType === "phpunit";
+
+  // Run smoke tests (wp, plugin, theme) - smoke tests package handles whether to run
+  const smokeTestFilter = getSmokeTestFilter(testType);
+  if (smokeTestFilter !== false) {
+    const smokeTestReport = await runSmokeTests(
+      resolvedConfig,
+      smokeTestFilter,
+      extraArgs
+    );
+    if (smokeTestReport.results.summary.tests > 0) {
+      reports.push(smokeTestReport);
+    }
+  }
+
+  // Run PHPUnit tests
+  if (shouldRunPhpUnit) {
+    const phpunitReport = await runPhpunitTests(resolvedConfig, extraArgs);
+    // Always include report if PHPUnit was configured to run
+    // This ensures bootstrap failures are visible
+    if (phpunitReport.results.summary.tests > 0) {
+      reports.push(phpunitReport);
+    }
+  }
+
+  // No tests were run
+  if (reports.length === 0) {
+    clack.log.error("No tests were run. Check your configuration.");
+    return { success: false, hasTests: false };
+  }
+
+  // Merge results from all test suites
+  const mergedReport = mergeReports(reports);
+
+  // Display unified summary
+  const { summary } = mergedReport.results;
+  const success = summary.failed === 0;
+
+  // Print final combined summary with default reporter options
+  const defaultReporterOptions = resolvedConfig.reporters?.default;
+
+  // Convert reporter options to summary options (handle boolean shorthand)
+  // When false or true (boolean shorthand), pass undefined to use printSummary defaults
+  // When an object, pass it directly since SummaryOptions now matches BaseReporterOptions
+  const summaryOptions =
+    typeof defaultReporterOptions === "object"
+      ? defaultReporterOptions
+      : undefined;
+
+  printSummary(summary, summaryOptions);
+
+  return { success, hasTests: true };
+};
+
 export const runTests = async (
   configPath: string,
-  testType?: TestType,
-  phpunitArgs?: string[]
+  options?: RunTestsOptions
 ): Promise<void> => {
+  const { passWithNoTests } = options || {};
   let finalConfigPath = await resolveConfigPath(configPath);
 
   // Check if config file exists
   while (!(await checkConfigExists(finalConfigPath))) {
-    const resolvedPath = path.resolve(process.cwd(), finalConfigPath);
+    const cwd = getWorkingDirectory();
+    const resolvedPath = path.resolve(cwd, finalConfigPath);
     clack.log.error(`Config file not found: ${resolvedPath}`);
 
     const newPath = await clack.text({
@@ -104,65 +210,21 @@ export const runTests = async (
     finalConfigPath = newPath;
   }
 
-  const absoluteConfigPath = path.resolve(process.cwd(), finalConfigPath);
+  const result = await executeTests(finalConfigPath, options);
 
-  // Validate configuration before running tests
-  const isValid = await validateConfig(absoluteConfigPath);
-  if (!isValid) {
+  if (!result.hasTests) {
+    // If passWithNoTests is enabled, treat no tests as success
+    if (passWithNoTests) {
+      clack.log.info("No tests were run. Check your configuration.");
+      process.exit(0);
+    }
     process.exit(1);
   }
 
-  // Run all test suites and collect results
-  const reports: Report[] = [];
-
-  // Determine which tests to run based on testType parameter
-  const shouldRunPhpUnit = !testType || testType === "phpunit";
-
-  // Run smoke tests (wp, plugin, theme) - smoke tests package handles whether to run
-  const smokeTestFilter = getSmokeTestFilter(testType);
-  const smokeTestReport = await runSmokeTests(
-    absoluteConfigPath,
-    smokeTestFilter
-  );
-  if (smokeTestReport.results.summary.tests > 0) {
-    reports.push(smokeTestReport);
-  }
-
-  // Run PHPUnit tests
-  if (shouldRunPhpUnit) {
-    const phpunitReport = await runPhpunitTests(absoluteConfigPath, phpunitArgs);
-    // Always include report if PHPUnit was configured to run
-    // This ensures bootstrap failures are visible
-    if (phpunitReport.results.summary.tests > 0) {
-      reports.push(phpunitReport);
-    }
-  }
-
-  // Merge all reports
-  if (reports.length === 0) {
-    clack.log.error("No tests were run. Check your configuration.");
+  // Determine exit code based on test results
+  if (!result.success) {
     process.exit(1);
   }
 
-  // Merge results from all test suites
-  const mergedReport = mergeReports(reports);
-
-  // Display unified summary
-  const { summary, tests } = mergedReport.results;
-  const success = summary.failed === 0;
-
-  // Print failed test details
-  const failedTests = tests.filter(test => test.status === 'failed');
-  if (failedTests.length > 0) {
-    for (const test of failedTests) {
-      if (test.trace) {
-        console.error(`\n${test.name}:\n${test.trace}`);
-      }
-    }
-  }
-
-  // Print final combined summary
-  printSummary(summary);
-
-  process.exit(success ? 0 : 1);
+  process.exit(0);
 };

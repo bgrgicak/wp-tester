@@ -40,7 +40,9 @@ This command validates your `wp-tester.json` file against the JSON schema to ens
 
 ### Validation Options
 
-- `--config` or `-c`: Specify a custom path to your configuration file (default: `./wp-tester.json`)
+- `--config` or `-c`: Specify a custom path to your configuration file or directory (default: `./wp-tester.json`)
+  - When a directory path is provided, wp-tester will look for `wp-tester.json` within that directory
+  - When a file path is provided, wp-tester will use that specific file
 
 **Examples:**
 
@@ -50,6 +52,9 @@ wp-tester config validate
 
 # Validate a configuration file at a custom location
 wp-tester config validate --config ./configs/prod-config.json
+
+# Validate using a directory path (looks for wp-tester.json in the directory)
+wp-tester config validate --config /path/to/project
 ```
 
 The validation will check for:
@@ -66,7 +71,7 @@ If validation fails, the command will display detailed error messages indicating
 {
   "environments": [],
   "tests": {},
-  "reporters": []
+  "reporters": {}
 }
 ```
 
@@ -82,6 +87,7 @@ Each environment is an object with:
 - `name` (optional string): A descriptive name for the environment
 - `blueprint` (required): Either an inline WordPress Playground Blueprint object or a string path to a Blueprint JSON file
 - `mounts` (optional): Array of mount configurations to map local filesystem paths into the WordPress Playground virtual filesystem
+- `skip` (optional boolean, default: false): When set to `true`, this environment will be skipped during test execution. Useful for temporarily excluding environments without removing them from the configuration file. Since JSON doesn't support comments, this provides a way to "comment out" environments.
 
 **Example:**
 
@@ -116,12 +122,42 @@ Each environment is an object with:
         "steps": [
           {
             "step": "installPlugin",
-            "pluginZipFile": {
+            "pluginData": {
               "resource": "wordpress.org/plugins",
               "slug": "hello-dolly"
             }
           }
         ]
+      }
+    }
+  ]
+}
+```
+
+**Example with skipped environment:**
+
+Use the `skip` property to temporarily skip an environment without removing it from your configuration:
+
+```json
+{
+  "environments": [
+    {
+      "name": "PHP 8.2 + WP 6.7",
+      "blueprint": {
+        "preferredVersions": {
+          "php": "8.2",
+          "wp": "6.7"
+        }
+      }
+    },
+    {
+      "name": "PHP 7.4 + WP 6.5 (temporarily skipped)",
+      "skip": true,
+      "blueprint": {
+        "preferredVersions": {
+          "php": "7.4",
+          "wp": "6.5"
+        }
       }
     }
   ]
@@ -390,6 +426,8 @@ Integration test mode runs your tests with the full WordPress environment loaded
 
 **When to use:** When your tests need WordPress functions, database access, or any WordPress-specific functionality.
 
+**How it works:** In integration mode, wp-tester automatically loads WordPress before your bootstrap file runs. Your bootstrap only needs to handle unit mode setup.
+
 ##### Default Behavior
 
 If you omit the `testMode` property, it defaults to `"unit"`:
@@ -430,18 +468,24 @@ When you run PHPUnit unit tests, WP Tester automatically:
 4. Generates `wp-tests-config.php` with proper database and path settings
 5. Sets the `WP_TESTS_DIR` environment variable
 
-**Your test bootstrap** should reference wordpress-tests-lib normally:
+**Your test bootstrap** only needs to handle unit mode (integration mode is handled by wp-tester):
 
 ```php
 <?php
+// Check for unit mode (WordPress test library)
 $_tests_dir = getenv( 'WP_TESTS_DIR' );
 
-if ( ! $_tests_dir ) {
-    $_tests_dir = rtrim( sys_get_temp_dir(), '/\\' ) . '/wordpress-tests-lib';
-}
+if ( $_tests_dir && file_exists( $_tests_dir . '/includes/functions.php' ) ) {
+    // Unit mode: Load WordPress test library
+    require_once $_tests_dir . '/includes/functions.php';
 
-require_once $_tests_dir . '/includes/functions.php';
-require $_tests_dir . '/includes/bootstrap.php';
+    tests_add_filter( 'muplugins_loaded', function() {
+        require dirname( __DIR__ ) . '/your-plugin.php';
+    } );
+
+    require $_tests_dir . '/includes/bootstrap.php';
+}
+// Note: Integration mode doesn't need bootstrap code - wp-tester loads WordPress automatically
 ```
 
 **Why unit tests only?**
@@ -452,36 +496,61 @@ However, integration tests load WordPress via `wp-load.php` before your bootstra
 
 ### `reporters`
 
-**Type:** `Array<string | [string, Object]>`
+**Type:** `Object`
 **Required:** No
-**Default:** `["default"]`
+**Default:** `{}` (default console reporter enabled)
 
-**Description:** Configures how test results are displayed and saved.
+**Description:** Configures how test results are displayed and saved. Each reporter can have filter options to control which test statuses are shown.
+
+**Common Filter Options:**
+
+All reporters support these filter options:
+- `passed` (boolean): Show passed tests
+- `failed` (boolean): Show failed tests
+- `skipped` (boolean): Show skipped tests
+- `pending` (boolean): Show pending tests
+- `other` (boolean): Show other test statuses
+
+When no filter options are specified, all statuses are shown by default.
 
 **Reporter Types:**
 
-#### `"default"`
+#### `default`
 
 Outputs human-readable test results to the console.
 
 **Example:**
 ```json
 {
-  "reporters": ["default"]
+  "reporters": {}
 }
 ```
 
-#### `["json", { "outputFile": "path/to/file.json" }]`
+Or simply omit the property to use defaults.
+
+**With filter options (show only failed tests):**
+```json
+{
+  "reporters": {
+    "default": {
+      "failed": true
+    }
+  }
+}
+```
+
+#### `json`
 
 Outputs test results in CTRF (Common Test Report Format) JSON format to a file.
 
 **Example:**
 ```json
 {
-  "reporters": [
-    "default",
-    ["json", { "outputFile": "test-results.json" }]
-  ]
+  "reporters": {
+    "json": {
+      "outputFile": "test-results.json"
+    }
+  }
 }
 ```
 
@@ -490,7 +559,7 @@ Outputs test results in CTRF (Common Test Report Format) JSON format to a file.
 
 **Default Behavior:**
 
-When `reporters` is omitted, defaults to `["default"]` (console output only).
+When `reporters` is omitted (or `default` is `true` or omitted), console output with all statuses is shown.
 
 **Multiple Reporters:**
 
@@ -498,13 +567,186 @@ You can use multiple reporters simultaneously:
 
 ```json
 {
-  "reporters": [
-    "default",
-    ["json", { "outputFile": "results.json" }],
-    ["json", { "outputFile": "ci-results.json" }]
-  ]
+  "reporters": {
+    "json": {
+      "outputFile": "results.json"
+    }
+  }
 }
 ```
+
+Note: The default console reporter is enabled automatically when you add other reporters (like `json`), so you don't need to explicitly set `"default": true`.
+
+#### `tests.watch`
+
+**Type:** `Object`
+**Required:** No
+**Description:** Configures watch mode behavior when using `wp-tester test --watch`. Controls which files trigger test re-runs.
+
+Watch mode monitors the project directory for file changes. The project directory is determined by:
+- The directory containing `wp-tester.json` if no `projectHostPath` is specified
+- The `projectHostPath` configuration option if specified
+- When using `--config` with a directory path, the directory itself is used as the project directory
+
+**Properties:**
+
+##### `tests.watch.include`
+
+**Type:** `Array<string>`
+**Required:** No
+**Description:** Glob patterns for files/directories to watch. If not specified, watches all files in the project directory.
+
+**Examples:**
+```json
+{
+  "tests": {
+    "watch": {
+      "include": ["src/**/*.php", "tests/**/*.php"]
+    }
+  }
+}
+```
+
+```json
+{
+  "tests": {
+    "watch": {
+      "include": ["**/*.php", "**/*.js"]
+    }
+  }
+}
+```
+
+##### `tests.watch.exclude`
+
+**Type:** `Array<string>`
+**Required:** No
+**Default:** `["**/node_modules/**", "**/vendor/**", "**/.git/**"]`
+**Description:** Glob patterns to exclude from watching. These patterns are checked before include patterns.
+
+**Example:**
+```json
+{
+  "tests": {
+    "watch": {
+      "exclude": ["vendor/**", "node_modules/**", "*.log", "coverage/**"]
+    }
+  }
+}
+```
+
+**Complete Example:**
+
+```json
+{
+  "tests": {
+    "plugin": "my-plugin",
+    "phpunit": {
+      "phpunitPath": "vendor/bin/phpunit",
+      "configPath": "phpunit.xml.dist"
+    },
+    "watch": {
+      "include": ["src/**/*.php", "tests/**/*.php", "includes/**/*.php"],
+      "exclude": ["vendor/**", "node_modules/**", "*.log"]
+    }
+  }
+}
+```
+
+**Behavior:**
+
+1. If `include` is specified, only files matching those patterns trigger re-runs
+2. Files matching `exclude` patterns are always ignored
+3. If `include` is not specified, all files (except excluded ones) trigger re-runs
+4. Default excludes cover common directories that shouldn't trigger tests (node_modules, vendor, .git)
+
+**Usage:**
+
+```bash
+# Start watch mode
+wp-tester test --watch
+
+# Watch mode with specific test type
+wp-tester test --watch --test phpunit
+```
+
+## Dependencies
+
+When your plugin or theme depends on other plugins or themes, use Blueprint steps to install them. Your project is automatically mounted and activated by wp-tester based on `tests.plugin` or `tests.theme` - you only need to configure dependencies.
+
+### From WordPress.org
+
+Use `installPlugin` or `installTheme` with `activate: true`:
+
+```json
+{
+  "blueprint": {
+    "steps": [
+      {
+        "step": "installPlugin",
+        "pluginData": {
+          "resource": "wordpress.org/plugins",
+          "slug": "woocommerce"
+        },
+        "activate": true
+      },
+      {
+        "step": "installTheme",
+        "themeData": {
+          "resource": "wordpress.org/themes",
+          "slug": "storefront"
+        },
+        "activate": true
+      }
+    ]
+  }
+}
+```
+
+To install a specific version, use a URL:
+
+```json
+{
+  "step": "installPlugin",
+  "pluginData": {
+    "resource": "url",
+    "url": "https://downloads.wordpress.org/plugin/woocommerce.8.5.0.zip"
+  },
+  "activate": true
+}
+```
+
+### Local Dependencies
+
+For dependencies in your local filesystem (monorepos, sibling directories), mount them and use `activatePlugin`:
+
+```json
+{
+  "environments": [
+    {
+      "blueprint": {
+        "steps": [
+          {
+            "step": "activatePlugin",
+            "pluginPath": "my-dependency/my-dependency.php"
+          }
+        ]
+      },
+      "mounts": [
+        {
+          "hostPath": "../my-dependency",
+          "vfsPath": "/wordpress/wp-content/plugins/my-dependency"
+        }
+      ]
+    }
+  ],
+  "tests": {
+    "plugin": "my-plugin"
+  }
+}
+```
+
+For a complete list of available steps, see the [WordPress Playground Blueprint Steps Documentation](https://wordpress.github.io/wordpress-playground/blueprints/steps#).
 
 ## Complete Examples
 
@@ -526,8 +768,7 @@ Test a plugin with default settings:
   ],
   "tests": {
     "wp": true
-  },
-  "reporters": ["default"]
+  }
 }
 ```
 
@@ -560,10 +801,11 @@ Test across multiple PHP and WordPress versions:
     "plugin": "my-plugin",
     "wp": true
   },
-  "reporters": [
-    "default",
-    ["json", { "outputFile": "test-results.json" }]
-  ]
+  "reporters": {
+    "json": {
+      "outputFile": "test-results.json"
+    }
+  }
 }
 ```
 
@@ -584,7 +826,7 @@ Test a theme with custom environment setup:
         "steps": [
           {
             "step": "installPlugin",
-            "pluginZipFile": {
+            "pluginData": {
               "resource": "wordpress.org/plugins",
               "slug": "woocommerce"
             }
@@ -596,8 +838,7 @@ Test a theme with custom environment setup:
   "tests": {
     "theme": "my-theme",
     "wp": true
-  },
-  "reporters": ["default"]
+  }
 }
 ```
 
@@ -635,10 +876,11 @@ Test a plugin with PHPUnit integration. You can use `testMode` to control whethe
       "phpunitArgs": ["--verbose"]
     }
   },
-  "reporters": [
-    "default",
-    ["json", { "outputFile": "test-results.json" }]
-  ]
+  "reporters": {
+    "json": {
+      "outputFile": "test-results.json"
+    }
+  }
 }
 ```
 

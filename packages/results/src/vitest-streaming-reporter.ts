@@ -7,7 +7,9 @@
 
 import type { Reporter } from "vitest/reporters";
 import type { Vitest, TestModule, TestCase, TestSuite } from "vitest/node";
-import { StreamingReporter } from "./streaming.js";
+import type { SerializedError } from "@vitest/utils";
+import { VitestStreamingBase } from "./vitest-streaming.js";
+import { highlightStringDiff } from "./diff-utils.js";
 
 /**
  * Get the test state from a TestCase
@@ -31,15 +33,85 @@ function getTestDuration(testCase: TestCase): number {
 }
 
 /**
+ * Format error details with expected/actual comparison
+ */
+function formatErrorDetails(error: SerializedError): string {
+  const lines: string[] = [];
+
+  // Check if this is an assertion error with expected/actual values
+  // Some assertions like toContain() don't provide meaningful expected/actual values
+  // Only show diff if we have both values AND they're not just undefined
+  if ('actual' in error && error.actual !== undefined && 'expected' in error && error.expected !== undefined) {
+    const actualStr = typeof error.actual === 'string' ? error.actual : JSON.stringify(error.actual);
+    const expectedStr = typeof error.expected === 'string' ? error.expected : JSON.stringify(error.expected);
+
+    // Skip diff if expected is literally "undefined" - this indicates the assertion
+    // doesn't provide proper diff values (e.g., toContain)
+    if (expectedStr === 'undefined') {
+      return '';
+    }
+
+    // Highlight character-level differences using the same markers as PHPUnit (« and »)
+    const { expected, actual } = highlightStringDiff(expectedStr, actualStr);
+
+    lines.push('Expected:');
+    lines.push(expected);
+    lines.push('Actual:');
+    lines.push(actual);
+  }
+
+  return lines.join('\n');
+}
+
+/**
  * Get error message from a TestCase
  */
 function getErrorInfo(testCase: TestCase): { message?: string; trace?: string } {
   const result = testCase.result();
   if (result.state === "failed" && result.errors && result.errors.length > 0) {
     const error = result.errors[0];
+
+    // Extract base message
+    const message = error.message || (error instanceof Error ? error.toString() : JSON.stringify(error));
+
+    // Build trace with file location and error details
+    let trace = '';
+
+    // Add file location if available
+    const stackStr = error.stackStr || error.stack;
+    if (stackStr && typeof stackStr === 'string') {
+      // Extract file path and line number from stack
+      const stackLines = stackStr.split('\n');
+      const firstLine = stackLines.find((line: string) => line.includes('.spec.') || line.includes('.test.'));
+      if (firstLine) {
+        // Extract just the file path and line number - try multiple patterns
+        // Pattern 1: at /path/to/file.ts:line:column
+        let match = firstLine.match(/at\s+(\/[^:]+:\d+:\d+)/);
+        if (!match) {
+          // Pattern 2: (/path/to/file.ts:line:column)
+          match = firstLine.match(/\(([^)]+\.(?:spec|test)\.[^)]+)\)/);
+        }
+        if (match) {
+          trace = ' ' + match[1] + '\n';
+        }
+      }
+    }
+
+    // Add error details (expected/actual comparison)
+    const details = formatErrorDetails(error);
+    if (details) {
+      trace += '\n' + details;
+    }
+
+    // If we still don't have a trace but have details, use just the details
+    // This prevents showing the full node_modules stack trace
+    if (!trace && details) {
+      trace = details;
+    }
+
     return {
-      message: error.message || (error instanceof Error ? error.toString() : JSON.stringify(error)),
-      trace: error.stack,
+      message,
+      trace,
     };
   }
   return {};
@@ -102,19 +174,19 @@ function getFileIdFromTestSuite(testSuite: TestSuite): string {
  * Custom Vitest reporter that streams test results in real-time
  */
 export class VitestStreamingReporter implements Reporter {
-  private streaming: StreamingReporter;
+  private streaming: VitestStreamingBase;
   private vitest: Vitest | null = null;
   private toolName: string;
 
-  constructor(toolName: string = "vitest", streamingReporter?: StreamingReporter) {
-    this.streaming = streamingReporter || new StreamingReporter();
+  constructor(toolName: string = "vitest", streamingReporter?: VitestStreamingBase) {
+    this.streaming = streamingReporter || new VitestStreamingBase();
     this.toolName = toolName;
   }
 
   /**
    * Get the underlying StreamingReporter for access to results
    */
-  getStreamingReporter(): StreamingReporter {
+  getStreamingReporter(): VitestStreamingBase {
     return this.streaming;
   }
 

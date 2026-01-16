@@ -4,4 +4,4 @@
  * Provides PHPUnit test execution and result parsing for wp-tester.
  */
 
-export { runPhpunitTests, shouldRunPhpunitTests } from "./runner";
+export { runPhpunitTests, shouldRunPhpunitTests } from "./runner.js";

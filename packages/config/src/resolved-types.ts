@@ -1,5 +1,16 @@
 import type { BlueprintV1Declaration } from "@wp-playground/blueprints";
-import type { Mount, Reporter, PHPUnitConfig, Tests, Environment, WPTesterConfig, TestMode, ProjectType } from "./wp-tester-config";
+import type { Mount, PHPUnitConfig, Tests, Environment, WPTesterConfig, TestMode, ProjectType, BaseReporterOptions, JsonReporterOptions } from "./wp-tester-config";
+
+/**
+ * Resolved reporters configuration.
+ * Supports boolean shorthand for default reporter (true = enable with defaults).
+ */
+export interface ResolvedReporters {
+  /** Default reporter options (supports boolean shorthand: true = enable with defaults) */
+  default?: boolean | BaseReporterOptions;
+  /** JSON reporter options */
+  json?: JsonReporterOptions;
+}
 
 /**
  * Resolved PHPUnit configuration with absolute paths and required testMode.
@@ -14,6 +25,8 @@ export interface ResolvedPHPUnitConfig extends Omit<PHPUnitConfig, 'testMode'> {
  */
 export interface ResolvedTests extends Omit<Tests, 'phpunit'> {
   phpunit?: ResolvedPHPUnitConfig;
+  /** Allow the test suite to pass when no tests are executed */
+  passWithNoTests?: boolean;
 }
 
 /**
@@ -27,13 +40,15 @@ export interface ResolvedBlueprint extends Omit<BlueprintV1Declaration, 'preferr
 /**
  * Resolved environment with loaded blueprint and required mounts array.
  */
-export interface ResolvedEnvironment extends Omit<Environment, 'blueprint' | 'mounts' | 'env'> {
+export interface ResolvedEnvironment extends Omit<Environment, 'blueprint' | 'mounts' | 'env' | 'skip'> {
   /** Blueprint loaded from file (if it was a string path) with guaranteed preferredVersions */
   blueprint: ResolvedBlueprint;
   /** Mounts array (always defined, may be empty) */
   mounts: Mount[];
   /** Environment variables (always defined, may be empty) */
   env: Record<string, string>;
+  /** Whether this environment should be skipped (always defined after resolution, defaults to false) */
+  skip: boolean;
 }
 
 /**
@@ -50,6 +65,6 @@ export interface ResolvedWPTesterConfig extends Omit<WPTesterConfig, 'projectHos
   environments: ResolvedEnvironment[];
   /** Resolved tests with absolute paths and defaults */
   tests: ResolvedTests;
-  /** Reporters (always defined after resolution) */
-  reporters: Reporter[];
+  /** Reporters (always defined after resolution, boolean values resolved to objects) */
+  reporters: ResolvedReporters;
 }
