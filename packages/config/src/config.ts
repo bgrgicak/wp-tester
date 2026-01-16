@@ -47,10 +47,15 @@ export function configPath(): string {
 }
 
 export function getSchemaPath(importMetaUrl?: string): string {
-  // For ESM in production (built files)
-  if (importMetaUrl) {
-    const currentDir = dirname(fileURLToPath(importMetaUrl));
-    return join(currentDir, "schema.json");
+  // For ESM in production (built files) - use import.meta.url from this module
+  // This works when the package is installed via npm or run via npx
+  const metaUrl = importMetaUrl || import.meta.url;
+  if (metaUrl) {
+    const currentDir = dirname(fileURLToPath(metaUrl));
+    const schemaPath = join(currentDir, "schema.json");
+    if (existsSync(schemaPath)) {
+      return schemaPath;
+    }
   }
 
   // For CommonJS (built files)
