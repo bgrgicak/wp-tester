@@ -15,6 +15,7 @@ export interface SummaryOptions {
   failed?: boolean;
   skipped?: boolean;
   pending?: boolean;
+  other?: boolean;
 }
 
 /**
@@ -41,6 +42,7 @@ export function printSummary(summary: Summary, options?: SummaryOptions): void {
   const showFailed = options?.failed ?? true;
   const showSkipped = options?.skipped ?? true;
   const showPending = options?.pending ?? true;
+  const showOther = options?.other ?? true;
 
   console.log("");
 
@@ -55,6 +57,9 @@ export function printSummary(summary: Summary, options?: SummaryOptions): void {
   }
   if (summary.pending > 0 && showPending) {
     console.log(pc.yellow(`  ◔ ${summary.pending} pending`));
+  }
+  if (summary.other > 0 && showOther) {
+    console.log(pc.gray(`  ◆ ${summary.other} other`));
   }
 
   // Display warnings from summary.extra
@@ -75,6 +80,7 @@ export function printSummary(summary: Summary, options?: SummaryOptions): void {
   if (showFailed) legendParts.push("✗ failed");
   if (showSkipped) legendParts.push("○ skipped");
   if (showPending) legendParts.push("◔ pending");
+  if (showOther) legendParts.push("◆ other");
 
   if (legendParts.length > 0) {
     console.log(pc.dim(`  Legend: ${legendParts.join("  ")}`));

@@ -6,8 +6,8 @@ import { runPhpunitTests } from "@wp-tester/phpunit";
 import { mergeReports, printSummary, type Report } from "@wp-tester/results";
 import type { TestType, ResolvedWPTesterConfig } from "@wp-tester/config";
 import { resolveConfig } from "@wp-tester/config";
-import { validateConfig } from '../config/validate';
-import { getWorkingDirectory } from '@wp-tester/config';
+import { validateConfig } from "../config/validate";
+import { getWorkingDirectory } from "@wp-tester/config";
 
 /**
  * Options for the test runner
@@ -27,7 +27,9 @@ export interface RunTestsOptions {
  * Apply --failed-only CLI override to config reporters.
  * Sets all filter options to false except failed: true.
  */
-function applyFailedOnlyOverride(config: ResolvedWPTesterConfig): ResolvedWPTesterConfig {
+function applyFailedOnlyOverride(
+  config: ResolvedWPTesterConfig
+): ResolvedWPTesterConfig {
   const failedOnlyFilter = {
     passed: false,
     failed: true,
@@ -40,11 +42,12 @@ function applyFailedOnlyOverride(config: ResolvedWPTesterConfig): ResolvedWPTest
     ...config,
     reporters: {
       ...config.reporters,
-      default: config.reporters?.default !== undefined
-        ? typeof config.reporters.default === 'object'
-          ? { ...config.reporters.default, ...failedOnlyFilter }
-          : failedOnlyFilter
-        : failedOnlyFilter,
+      default:
+        config.reporters?.default !== undefined
+          ? typeof config.reporters.default === "object"
+            ? { ...config.reporters.default, ...failedOnlyFilter }
+            : failedOnlyFilter
+          : failedOnlyFilter,
     },
   };
 }
@@ -164,7 +167,16 @@ export const executeTests = async (
 
   // Print final combined summary with default reporter options
   const defaultReporterOptions = resolvedConfig.reporters?.default;
-  printSummary(summary, defaultReporterOptions);
+
+  // Convert reporter options to summary options (handle boolean shorthand)
+  // When false or true (boolean shorthand), pass undefined to use printSummary defaults
+  // When an object, pass it directly since SummaryOptions now matches BaseReporterOptions
+  const summaryOptions =
+    typeof defaultReporterOptions === "object"
+      ? defaultReporterOptions
+      : undefined;
+
+  printSummary(summary, summaryOptions);
 
   return { success, hasTests: true };
 };
