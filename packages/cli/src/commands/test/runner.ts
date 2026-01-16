@@ -7,7 +7,7 @@ import { mergeReports, printSummary, type Report } from "@wp-tester/results";
 import type { TestType, ResolvedWPTesterConfig } from "@wp-tester/config";
 import { resolveConfig } from "@wp-tester/config";
 import { validateConfig } from "../config/validate";
-import { getWorkingDirectory } from "@wp-tester/config";
+import { getConfigPath } from "@wp-tester/config";
 
 /**
  * Options for the test runner
@@ -53,8 +53,7 @@ function applyFailedOnlyOverride(
 }
 
 async function resolveConfigPath(configPath: string): Promise<string> {
-  const cwd = getWorkingDirectory();
-  const resolvedPath = path.resolve(cwd, configPath);
+  const resolvedPath = getConfigPath(configPath);
 
   try {
     const stats = await stat(resolvedPath);
@@ -72,8 +71,7 @@ async function resolveConfigPath(configPath: string): Promise<string> {
 
 async function checkConfigExists(configPath: string): Promise<boolean> {
   try {
-    const cwd = getWorkingDirectory();
-    const resolvedPath = path.resolve(cwd, configPath);
+    const resolvedPath = getConfigPath(configPath);
     await access(resolvedPath, constants.F_OK);
     return true;
   } catch {
@@ -190,8 +188,7 @@ export const runTests = async (
 
   // Check if config file exists
   while (!(await checkConfigExists(finalConfigPath))) {
-    const cwd = getWorkingDirectory();
-    const resolvedPath = path.resolve(cwd, finalConfigPath);
+    const resolvedPath = getConfigPath(finalConfigPath);
     clack.log.error(`Config file not found: ${resolvedPath}`);
 
     const newPath = await clack.text({

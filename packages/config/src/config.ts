@@ -1,5 +1,5 @@
-import type { WPTesterConfig, Tests } from "./wp-tester-config";
-import type { ResolvedWPTesterConfig, ResolvedEnvironment, ResolvedTests, ResolvedPHPUnitConfig, ResolvedReporters } from "./resolved-types";
+import type { WPTesterConfig, Tests, Environment } from "./wp-tester-config";
+import type { ResolvedWPTesterConfig, ResolvedEnvironment, ResolvedTests, ResolvedPHPUnitConfig, ResolvedBlueprint, ResolvedReporters } from "./resolved-types";
 import type { BlueprintV1Declaration } from "@wp-playground/blueprints";
 import { readFile, writeFile, access, constants as fsConstants } from "fs/promises";
 import { existsSync, statSync } from "fs";
@@ -7,6 +7,17 @@ import { join, dirname, resolve, isAbsolute } from "path";
 import { fileURLToPath } from "url";
 import { getProjectRootMount } from "./auto-mount";
 import { detectProjectType } from "./options/project-type-detect";
+
+/**
+ * Internal interface for expanded environments with resolved version arrays.
+ * This is used internally during expansion before full resolution.
+ */
+interface ExpandedEnvironment extends Environment {
+  /** The specific PHP version for this expanded environment */
+  _phpVersion?: string;
+  /** The specific WP version for this expanded environment */
+  _wpVersion?: string;
+}
 
 export type { WPTesterConfig } from "./wp-tester-config";
 
@@ -125,6 +136,15 @@ export async function writeConfigFile(
  * @returns Absolute path to the config file
  */
 export function getConfigPath(config: string): string {
+  // Expand tilde (~) to home directory
+  if (config.startsWith('~/') || config === '~') {
+    const homeDir = process.env.HOME || process.env.USERPROFILE;
+    if (!homeDir) {
+      throw new Error('Unable to resolve home directory');
+    }
+    config = config === '~' ? homeDir : join(homeDir, config.slice(2));
+  }
+
   return isAbsolute(config) ? config : resolve(getWorkingDirectory(), config);
 }
 
@@ -187,6 +207,161 @@ export function getProjectDir(
 
   // No projectHostPath specified, return base directory
   return baseDir;
+}
+
+/**
+ * Normalize a version spec (string or array) to an array of versions.
+ * @param spec - Version specification (single string or array)
+ * @returns Array of version strings
+ */
+function normalizeVersionSpec(spec: string | string[] | undefined): string[] {
+  if (!spec) {
+    return [];
+  }
+  return Array.isArray(spec) ? spec : [spec];
+}
+
+/**
+ * Generate a name for an expanded environment based on the original name
+ * and the specific PHP/WP versions.
+ * @param baseName - Original environment name (if any)
+ * @param phpVersion - PHP version for this combination (only if from matrix)
+ * @param wpVersion - WordPress version for this combination (only if from matrix)
+ * @param phpIsFromMatrix - Whether PHP version is from matrix expansion (not blueprint)
+ * @param wpIsFromMatrix - Whether WP version is from matrix expansion (not blueprint)
+ * @param isMatrix - Whether this is part of a matrix (multiple combinations)
+ * @returns Generated environment name
+ */
+function generateExpandedName(
+  baseName: string | undefined,
+  phpVersion: string | undefined,
+  wpVersion: string | undefined,
+  phpIsFromMatrix: boolean,
+  wpIsFromMatrix: boolean,
+  isMatrix: boolean
+): string | undefined {
+  // If not a matrix expansion, keep the original name
+  if (!isMatrix) {
+    return baseName;
+  }
+
+  // Build version suffix - only include versions that are from the matrix
+  const parts: string[] = [];
+  if (phpVersion && phpIsFromMatrix) {
+    parts.push(`PHP ${phpVersion}`);
+  }
+  if (wpVersion && wpIsFromMatrix) {
+    parts.push(`WP ${wpVersion}`);
+  }
+
+  if (parts.length === 0) {
+    return baseName;
+  }
+
+  const versionSuffix = parts.join(", ");
+  return baseName ? `${baseName} (${versionSuffix})` : versionSuffix;
+}
+
+/**
+ * Expand environments with version arrays into multiple environments,
+ * one for each combination of PHP and WP versions.
+ *
+ * Rules:
+ * - If blueprint.preferredVersions.php is set, it overrides env.php (no matrix for PHP)
+ * - If blueprint.preferredVersions.wp is set, it overrides env.wp (no matrix for WP)
+ * - When arrays are provided for both php and wp, creates a full matrix of combinations
+ *
+ * @param environments - Original environments array
+ * @param projectDir - Project directory for resolving blueprint paths
+ * @returns Expanded environments array
+ */
+async function expandEnvironments(
+  environments: Environment[],
+  projectDir: string
+): Promise<ExpandedEnvironment[]> {
+  const expanded: ExpandedEnvironment[] = [];
+
+  for (const env of environments) {
+    // Load blueprint if it's a string path (needed to check preferredVersions)
+    // If no blueprint is provided, use an empty object (defaults will be applied later)
+    let blueprint: BlueprintV1Declaration;
+    if (!env.blueprint) {
+      blueprint = {};
+    } else if (typeof env.blueprint === "string") {
+      const blueprintPath = resolveAbsolute(env.blueprint, projectDir);
+      const blueprintContent = await readFile(blueprintPath, "utf-8");
+      blueprint = JSON.parse(blueprintContent) as BlueprintV1Declaration;
+    } else {
+      blueprint = env.blueprint;
+    }
+
+    // Determine PHP versions to use
+    // Blueprint preferredVersions.php overrides environment-level php
+    // However, "latest" is treated as unspecified, allowing matrix expansion
+    const blueprintPhp = blueprint.preferredVersions?.php;
+    let phpVersions: string[];
+    let phpIsFromMatrix: boolean;
+    if (blueprintPhp && blueprintPhp !== "latest") {
+      // Blueprint takes precedence - use only the blueprint version
+      phpVersions = [blueprintPhp];
+      phpIsFromMatrix = false; // Not from matrix, from blueprint
+    } else {
+      // Use environment-level versions
+      phpVersions = normalizeVersionSpec(env.php);
+      phpIsFromMatrix = true; // From matrix (env-level config)
+    }
+
+    // Determine WP versions to use
+    // Blueprint preferredVersions.wp overrides environment-level wp
+    // However, "latest" is treated as unspecified, allowing matrix expansion
+    const blueprintWp = blueprint.preferredVersions?.wp;
+    let wpVersions: string[];
+    let wpIsFromMatrix: boolean;
+    if (blueprintWp && blueprintWp !== "latest") {
+      // Blueprint takes precedence - use only the blueprint version
+      wpVersions = [blueprintWp];
+      wpIsFromMatrix = false; // Not from matrix, from blueprint
+    } else {
+      // Use environment-level versions
+      wpVersions = normalizeVersionSpec(env.wp);
+      wpIsFromMatrix = true; // From matrix (env-level config)
+    }
+
+    // If no versions specified at either level, create a single environment
+    if (phpVersions.length === 0 && wpVersions.length === 0) {
+      expanded.push({ ...env });
+      continue;
+    }
+
+    // Ensure at least one version for each dimension (use empty string as placeholder for "not specified")
+    const phpList = phpVersions.length > 0 ? phpVersions : [""];
+    const wpList = wpVersions.length > 0 ? wpVersions : [""];
+
+    // Determine if this is a matrix (multiple combinations)
+    const isMatrix = phpList.length > 1 || wpList.length > 1;
+
+    // Create combinations
+    for (const phpVersion of phpList) {
+      for (const wpVersion of wpList) {
+        const expandedEnv: ExpandedEnvironment = {
+          ...env,
+          name: generateExpandedName(
+            env.name,
+            phpVersion || undefined,
+            wpVersion || undefined,
+            phpIsFromMatrix,
+            wpIsFromMatrix,
+            isMatrix
+          ),
+          _phpVersion: phpVersion || undefined,
+          _wpVersion: wpVersion || undefined,
+        };
+        expanded.push(expandedEnv);
+      }
+    }
+  }
+
+  return expanded;
 }
 
 /**
@@ -311,12 +486,21 @@ export async function resolveConfig(
     reporters.default = inputDefault;
   }
 
-  // Resolve environments: convert Environment[] to ResolvedEnvironment[]
+  // Expand environments with version arrays into multiple environments
+  const expandedEnvironments = await expandEnvironments(
+    resolvedConfig.environments,
+    projectDir
+  );
+
+  // Resolve environments: convert ExpandedEnvironment[] to ResolvedEnvironment[]
   const resolvedEnvironments: ResolvedEnvironment[] = await Promise.all(
-    resolvedConfig.environments.map(async (env) => {
+    expandedEnvironments.map(async (env) => {
       // Resolve blueprint from string to BlueprintV1Declaration if needed
+      // If no blueprint is provided, use an empty object (defaults will be applied later)
       let blueprint: BlueprintV1Declaration;
-      if (typeof env.blueprint === "string") {
+      if (!env.blueprint) {
+        blueprint = {};
+      } else if (typeof env.blueprint === "string") {
         const blueprintPath = resolveAbsolute(env.blueprint, projectDir);
         const blueprintContent = await readFile(blueprintPath, "utf-8");
         blueprint = JSON.parse(blueprintContent) as BlueprintV1Declaration;
@@ -324,12 +508,27 @@ export async function resolveConfig(
         blueprint = env.blueprint;
       }
 
-      // Ensure preferredVersions exists with defaults to create a ResolvedBlueprint
-      const resolvedBlueprint = {
+      // Determine PHP version:
+      // 1. Use the expanded version from matrix (_phpVersion) if set
+      // 2. Otherwise use blueprint preferredVersions.php if set
+      // 3. Otherwise default to "latest"
+      const phpVersion = env._phpVersion || blueprint.preferredVersions?.php || "latest";
+
+      // Determine WP version:
+      // 1. Use the expanded version from matrix (_wpVersion) if set
+      // 2. Otherwise use blueprint preferredVersions.wp if set
+      // 3. Otherwise default to "latest"
+      const wpVersion = env._wpVersion || blueprint.preferredVersions?.wp || "latest";
+
+      // Create resolved blueprint with determined versions
+      // Type assertion is needed because the versions come from user config
+      // and TypeScript can't verify at compile time that they're valid.
+      // Invalid versions will be caught by WordPress Playground at runtime.
+      const resolvedBlueprint: ResolvedBlueprint = {
         ...blueprint,
         preferredVersions: {
-          php: blueprint.preferredVersions?.php || "latest",
-          wp: blueprint.preferredVersions?.wp || "latest",
+          php: phpVersion as ResolvedBlueprint['preferredVersions']['php'],
+          wp: wpVersion,
         },
       };
 

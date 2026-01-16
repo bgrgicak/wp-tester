@@ -11,11 +11,7 @@
 import type { Test, TestStatus, Report } from "ctrf";
 import pc from "picocolors";
 import { applyDiffHighlighting } from "./diff-utils.js";
-
-/**
- * Spinner frames for animated loader
- */
-const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+import { SPINNER_FRAMES } from "./spinner.js";
 
 /**
  * Test event emitted during test execution
@@ -155,12 +151,14 @@ interface FileState {
 interface ReporterState {
   files: Map<string, FileState>;
   toolName: string;
+  displayName?: string;
   startTime: number;
   totalTests: number;
   passedTests: number;
   failedTests: number;
   skippedTests: number;
   pendingTests: number;
+  isRunning: boolean;
 }
 
 /**
@@ -211,6 +209,7 @@ export class StreamingReporter {
       failedTests: 0,
       skippedTests: 0,
       pendingTests: 0,
+      isRunning: false,
     };
   }
 
@@ -368,24 +367,77 @@ export class StreamingReporter {
   }
 
   /**
+   * Check if a suite or any of its descendants has visible content
+   */
+  private hasVisibleContent(file: FileState, suiteIndex: number): boolean {
+    const suite = file.suites[suiteIndex];
+
+    // Check if suite is loading (always visible during loading)
+    if (suite.isLoading && suite.tests.length === 0) {
+      return true;
+    }
+
+    // Check if suite has any visible tests
+    const hasVisibleTests = suite.tests.some(test => this.shouldShowStatus(test.status));
+    if (hasVisibleTests) {
+      return true;
+    }
+
+    // Check if any child suites (with depth > current depth) have visible content
+    const currentDepth = suite.depth;
+    for (let i = suiteIndex + 1; i < file.suites.length; i++) {
+      const nextSuite = file.suites[i];
+
+      // If we've returned to the same or lower depth, we've exited the children
+      if (nextSuite.depth <= currentDepth) {
+        break;
+      }
+
+      // Only check immediate children (depth = current + 1)
+      if (nextSuite.depth === currentDepth + 1) {
+        if (this.hasVisibleContent(file, i)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
    * Render a file's tests to output lines
    */
   private renderFile(file: FileState, lines: string[]): void {
-    for (const suite of file.suites) {
-      this.renderSuite(suite, lines);
+    for (let i = 0; i < file.suites.length; i++) {
+      this.renderSuite(file, i, lines);
     }
   }
 
   /**
    * Render a suite and its tests
    */
-  private renderSuite(suite: SuiteState, lines: string[]): void {
+  private renderSuite(file: FileState, suiteIndex: number, lines: string[]): void {
+    const suite = file.suites[suiteIndex];
     const indent = "  ".repeat(suite.depth);
 
     // Only show spinner if suite is loading AND has no tests yet
     // Don't show spinner if tests have been reported (loading is complete)
     const showSpinner = suite.isLoading && suite.tests.length === 0;
 
+    // Collect visible tests first to determine if suite should be shown
+    const visibleTestLines: string[] = [];
+    for (const test of suite.tests) {
+      if (this.shouldShowStatus(test.status)) {
+        this.renderTest(test, suite.depth + 1, visibleTestLines);
+      }
+    }
+
+    // Check if this suite has visible content (tests or child suites with content)
+    if (!this.hasVisibleContent(file, suiteIndex)) {
+      return; // Skip rendering this suite entirely
+    }
+
+    // Render the suite name
     if (showSpinner) {
       const spinner = pc.cyan(SPINNER_FRAMES[this.spinnerFrame]);
       lines.push(`${indent}${spinner} ${pc.bold(suite.name)}`);
@@ -394,10 +446,8 @@ export class StreamingReporter {
       lines.push(`${indent}  ${pc.bold(suite.name)}`);
     }
 
-    // Render tests
-    for (const test of suite.tests) {
-      this.renderTest(test, suite.depth + 1, lines);
-    }
+    // Add the visible test lines
+    lines.push(...visibleTestLines);
   }
 
   /**
@@ -425,11 +475,6 @@ export class StreamingReporter {
    * Render a single test
    */
   private renderTest(test: TestState, depth: number, lines: string[]): void {
-    // Check if this test status should be displayed
-    if (!this.shouldShowStatus(test.status)) {
-      return;
-    }
-
     const indent = "  ".repeat(depth);
 
     switch (test.status) {
@@ -587,18 +632,33 @@ export class StreamingReporter {
   }
 
   /**
+   * Get display name from tool name
+   */
+  private getDisplayName(toolName: string): string {
+    const nameMap: Record<string, string> = {
+      "wp-tester-phpunit": "PHPUnit Tests",
+      "wp-tester-smoke": "WordPress Tests",
+      "wp-tester": "Tests",
+    };
+    return nameMap[toolName] || toolName;
+  }
+
+  /**
    * Called when test run starts
    */
   onRunStart(toolName?: string): void {
+    const tool = toolName || "wp-tester";
     this.state = {
       files: new Map(),
-      toolName: toolName || "wp-tester",
+      toolName: tool,
+      displayName: this.getDisplayName(tool),
       startTime: Date.now(),
       totalTests: 0,
       passedTests: 0,
       failedTests: 0,
       skippedTests: 0,
       pendingTests: 0,
+      isRunning: true,
     };
 
     this.lastOutputLineCount = 0;
@@ -609,6 +669,7 @@ export class StreamingReporter {
    */
   onRunEnd(): void {
     this.stopSpinner();
+    this.state.isRunning = false;
 
     // Clean up any tests still in "running" state across all files
     // This ensures we never show spinners in the final output
@@ -721,11 +782,17 @@ export class StreamingReporter {
       s.isLoading = false;
     }
 
-    suite.tests.push({
-      name,
-      suiteName,
-      status: "running",
-    });
+    // Check if test already exists (completion event arrived before start event)
+    const existingTest = suite.tests.find((t) => t.name === name && t.suiteName === suiteName);
+    if (!existingTest) {
+      // Test doesn't exist yet - create it in running state
+      suite.tests.push({
+        name,
+        suiteName,
+        status: "running",
+      });
+    }
+    // If test already exists with a completed status, don't change it
 
     this.render();
   }
@@ -750,19 +817,23 @@ export class StreamingReporter {
       s.isLoading = false;
     }
 
-    // Find and update the test - try exact match first, then fallback to name-only match
+    // Find and update the test
+    // Look for a test in "running" state first (most common case - completion follows start)
     let test = suite.tests.find(
-      (t) => t.name === name && t.suiteName === suiteName
+      (t) => t.name === name && t.status === "running"
     );
+
     if (!test) {
-      // Fallback: try to find by name only (handles cases where suiteName might differ)
-      test = suite.tests.find((t) => t.name === name && t.status === "running");
+      // Fallback: try exact match with suiteName (handles case where test completed before start event)
+      test = suite.tests.find((t) => t.name === name && t.suiteName === suiteName);
     }
 
     if (test) {
       test.status = "passed";
       test.duration = duration;
+      test.suiteName = suiteName; // Ensure suiteName is set
     } else {
+      // Test start event hasn't arrived yet - create the test with completed state
       suite.tests.push({
         name,
         suiteName,
@@ -798,13 +869,13 @@ export class StreamingReporter {
       s.isLoading = false;
     }
 
-    // Find and update the test - try exact match first, then fallback to name-only match
-    let test = suite.tests.find(
-      (t) => t.name === name && t.suiteName === suiteName
-    );
+    // Find and update the test
+    // Look for a test in "running" state first (most common case - completion follows start)
+    let test = suite.tests.find((t) => t.name === name && t.status === "running");
+
     if (!test) {
-      // Fallback: try to find by name only (handles cases where suiteName might differ)
-      test = suite.tests.find((t) => t.name === name && t.status === "running");
+      // Fallback: try exact match with suiteName (handles case where test completed before start event)
+      test = suite.tests.find((t) => t.name === name && t.suiteName === suiteName);
     }
 
     if (test) {
@@ -812,7 +883,9 @@ export class StreamingReporter {
       test.duration = duration;
       test.message = message;
       test.trace = trace;
+      test.suiteName = suiteName; // Ensure suiteName is set
     } else {
+      // Test start event hasn't arrived yet - create the test with completed state
       suite.tests.push({
         name,
         suiteName,
@@ -848,19 +921,21 @@ export class StreamingReporter {
       s.isLoading = false;
     }
 
-    // Find and update the test - try exact match first, then fallback to name-only match
-    let test = suite.tests.find(
-      (t) => t.name === name && t.suiteName === suiteName
-    );
+    // Find and update the test
+    // Look for a test in "running" state first (most common case - completion follows start)
+    let test = suite.tests.find((t) => t.name === name && t.status === "running");
+
     if (!test) {
-      // Fallback: try to find by name only (handles cases where suiteName might differ)
-      test = suite.tests.find((t) => t.name === name && t.status === "running");
+      // Fallback: try exact match with suiteName (handles case where test completed before start event)
+      test = suite.tests.find((t) => t.name === name && t.suiteName === suiteName);
     }
 
     if (test) {
       test.status = "skipped";
       test.message = reason;
+      test.suiteName = suiteName; // Ensure suiteName is set
     } else {
+      // Test start event hasn't arrived yet - create the test with completed state
       suite.tests.push({
         name,
         suiteName,

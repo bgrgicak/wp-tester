@@ -49,7 +49,8 @@ export function printSummary(summary: Summary, options?: SummaryOptions): void {
   if (summary.passed > 0 && showPassed) {
     console.log(pc.green(`  ✓ ${summary.passed} passed`));
   }
-  if (summary.failed > 0 && showFailed) {
+  // Always show the number of failed tests
+  if (showFailed) {
     console.log(pc.red(`  ✗ ${summary.failed} failed`));
   }
   if (summary.skipped > 0 && showSkipped) {
@@ -71,7 +72,9 @@ export function printSummary(summary: Summary, options?: SummaryOptions): void {
   }
 
   console.log("");
-  console.log(pc.dim(`  ${summary.tests} tests in ${formatDuration(duration)}`));
+  console.log(
+    pc.dim(`  ${summary.tests} tests in ${formatDuration(duration)}`)
+  );
   console.log("");
 
   // Build legend based on enabled statuses

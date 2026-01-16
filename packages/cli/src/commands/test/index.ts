@@ -1,9 +1,8 @@
 import { runTests, executeTests } from './runner';
 import { runWatchMode } from './watcher';
 import type { TestType } from '@wp-tester/config';
-import { getWorkingDirectory } from '@wp-tester/config';
+import { getConfigPath } from '@wp-tester/config';
 import * as clack from "@clack/prompts";
-import path from "path";
 
 interface TestArgs {
   config?: string;
@@ -27,16 +26,26 @@ export const testHandler = async (argv: TestArgs): Promise<void> => {
   }
 
   if (watch) {
-    const cwd = getWorkingDirectory();
-    const absoluteConfigPath = path.resolve(cwd, config);
+    const absoluteConfigPath = getConfigPath(config);
     await runWatchMode({
       configPath: absoluteConfigPath,
       onRunTests: async () => {
-        await executeTests(absoluteConfigPath, { testType: test, extraArgs, passWithNoTests, failedOnly });
+        await executeTests(absoluteConfigPath, {
+          testType: test,
+          extraArgs,
+          passWithNoTests,
+          failedOnly,
+        });
       },
     });
   } else {
-    await runTests(config, { testType: test, extraArgs, passWithNoTests, failedOnly });
+    clack.log.info(" Test Run\n");
+    await runTests(config, {
+      testType: test,
+      extraArgs,
+      passWithNoTests,
+      failedOnly,
+    });
   }
 };
 

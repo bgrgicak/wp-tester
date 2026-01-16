@@ -19,6 +19,11 @@ export type {
 export { vitestToCTRF } from './parsers/vitest.js';
 export { mergeReports } from './merge.js';
 export {
+  Spinner,
+  SPINNER_FRAMES,
+  type SpinnerOptions,
+} from './spinner.js';
+export {
   StreamingReporter,
   stdoutWriter,
   createTestFromEvent,

@@ -237,10 +237,33 @@ export interface Environment {
   name?: string;
 
   /**
+   * PHP version(s) for this environment.
+   * Can be a single version string or an array of versions for matrix testing.
+   * When an array is provided, tests will run for each PHP version combined with each WP version.
+   * If blueprint.preferredVersions.php is also set, the blueprint value takes precedence
+   * and only that single version will be used.
+   * @example "8.2"
+   * @example ["8.1", "8.2", "8.3"]
+   */
+  php?: NonNullable<BlueprintV1Declaration["preferredVersions"]>["php"][];
+
+  /**
+   * WordPress version(s) for this environment.
+   * Can be a single version string or an array of versions for matrix testing.
+   * When an array is provided, tests will run for each WP version combined with each PHP version.
+   * If blueprint.preferredVersions.wp is also set, the blueprint value takes precedence
+   * and only that single version will be used.
+   * @example "6.7"
+   * @example ["6.6", "6.7"]
+   */
+  wp?: NonNullable<BlueprintV1Declaration["preferredVersions"]>["wp"][];
+
+  /**
    * WordPress Playground Blueprint configuration.
    * Can be an inline blueprint object or a file path to a blueprint JSON file.
+   * If not specified, a default blueprint will be created using the php and wp version settings.
    */
-  blueprint: Blueprint;
+  blueprint?: Blueprint;
 
   /**
    * Filesystem mounts to apply to this environment

@@ -43,7 +43,7 @@
     },
     "ArrayBuffer": {
       "properties": {
-        "__@toStringTag@673": {
+        "__@toStringTag@506": {
           "type": "string"
         },
         "byteLength": {
@@ -51,7 +51,7 @@
         }
       },
       "required": [
-        "__@toStringTag@673",
+        "__@toStringTag@506",
         "byteLength"
       ],
       "type": "object"
@@ -96,1039 +96,6 @@
         }
       },
       "type": "object"
-    },
-    "Blueprint": {
-      "anyOf": [
-        {
-          "description": "The Blueprint declaration, typically stored in a blueprint.json file.",
-          "properties": {
-            "constants": {
-              "$ref": "#/definitions/PHPConstants",
-              "description": "PHP Constants to define on every request"
-            },
-            "description": {
-              "description": "Optional description. It doesn't do anything but is exposed as\na courtesy to developers who may want to document which blueprint\nfile does what.",
-              "type": "string"
-            },
-            "extraLibraries": {
-              "description": "Extra libraries to preload into the Playground instance.",
-              "items": {
-                "const": "wp-cli",
-                "type": "string"
-              },
-              "type": "array"
-            },
-            "features": {
-              "properties": {
-                "intl": {
-                  "type": "boolean"
-                },
-                "networking": {
-                  "description": "Should boot with support for network request via wp_safe_remote_get?",
-                  "type": "boolean"
-                }
-              },
-              "type": "object"
-            },
-            "landingPage": {
-              "description": "The URL to navigate to after the blueprint has been run.",
-              "type": "string"
-            },
-            "login": {
-              "anyOf": [
-                {
-                  "properties": {
-                    "password": {
-                      "type": "string"
-                    },
-                    "username": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "password",
-                    "username"
-                  ],
-                  "type": "object"
-                },
-                {
-                  "type": "boolean"
-                }
-              ],
-              "description": "User to log in as.\nIf true, logs the user in as admin/password."
-            },
-            "meta": {
-              "description": "Optional metadata. Used by the Blueprints gallery at https://github.com/WordPress/blueprints",
-              "properties": {
-                "author": {
-                  "description": "A GitHub username of the author of this Blueprint.",
-                  "type": "string"
-                },
-                "categories": {
-                  "description": "Relevant categories to help users find your Blueprint in the future\nBlueprints section on WordPress.org.",
-                  "items": {
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                "description": {
-                  "description": "A brief explanation of what your Blueprint offers.",
-                  "type": "string"
-                },
-                "title": {
-                  "description": "A clear and concise name for your Blueprint.",
-                  "type": "string"
-                }
-              },
-              "required": [
-                "author",
-                "title"
-              ],
-              "type": "object"
-            },
-            "phpExtensionBundles": {},
-            "plugins": {
-              "description": "WordPress plugins to install and activate",
-              "items": {
-                "anyOf": [
-                  {
-                    "properties": {
-                      "path": {
-                        "description": "The path to the file in the VFS",
-                        "type": "string"
-                      },
-                      "resource": {
-                        "const": "vfs",
-                        "description": "Identifies the file resource as Virtual File System (VFS)",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "path",
-                      "resource"
-                    ],
-                    "type": "object"
-                  },
-                  {
-                    "properties": {
-                      "contents": {
-                        "anyOf": [
-                          {
-                            "additionalProperties": false,
-                            "patternProperties": {
-                              "^[0-9]+$": {
-                                "type": "number"
-                              }
-                            },
-                            "properties": {
-                              "BYTES_PER_ELEMENT": {
-                                "type": "number"
-                              },
-                              "__@toStringTag@673": {
-                                "const": "Uint8Array",
-                                "type": "string"
-                              },
-                              "buffer": {
-                                "$ref": "#/definitions/ArrayBufferLike"
-                              },
-                              "byteLength": {
-                                "type": "number"
-                              },
-                              "byteOffset": {
-                                "type": "number"
-                              },
-                              "length": {
-                                "type": "number"
-                              }
-                            },
-                            "required": [
-                              "BYTES_PER_ELEMENT",
-                              "__@toStringTag@673",
-                              "buffer",
-                              "byteLength",
-                              "byteOffset",
-                              "length"
-                            ],
-                            "type": "object"
-                          },
-                          {
-                            "type": "string"
-                          }
-                        ],
-                        "description": "The contents of the file"
-                      },
-                      "name": {
-                        "description": "The name of the file",
-                        "type": "string"
-                      },
-                      "resource": {
-                        "const": "literal",
-                        "description": "Identifies the file resource as a literal file",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "contents",
-                      "name",
-                      "resource"
-                    ],
-                    "type": "object"
-                  },
-                  {
-                    "properties": {
-                      "resource": {
-                        "const": "wordpress.org/themes",
-                        "description": "Identifies the file resource as a WordPress Core theme",
-                        "type": "string"
-                      },
-                      "slug": {
-                        "description": "The slug of the WordPress Core theme",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "resource",
-                      "slug"
-                    ],
-                    "type": "object"
-                  },
-                  {
-                    "properties": {
-                      "resource": {
-                        "const": "wordpress.org/plugins",
-                        "description": "Identifies the file resource as a WordPress Core plugin",
-                        "type": "string"
-                      },
-                      "slug": {
-                        "description": "The slug of the WordPress Core plugin",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "resource",
-                      "slug"
-                    ],
-                    "type": "object"
-                  },
-                  {
-                    "properties": {
-                      "caption": {
-                        "description": "Optional caption for displaying a progress message",
-                        "type": "string"
-                      },
-                      "resource": {
-                        "const": "url",
-                        "description": "Identifies the file resource as a URL",
-                        "type": "string"
-                      },
-                      "url": {
-                        "description": "The URL of the file",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "resource",
-                      "url"
-                    ],
-                    "type": "object"
-                  },
-                  {
-                    "properties": {
-                      "path": {
-                        "description": "The path to the file in the Blueprint",
-                        "type": "string"
-                      },
-                      "resource": {
-                        "const": "bundled",
-                        "description": "Identifies the file resource as a Blueprint file",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "path",
-                      "resource"
-                    ],
-                    "type": "object"
-                  },
-                  {
-                    "type": "string"
-                  }
-                ]
-              },
-              "type": "array"
-            },
-            "preferredVersions": {
-              "description": "The preferred PHP and WordPress versions to use.",
-              "properties": {
-                "php": {
-                  "description": "The preferred PHP version to use.\nIf not specified, the latest supported version will be used",
-                  "enum": [
-                    "7.2",
-                    "7.3",
-                    "7.4",
-                    "8.0",
-                    "8.1",
-                    "8.2",
-                    "8.3",
-                    "8.4",
-                    "latest"
-                  ],
-                  "type": "string"
-                },
-                "wp": {
-                  "description": "The preferred WordPress version to use.\nIf not specified, the latest supported version will be used",
-                  "type": "string"
-                }
-              },
-              "required": [
-                "php",
-                "wp"
-              ],
-              "type": "object"
-            },
-            "siteOptions": {
-              "allOf": [
-                {
-                  "$ref": "#/definitions/Record%3Cstring%2Cstring%3E"
-                },
-                {
-                  "properties": {
-                    "blogname": {
-                      "description": "The site title",
-                      "type": "string"
-                    }
-                  },
-                  "type": "object"
-                }
-              ],
-              "description": "WordPress site options to define"
-            },
-            "steps": {
-              "description": "The steps to run after every other operation in this Blueprint was\nexecuted.",
-              "items": {
-                "anyOf": [
-                  {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/ActivatePluginStep"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/ActivateThemeStep"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/CpStep"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/DefineWpConfigConstsStep"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/DefineSiteUrlStep"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/EnableMultisiteStep"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/ImportThemeStarterContentStep"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "allOf": [
-                      {
-                        "description": "login",
-                        "properties": {
-                          "password": {
-                            "type": "string"
-                          },
-                          "step": {
-                            "const": "login",
-                            "type": "string"
-                          },
-                          "username": {
-                            "description": "The user to log in as. Defaults to 'admin'.",
-                            "type": "string"
-                          }
-                        },
-                        "required": [
-                          "step"
-                        ],
-                        "type": "object"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/MkdirStep"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/MvStep"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/ResetDataStep"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/RequestStep"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/RmStep"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/RmdirStep"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/RunPHPStep"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/RunPHPWithOptionsStep"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/RunWpInstallationWizardStep"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "allOf": [
-                      {
-                        "description": "setSiteOptions",
-                        "properties": {
-                          "options": {
-                            "$ref": "#/definitions/Record%3Cstring%2Cunknown%3E",
-                            "description": "The options to set on the site."
-                          },
-                          "step": {
-                            "const": "setSiteOptions",
-                            "description": "The name of the step. Must be \"setSiteOptions\".",
-                            "type": "string"
-                          }
-                        },
-                        "required": [
-                          "options",
-                          "step"
-                        ],
-                        "type": "object"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/UpdateUserMetaStep"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/WPCLIStep"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/SetSiteLanguageStep"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/ImportWxrStep%3CFileReference%3E"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/ImportWordPressFilesStep%3CFileReference%3E"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/InstallPluginStep%3CFileReference%2CDirectoryReference%3E"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/InstallThemeStep%3CFileReference%2CDirectoryReference%3E"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/RunSqlStep%3CFileReference%3E"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/UnzipStep%3CFileReference%3E"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/WriteFileStep%3CFileReference%3E"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/WriteFilesStep%3CDirectoryReference%3E"
-                      },
-                      {
-                        "properties": {
-                          "progress": {
-                            "properties": {
-                              "caption": {
-                                "type": "string"
-                              },
-                              "weight": {
-                                "type": "number"
-                              }
-                            },
-                            "type": "object"
-                          }
-                        },
-                        "type": "object"
-                      }
-                    ]
-                  },
-                  {
-                    "const": false,
-                    "type": "boolean"
-                  },
-                  {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  }
-                ]
-              },
-              "type": "array"
-            }
-          },
-          "type": "object"
-        },
-        {
-          "type": "string"
-        }
-      ],
-      "description": "WordPress Playground Blueprint configuration.\nCan be either an inline blueprint object or a file path to a blueprint JSON file."
     },
     "CpStep": {
       "description": "cp",
@@ -1304,8 +271,1037 @@
       "description": "Test environment configuration.\nDefines a WordPress environment with specific versions and setup.",
       "properties": {
         "blueprint": {
-          "$ref": "#/definitions/Blueprint",
-          "description": "WordPress Playground Blueprint configuration.\nCan be an inline blueprint object or a file path to a blueprint JSON file."
+          "anyOf": [
+            {
+              "description": "The Blueprint declaration, typically stored in a blueprint.json file.",
+              "properties": {
+                "constants": {
+                  "$ref": "#/definitions/PHPConstants",
+                  "description": "PHP Constants to define on every request"
+                },
+                "description": {
+                  "description": "Optional description. It doesn't do anything but is exposed as\na courtesy to developers who may want to document which blueprint\nfile does what.",
+                  "type": "string"
+                },
+                "extraLibraries": {
+                  "description": "Extra libraries to preload into the Playground instance.",
+                  "items": {
+                    "const": "wp-cli",
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "features": {
+                  "properties": {
+                    "intl": {
+                      "type": "boolean"
+                    },
+                    "networking": {
+                      "description": "Should boot with support for network request via wp_safe_remote_get?",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                },
+                "landingPage": {
+                  "description": "The URL to navigate to after the blueprint has been run.",
+                  "type": "string"
+                },
+                "login": {
+                  "anyOf": [
+                    {
+                      "properties": {
+                        "password": {
+                          "type": "string"
+                        },
+                        "username": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "password",
+                        "username"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "type": "boolean"
+                    }
+                  ],
+                  "description": "User to log in as.\nIf true, logs the user in as admin/password."
+                },
+                "meta": {
+                  "description": "Optional metadata. Used by the Blueprints gallery at https://github.com/WordPress/blueprints",
+                  "properties": {
+                    "author": {
+                      "description": "A GitHub username of the author of this Blueprint.",
+                      "type": "string"
+                    },
+                    "categories": {
+                      "description": "Relevant categories to help users find your Blueprint in the future\nBlueprints section on WordPress.org.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "description": {
+                      "description": "A brief explanation of what your Blueprint offers.",
+                      "type": "string"
+                    },
+                    "title": {
+                      "description": "A clear and concise name for your Blueprint.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "author",
+                    "title"
+                  ],
+                  "type": "object"
+                },
+                "phpExtensionBundles": {},
+                "plugins": {
+                  "description": "WordPress plugins to install and activate",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "properties": {
+                          "path": {
+                            "description": "The path to the file in the VFS",
+                            "type": "string"
+                          },
+                          "resource": {
+                            "const": "vfs",
+                            "description": "Identifies the file resource as Virtual File System (VFS)",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "resource"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "properties": {
+                          "contents": {
+                            "anyOf": [
+                              {
+                                "additionalProperties": false,
+                                "patternProperties": {
+                                  "^[0-9]+$": {
+                                    "type": "number"
+                                  }
+                                },
+                                "properties": {
+                                  "BYTES_PER_ELEMENT": {
+                                    "type": "number"
+                                  },
+                                  "__@toStringTag@506": {
+                                    "const": "Uint8Array",
+                                    "type": "string"
+                                  },
+                                  "buffer": {
+                                    "$ref": "#/definitions/ArrayBufferLike"
+                                  },
+                                  "byteLength": {
+                                    "type": "number"
+                                  },
+                                  "byteOffset": {
+                                    "type": "number"
+                                  },
+                                  "length": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": [
+                                  "BYTES_PER_ELEMENT",
+                                  "__@toStringTag@506",
+                                  "buffer",
+                                  "byteLength",
+                                  "byteOffset",
+                                  "length"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "type": "string"
+                              }
+                            ],
+                            "description": "The contents of the file"
+                          },
+                          "name": {
+                            "description": "The name of the file",
+                            "type": "string"
+                          },
+                          "resource": {
+                            "const": "literal",
+                            "description": "Identifies the file resource as a literal file",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "contents",
+                          "name",
+                          "resource"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "properties": {
+                          "resource": {
+                            "const": "wordpress.org/themes",
+                            "description": "Identifies the file resource as a WordPress Core theme",
+                            "type": "string"
+                          },
+                          "slug": {
+                            "description": "The slug of the WordPress Core theme",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "resource",
+                          "slug"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "properties": {
+                          "resource": {
+                            "const": "wordpress.org/plugins",
+                            "description": "Identifies the file resource as a WordPress Core plugin",
+                            "type": "string"
+                          },
+                          "slug": {
+                            "description": "The slug of the WordPress Core plugin",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "resource",
+                          "slug"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "properties": {
+                          "caption": {
+                            "description": "Optional caption for displaying a progress message",
+                            "type": "string"
+                          },
+                          "resource": {
+                            "const": "url",
+                            "description": "Identifies the file resource as a URL",
+                            "type": "string"
+                          },
+                          "url": {
+                            "description": "The URL of the file",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "resource",
+                          "url"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "properties": {
+                          "path": {
+                            "description": "The path to the file in the Blueprint",
+                            "type": "string"
+                          },
+                          "resource": {
+                            "const": "bundled",
+                            "description": "Identifies the file resource as a Blueprint file",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "resource"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "type": "array"
+                },
+                "preferredVersions": {
+                  "description": "The preferred PHP and WordPress versions to use.",
+                  "properties": {
+                    "php": {
+                      "description": "The preferred PHP version to use.\nIf not specified, the latest supported version will be used",
+                      "enum": [
+                        "7.2",
+                        "7.3",
+                        "7.4",
+                        "8.0",
+                        "8.1",
+                        "8.2",
+                        "8.3",
+                        "8.4",
+                        "latest"
+                      ],
+                      "type": "string"
+                    },
+                    "wp": {
+                      "description": "The preferred WordPress version to use.\nIf not specified, the latest supported version will be used",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "php",
+                    "wp"
+                  ],
+                  "type": "object"
+                },
+                "siteOptions": {
+                  "allOf": [
+                    {
+                      "$ref": "#/definitions/Record%3Cstring%2Cstring%3E"
+                    },
+                    {
+                      "properties": {
+                        "blogname": {
+                          "description": "The site title",
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ],
+                  "description": "WordPress site options to define"
+                },
+                "steps": {
+                  "description": "The steps to run after every other operation in this Blueprint was\nexecuted.",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/ActivatePluginStep"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/ActivateThemeStep"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/CpStep"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/DefineWpConfigConstsStep"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/DefineSiteUrlStep"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/EnableMultisiteStep"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/ImportThemeStarterContentStep"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "description": "login",
+                            "properties": {
+                              "password": {
+                                "type": "string"
+                              },
+                              "step": {
+                                "const": "login",
+                                "type": "string"
+                              },
+                              "username": {
+                                "description": "The user to log in as. Defaults to 'admin'.",
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "step"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/MkdirStep"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/MvStep"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/ResetDataStep"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/RequestStep"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/RmStep"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/RmdirStep"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/RunPHPStep"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/RunPHPWithOptionsStep"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/RunWpInstallationWizardStep"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "description": "setSiteOptions",
+                            "properties": {
+                              "options": {
+                                "$ref": "#/definitions/Record%3Cstring%2Cunknown%3E",
+                                "description": "The options to set on the site."
+                              },
+                              "step": {
+                                "const": "setSiteOptions",
+                                "description": "The name of the step. Must be \"setSiteOptions\".",
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "options",
+                              "step"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/UpdateUserMetaStep"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/WPCLIStep"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/SetSiteLanguageStep"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/ImportWxrStep%3CFileReference%3E"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/ImportWordPressFilesStep%3CFileReference%3E"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/InstallPluginStep%3CFileReference%2CDirectoryReference%3E"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/InstallThemeStep%3CFileReference%2CDirectoryReference%3E"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/RunSqlStep%3CFileReference%3E"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/UnzipStep%3CFileReference%3E"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/WriteFileStep%3CFileReference%3E"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/definitions/WriteFilesStep%3CDirectoryReference%3E"
+                          },
+                          {
+                            "properties": {
+                              "progress": {
+                                "properties": {
+                                  "caption": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "const": false,
+                        "type": "boolean"
+                      },
+                      {
+                        "type": [
+                          "null",
+                          "string"
+                        ]
+                      }
+                    ]
+                  },
+                  "type": "array"
+                }
+              },
+              "type": "object"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "WordPress Playground Blueprint configuration.\nCan be an inline blueprint object or a file path to a blueprint JSON file.\nIf not specified, a default blueprint will be created using the php and wp version settings."
         },
         "env": {
           "$ref": "#/definitions/EnvironmentVariables",
@@ -1324,15 +1320,37 @@
           "description": "Optional descriptive name for this environment",
           "type": "string"
         },
+        "php": {
+          "description": "PHP version(s) for this environment.\nCan be a single version string or an array of versions for matrix testing.\nWhen an array is provided, tests will run for each PHP version combined with each WP version.\nIf blueprint.preferredVersions.php is also set, the blueprint value takes precedence\nand only that single version will be used.",
+          "items": {
+            "enum": [
+              "7.2",
+              "7.3",
+              "7.4",
+              "8.0",
+              "8.1",
+              "8.2",
+              "8.3",
+              "8.4",
+              "latest"
+            ],
+            "type": "string"
+          },
+          "type": "array"
+        },
         "skip": {
           "default": false,
           "description": "Whether this environment should be skipped.\nSkipped environments are excluded from test execution.\nUseful for temporarily excluding environments without removing them from configuration.",
           "type": "boolean"
+        },
+        "wp": {
+          "description": "WordPress version(s) for this environment.\nCan be a single version string or an array of versions for matrix testing.\nWhen an array is provided, tests will run for each WP version combined with each PHP version.\nIf blueprint.preferredVersions.wp is also set, the blueprint value takes precedence\nand only that single version will be used.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
         }
       },
-      "required": [
-        "blueprint"
-      ],
       "type": "object"
     },
     "EnvironmentVariables": {
@@ -1375,7 +1393,7 @@
                     "BYTES_PER_ELEMENT": {
                       "type": "number"
                     },
-                    "__@toStringTag@673": {
+                    "__@toStringTag@506": {
                       "const": "Uint8Array",
                       "type": "string"
                     },
@@ -1394,7 +1412,7 @@
                   },
                   "required": [
                     "BYTES_PER_ELEMENT",
-                    "__@toStringTag@673",
+                    "__@toStringTag@506",
                     "buffer",
                     "byteLength",
                     "byteOffset",
@@ -1636,7 +1654,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@673": {
+                        "__@toStringTag@506": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -1655,7 +1673,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@673",
+                        "__@toStringTag@506",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -1844,7 +1862,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@673": {
+                        "__@toStringTag@506": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -1863,7 +1881,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@673",
+                        "__@toStringTag@506",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -2057,7 +2075,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@673": {
+                        "__@toStringTag@506": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -2076,7 +2094,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@673",
+                        "__@toStringTag@506",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -2265,7 +2283,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@673": {
+                        "__@toStringTag@506": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -2284,7 +2302,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@673",
+                        "__@toStringTag@506",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -2520,7 +2538,7 @@
                 "BYTES_PER_ELEMENT": {
                   "type": "number"
                 },
-                "__@toStringTag@673": {
+                "__@toStringTag@506": {
                   "const": "Uint8Array",
                   "type": "string"
                 },
@@ -2539,7 +2557,7 @@
               },
               "required": [
                 "BYTES_PER_ELEMENT",
-                "__@toStringTag@673",
+                "__@toStringTag@506",
                 "buffer",
                 "byteLength",
                 "byteOffset",
@@ -2605,7 +2623,7 @@
                 "BYTES_PER_ELEMENT": {
                   "type": "number"
                 },
-                "__@toStringTag@673": {
+                "__@toStringTag@506": {
                   "const": "Uint8Array",
                   "type": "string"
                 },
@@ -2624,7 +2642,7 @@
               },
               "required": [
                 "BYTES_PER_ELEMENT",
-                "__@toStringTag@673",
+                "__@toStringTag@506",
                 "buffer",
                 "byteLength",
                 "byteOffset",
@@ -2925,10 +2943,10 @@
     },
     "SharedArrayBuffer": {
       "properties": {
-        "__@species@779": {
+        "__@species@590": {
           "$ref": "#/definitions/SharedArrayBuffer"
         },
-        "__@toStringTag@673": {
+        "__@toStringTag@506": {
           "const": "SharedArrayBuffer",
           "type": "string"
         },
@@ -2937,8 +2955,8 @@
         }
       },
       "required": [
-        "__@species@779",
-        "__@toStringTag@673",
+        "__@species@590",
+        "__@toStringTag@506",
         "byteLength"
       ],
       "type": "object"
@@ -3021,7 +3039,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@673": {
+                        "__@toStringTag@506": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -3040,7 +3058,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@673",
+                        "__@toStringTag@506",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -3264,7 +3282,7 @@
                 "BYTES_PER_ELEMENT": {
                   "type": "number"
                 },
-                "__@toStringTag@673": {
+                "__@toStringTag@506": {
                   "const": "Uint8Array",
                   "type": "string"
                 },
@@ -3283,7 +3301,7 @@
               },
               "required": [
                 "BYTES_PER_ELEMENT",
-                "__@toStringTag@673",
+                "__@toStringTag@506",
                 "buffer",
                 "byteLength",
                 "byteOffset",
@@ -3324,7 +3342,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@673": {
+                        "__@toStringTag@506": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -3343,7 +3361,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@673",
+                        "__@toStringTag@506",
                         "buffer",
                         "byteLength",
                         "byteOffset",
