@@ -259,4 +259,151 @@ describe("StreamingReporter", () => {
     expect(output).toContain("hanging test");
     expect(output).toContain("◔"); // marked as pending, not running
   });
+
+  it("should hide empty suite names when all tests are filtered out", () => {
+    // Create a fresh writer for this test
+    const filteredWriter = new MockWriter();
+
+    // Create a reporter with a filter that only shows failed tests
+    const filteredReporter = new StreamingReporter({
+      writer: filteredWriter,
+      showRunBoundaries: false,
+      showSummary: false,
+      filter: {
+        passed: false,
+        failed: true,
+        skipped: false,
+        pending: false,
+        other: false,
+      },
+    });
+
+    filteredReporter.onEvent({ type: "run:start" });
+    filteredReporter.onEvent({ type: "suite:start", name: "Suite with failed test" });
+    filteredReporter.onEvent({ type: "test:fail", name: "failed test", duration: 50, suiteName: "Suite with failed test" });
+    filteredReporter.onEvent({ type: "suite:end", name: "Suite with failed test" });
+
+    filteredReporter.onEvent({ type: "suite:start", name: "Suite with only passed tests" });
+    filteredReporter.onEvent({ type: "test:pass", name: "passed test", duration: 100, suiteName: "Suite with only passed tests" });
+    filteredReporter.onEvent({ type: "suite:end", name: "Suite with only passed tests" });
+
+    filteredReporter.onEvent({ type: "run:end" });
+
+    // Get the final output after run:end (getCurrentOutput gives the current state)
+    const output = filteredWriter.getCurrentOutput();
+
+    // Suite with failed test should be visible
+    expect(output).toContain("Suite with failed test");
+    expect(output).toContain("failed test");
+
+    // Suite with only passed tests should NOT be visible (all tests filtered out)
+    expect(output).not.toContain("Suite with only passed tests");
+    expect(output).not.toContain("passed test");
+  });
+
+  it("should handle test completion before start event (race condition)", () => {
+    reporter.onEvent({ type: "run:start" });
+    reporter.onEvent({ type: "suite:start", name: "Suite", fileId: "file1" });
+
+    // Test completion arrives BEFORE test start (race condition in parallel execution)
+    reporter.onEvent({ type: "test:pass", name: "fast test", duration: 10, suiteName: "Suite", fileId: "file1" });
+
+    // Test start arrives late
+    reporter.onEvent({ type: "test:start", name: "fast test", suiteName: "Suite", fileId: "file1" });
+
+    reporter.onEvent({ type: "suite:end", name: "Suite", fileId: "file1" });
+
+    const counts = reporter.getCounts();
+    // Should only count the test once, not create duplicate entries
+    expect(counts.total).toBe(1);
+    expect(counts.passed).toBe(1);
+
+    const output = writer.getCurrentOutput();
+    // Should only show test once
+    const testMatches = output.match(/fast test/g);
+    expect(testMatches).toHaveLength(1);
+  });
+
+  it("should handle parallel tests with same name in different files", () => {
+    reporter.onEvent({ type: "run:start" });
+
+    // Two files with tests that have the same name
+    reporter.onEvent({ type: "file:start", fileId: "file1", fileName: "test1.spec.ts" });
+    reporter.onEvent({ type: "file:start", fileId: "file2", fileName: "test2.spec.ts" });
+
+    reporter.onEvent({ type: "suite:start", name: "Plugin Tests", fileId: "file1" });
+    reporter.onEvent({ type: "suite:start", name: "Plugin Tests", fileId: "file2" });
+
+    // Same test name in both files
+    reporter.onEvent({ type: "test:start", name: "should be active", suiteName: "Plugin Tests", fileId: "file1" });
+    reporter.onEvent({ type: "test:start", name: "should be active", suiteName: "Plugin Tests", fileId: "file2" });
+
+    // Complete in any order
+    reporter.onEvent({ type: "test:pass", name: "should be active", duration: 100, suiteName: "Plugin Tests", fileId: "file2" });
+    reporter.onEvent({ type: "test:pass", name: "should be active", duration: 150, suiteName: "Plugin Tests", fileId: "file1" });
+
+    reporter.onEvent({ type: "suite:end", name: "Plugin Tests", fileId: "file1" });
+    reporter.onEvent({ type: "suite:end", name: "Plugin Tests", fileId: "file2" });
+
+    reporter.onEvent({ type: "file:end", fileId: "file1" });
+    reporter.onEvent({ type: "file:end", fileId: "file2" });
+
+    const counts = reporter.getCounts();
+    // Should count both tests separately, not create duplicates
+    expect(counts.total).toBe(2);
+    expect(counts.passed).toBe(2);
+
+    // Should not have any tests marked as "Did not complete"
+    const output = writer.getCurrentOutput();
+    expect(output).not.toContain("Did not complete");
+
+    // Both tests should be shown
+    const testMatches = output.match(/should be active/g);
+    expect(testMatches).toHaveLength(2);
+  });
+
+  it("should keep parent suites visible when child suites have visible tests", () => {
+    // Create a fresh writer for this test
+    const filteredWriter = new MockWriter();
+
+    // Create a reporter with a filter that only shows failed tests
+    const filteredReporter = new StreamingReporter({
+      writer: filteredWriter,
+      showRunBoundaries: false,
+      showSummary: false,
+      filter: {
+        passed: false,
+        failed: true,
+        skipped: false,
+        pending: false,
+        other: false,
+      },
+    });
+
+    filteredReporter.onEvent({ type: "run:start" });
+    filteredReporter.onEvent({ type: "suite:start", name: "Parent Suite" });
+
+    // Parent suite has only passed tests (should be hidden)
+    filteredReporter.onEvent({ type: "test:pass", name: "parent passed test", duration: 50, suiteName: "Parent Suite" });
+
+    // Child suite with failed test (should be visible, along with parent)
+    filteredReporter.onEvent({ type: "suite:start", name: "Child Suite" });
+    filteredReporter.onEvent({ type: "test:fail", name: "child failed test", duration: 50, suiteName: "Child Suite" });
+    filteredReporter.onEvent({ type: "suite:end", name: "Child Suite" });
+
+    filteredReporter.onEvent({ type: "suite:end", name: "Parent Suite" });
+    filteredReporter.onEvent({ type: "run:end" });
+
+    const output = filteredWriter.getCurrentOutput();
+
+    // Parent suite should be visible because it has a child with visible content
+    expect(output).toContain("Parent Suite");
+
+    // Child suite should be visible
+    expect(output).toContain("Child Suite");
+    expect(output).toContain("child failed test");
+
+    // Parent's passed test should not be visible
+    expect(output).not.toContain("parent passed test");
+  });
 });
