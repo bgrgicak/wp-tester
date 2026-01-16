@@ -4,7 +4,6 @@
 
 import { describe, it, expect } from "vitest";
 import { highlightStringDiff, applyDiffHighlighting } from "./diff-utils.js";
-import pc from "picocolors";
 
 describe("highlightStringDiff", () => {
   it("should highlight differences in single-line strings", () => {

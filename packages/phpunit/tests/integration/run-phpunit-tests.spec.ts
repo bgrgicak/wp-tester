@@ -10,8 +10,8 @@ describe("runPhpunitTests integration", () => {
 	it(
 		"should run plugin PHPUnit tests and return CTRF report",
 		async () => {
-			// Pass the config path string directly so the runner can determine project root
-			const report = await runPhpunitTests(TEST_PLUGIN_CONFIG_PATH);
+			const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
+			const report = await runPhpunitTests(config);
 
 			// Validate report structure
 			expect(report).toBeDefined();
@@ -49,17 +49,7 @@ describe("runPhpunitTests integration", () => {
 	it(
 		"should run theme PHPUnit tests and return CTRF report",
 		async () => {
-			// Load config, enable PHPUnit, set projectHostPath
 			const config = await resolveConfig(TEST_THEME_CONFIG_PATH);
-			config.tests.phpunit = {
-				phpunitPath: "vendor/bin/phpunit",
-				configPath: "phpunit.xml.dist",
-				bootstrapPath: "tests/bootstrap.php",
-				testMode: "integration",
-			};
-			// Set projectHostPath to theme fixture path so runner can find phpunit.xml.dist
-			config.projectHostPath = TEST_THEME_CONFIG_PATH.replace("/wp-tester.json", "");
-
 			const report = await runPhpunitTests(config);
 
 			// Validate report structure
@@ -93,8 +83,8 @@ describe("runPhpunitTests integration", () => {
 	);
 
 	it("should handle multiple environments correctly", async () => {
-		// Pass config path so runner can determine project root
-		const report = await runPhpunitTests(TEST_PLUGIN_CONFIG_PATH);
+		const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
+		const report = await runPhpunitTests(config);
 
 		expect(report.results.tests).toBeDefined();
 
@@ -143,8 +133,9 @@ describe("runPhpunitTests integration", () => {
 		async () => {
 			// Test passing a single test file path as an argument
 			// This simulates: wp-tester test -- tests/WordPressTest.php
+			const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
 			const report = await runPhpunitTests(
-				TEST_PLUGIN_CONFIG_PATH,
+				config,
 				["tests/WordPressTest.php"]
 			);
 
@@ -176,8 +167,9 @@ describe("runPhpunitTests integration", () => {
 		async () => {
 			// Test passing a directory path as an argument
 			// This simulates: wp-tester test -- tests/
+			const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
 			const report = await runPhpunitTests(
-				TEST_PLUGIN_CONFIG_PATH,
+				config,
 				["tests/"]
 			);
 
@@ -198,8 +190,9 @@ describe("runPhpunitTests integration", () => {
 		async () => {
 			// Test that flag values are NOT resolved even if they look like paths
 			// Example: --filter could have a value like "MyNamespace\Tests"
+			const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
 			const report = await runPhpunitTests(
-				TEST_PLUGIN_CONFIG_PATH,
+				config,
 				["--filter", "WordPressTest"]
 			);
 
@@ -219,8 +212,9 @@ describe("runPhpunitTests integration", () => {
 		async () => {
 			// Test combining flags with file paths
 			// This simulates: wp-tester test -- --filter test_wordpress tests/WordPressTest.php
+			const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
 			const report = await runPhpunitTests(
-				TEST_PLUGIN_CONFIG_PATH,
+				config,
 				["--filter", "test_wordpress", "tests/WordPressTest.php"]
 			);
 
@@ -242,8 +236,9 @@ describe("runPhpunitTests integration", () => {
 		async () => {
 			// Test that boolean flags don't prevent path resolution
 			// This simulates: wp-tester test -- --stop-on-failure tests/WordPressTest.php
+			const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
 			const report = await runPhpunitTests(
-				TEST_PLUGIN_CONFIG_PATH,
+				config,
 				["--stop-on-failure", "tests/WordPressTest.php"]
 			);
 
@@ -263,8 +258,9 @@ describe("runPhpunitTests integration", () => {
 		async () => {
 			// Test path resolution after multiple boolean flags
 			// This simulates: wp-tester test -- --no-coverage --stop-on-failure tests/WordPressTest.php
+			const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
 			const report = await runPhpunitTests(
-				TEST_PLUGIN_CONFIG_PATH,
+				config,
 				["--no-coverage", "--stop-on-failure", "tests/WordPressTest.php"]
 			);
 
@@ -279,8 +275,9 @@ describe("runPhpunitTests integration", () => {
 		async () => {
 			// Test that = syntax doesn't prevent next path resolution
 			// This simulates: wp-tester test -- --colors=auto tests/WordPressTest.php
+			const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
 			const report = await runPhpunitTests(
-				TEST_PLUGIN_CONFIG_PATH,
+				config,
 				["--colors=auto", "tests/WordPressTest.php"]
 			);
 

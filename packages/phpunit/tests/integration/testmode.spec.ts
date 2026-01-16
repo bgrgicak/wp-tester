@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import { runPhpunitTests } from "../../src/index";
 import { resolveConfig } from "@wp-tester/config";
 import { TEST_PLUGIN_CONFIG_PATH } from "@wp-tester/test-fixtures";
+import { readFile } from 'fs/promises';
+import { dirname } from 'path';
 
 describe("PHPUnit testMode integration", () => {
 
@@ -78,13 +80,20 @@ describe("PHPUnit testMode integration", () => {
 	});
 
 	it("should default to unit mode when testMode is not specified", async () => {
-		// Load config and remove testMode to test default behavior
-		const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
-		if (config.tests.phpunit) {
-			// Remove testMode to test default behavior
-			const { testMode: _testMode, ...rest } = config.tests.phpunit;
-			config.tests.phpunit = rest as unknown as typeof config.tests.phpunit;
+		// Load config without testMode to test default behavior
+		// Read the test plugin config
+		const configContent = JSON.parse(await readFile(TEST_PLUGIN_CONFIG_PATH, 'utf-8'));
+
+		// Remove testMode from the raw config before resolution
+		if (configContent.tests?.phpunit) {
+			delete configContent.tests.phpunit.testMode;
 		}
+
+		// Add projectHostPath so paths can be resolved relative to the test plugin directory
+		configContent.projectHostPath = dirname(TEST_PLUGIN_CONFIG_PATH);
+
+		// Now resolve the config - it should default testMode to "unit"
+		const config = await resolveConfig(configContent);
 
 		const report = await runPhpunitTests(config);
 

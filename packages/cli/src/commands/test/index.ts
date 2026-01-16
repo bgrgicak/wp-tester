@@ -10,11 +10,13 @@ interface TestArgs {
   test?: TestType;
   watch?: boolean;
   passWithNoTests?: boolean;
-  "--"?: string[];
+  'failed-only'?: boolean;
+  '--'?: string[];
 }
 
 export const testHandler = async (argv: TestArgs): Promise<void> => {
-  const { config = "./wp-tester.json", test, watch, passWithNoTests } = argv;
+  const { config = './wp-tester.json', test, watch, passWithNoTests } = argv;
+  const failedOnly = argv['failed-only'];
   const extraArgs = argv["--"] || [];
 
   if (extraArgs.length > 0 && test === undefined) {
@@ -30,19 +32,11 @@ export const testHandler = async (argv: TestArgs): Promise<void> => {
     await runWatchMode({
       configPath: absoluteConfigPath,
       onRunTests: async () => {
-        await executeTests(absoluteConfigPath, {
-          testType: test,
-          extraArgs,
-          passWithNoTests,
-        });
+        await executeTests(absoluteConfigPath, { testType: test, extraArgs, passWithNoTests, failedOnly });
       },
     });
   } else {
-    await runTests(config, {
-      testType: test,
-      extraArgs,
-      passWithNoTests,
-    });
+    await runTests(config, { testType: test, extraArgs, passWithNoTests, failedOnly });
   }
 };
 

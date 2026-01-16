@@ -71,7 +71,7 @@ If validation fails, the command will display detailed error messages indicating
 {
   "environments": [],
   "tests": {},
-  "reporters": []
+  "reporters": {}
 }
 ```
 
@@ -496,36 +496,61 @@ However, integration tests load WordPress via `wp-load.php` before your bootstra
 
 ### `reporters`
 
-**Type:** `Array<string | [string, Object]>`
+**Type:** `Object`
 **Required:** No
-**Default:** `["default"]`
+**Default:** `{}` (default console reporter enabled)
 
-**Description:** Configures how test results are displayed and saved.
+**Description:** Configures how test results are displayed and saved. Each reporter can have filter options to control which test statuses are shown.
+
+**Common Filter Options:**
+
+All reporters support these filter options:
+- `passed` (boolean): Show passed tests
+- `failed` (boolean): Show failed tests
+- `skipped` (boolean): Show skipped tests
+- `pending` (boolean): Show pending tests
+- `other` (boolean): Show other test statuses
+
+When no filter options are specified, all statuses are shown by default.
 
 **Reporter Types:**
 
-#### `"default"`
+#### `default`
 
 Outputs human-readable test results to the console.
 
 **Example:**
 ```json
 {
-  "reporters": ["default"]
+  "reporters": {}
 }
 ```
 
-#### `["json", { "outputFile": "path/to/file.json" }]`
+Or simply omit the property to use defaults.
+
+**With filter options (show only failed tests):**
+```json
+{
+  "reporters": {
+    "default": {
+      "failed": true
+    }
+  }
+}
+```
+
+#### `json`
 
 Outputs test results in CTRF (Common Test Report Format) JSON format to a file.
 
 **Example:**
 ```json
 {
-  "reporters": [
-    "default",
-    ["json", { "outputFile": "test-results.json" }]
-  ]
+  "reporters": {
+    "json": {
+      "outputFile": "test-results.json"
+    }
+  }
 }
 ```
 
@@ -534,7 +559,7 @@ Outputs test results in CTRF (Common Test Report Format) JSON format to a file.
 
 **Default Behavior:**
 
-When `reporters` is omitted, defaults to `["default"]` (console output only).
+When `reporters` is omitted (or `default` is `true` or omitted), console output with all statuses is shown.
 
 **Multiple Reporters:**
 
@@ -542,13 +567,15 @@ You can use multiple reporters simultaneously:
 
 ```json
 {
-  "reporters": [
-    "default",
-    ["json", { "outputFile": "results.json" }],
-    ["json", { "outputFile": "ci-results.json" }]
-  ]
+  "reporters": {
+    "json": {
+      "outputFile": "results.json"
+    }
+  }
 }
 ```
+
+Note: The default console reporter is enabled automatically when you add other reporters (like `json`), so you don't need to explicitly set `"default": true`.
 
 #### `tests.watch`
 
@@ -741,8 +768,7 @@ Test a plugin with default settings:
   ],
   "tests": {
     "wp": true
-  },
-  "reporters": ["default"]
+  }
 }
 ```
 
@@ -775,10 +801,11 @@ Test across multiple PHP and WordPress versions:
     "plugin": "my-plugin",
     "wp": true
   },
-  "reporters": [
-    "default",
-    ["json", { "outputFile": "test-results.json" }]
-  ]
+  "reporters": {
+    "json": {
+      "outputFile": "test-results.json"
+    }
+  }
 }
 ```
 
@@ -811,8 +838,7 @@ Test a theme with custom environment setup:
   "tests": {
     "theme": "my-theme",
     "wp": true
-  },
-  "reporters": ["default"]
+  }
 }
 ```
 
@@ -850,10 +876,11 @@ Test a plugin with PHPUnit integration. You can use `testMode` to control whethe
       "phpunitArgs": ["--verbose"]
     }
   },
-  "reporters": [
-    "default",
-    ["json", { "outputFile": "test-results.json" }]
-  ]
+  "reporters": {
+    "json": {
+      "outputFile": "test-results.json"
+    }
+  }
 }
 ```
 

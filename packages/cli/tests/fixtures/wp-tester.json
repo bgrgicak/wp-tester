@@ -22,8 +22,5 @@
   ],
   "tests": {
     "wp": true
-  },
-  "reporters": [
-    "default"
-  ]
+  }
 }

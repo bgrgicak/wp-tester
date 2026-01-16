@@ -144,10 +144,11 @@ Test across multiple environments:
       "bootstrapPath": "tests/bootstrap.php"
     }
   },
-  "reporters": [
-    "default",
-    ["json", { "outputFile": "test-results.json" }]
-  ]
+  "reporters": {
+    "json": {
+      "outputFile": "test-results.json"
+    }
+  }
 }
 ```
 
@@ -300,10 +301,11 @@ Generate machine-readable reports for CI pipelines:
 
 ```json
 {
-  "reporters": [
-    "default",
-    ["json", { "outputFile": "test-results.json" }]
-  ]
+  "reporters": {
+    "json": {
+      "outputFile": "test-results.json"
+    }
+  }
 }
 ```
 

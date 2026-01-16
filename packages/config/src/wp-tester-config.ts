@@ -143,9 +143,50 @@ export interface Tests {
 }
 
 /**
+ * Base reporter options for filtering test results by status.
+ * All options default to false - only explicitly enabled statuses are shown.
+ */
+export interface BaseReporterOptions {
+  /**
+   * Show passed tests in output
+   * @default false
+   */
+  passed?: boolean;
+
+  /**
+   * Show failed tests in output
+   * @default false
+   */
+  failed?: boolean;
+
+  /**
+   * Show skipped tests in output
+   * @default false
+   */
+  skipped?: boolean;
+
+  /**
+   * Show pending tests in output
+   * @default false
+   */
+  pending?: boolean;
+
+  /**
+   * Show other test statuses in output
+   * @default false
+   */
+  other?: boolean;
+}
+
+/**
+ * Default reporter configuration options
+ */
+export type DefaultReporterOptions = BaseReporterOptions;
+
+/**
  * JSON reporter configuration options
  */
-export interface JsonReporterOptions {
+export interface JsonReporterOptions extends BaseReporterOptions {
   /**
    * Path where the JSON report file should be written
    * @example "test-results.json"
@@ -155,14 +196,25 @@ export interface JsonReporterOptions {
 }
 
 /**
- * Reporter configuration.
- * Can be a simple string for reporters without options,
- * or a tuple of [reporter name, options] for configurable reporters.
+ * Reporter configuration object.
+ * Each key is a reporter name, and the value is its options.
  *
- * @example "default"
- * @example ["json", { "outputFile": "results.json" }]
+ * @example {}
+ * @example { "default": { "failed": true, "passed": true } }
+ * @example { "json": { "outputFile": "results.json", "failed": true } }
  */
-export type Reporter = "default" | ["json", JsonReporterOptions];
+export interface Reporters {
+  /**
+   * Default console reporter options.
+   * Use `true` to enable with defaults, or an object for custom options.
+   */
+  default?: boolean | DefaultReporterOptions;
+
+  /**
+   * JSON file reporter options
+   */
+  json?: JsonReporterOptions;
+}
 
 /**
  * Environment variables for WordPress Playground.
@@ -284,8 +336,9 @@ export interface WPTesterConfig {
   tests: Tests;
 
   /**
-   * Output reporters for test results
-   * @default ["default"]
+   * Output reporters for test results.
+   * Each reporter can be configured with filtering options.
+   * @default { "default": { "passed": true, "failed": true, "skipped": true, "pending": true, "other": true } }
    */
-  reporters?: Reporter[];
+  reporters?: Reporters;
 }

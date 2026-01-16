@@ -28,6 +28,7 @@ export {
   type RunEvent,
   type StreamWriter,
   type StreamingReporterOptions,
+  type ReporterFilterOptions,
 } from './streaming.js';
 export {
   VitestStreamingBase,
@@ -45,7 +46,7 @@ export {
   createTeamCityParserStream,
   parseTeamCityOutput,
 } from './teamcity-parser.js';
-export { printSummary } from './summary.js';
+export { printSummary, type SummaryOptions } from './summary.js';
 
 export const EMPTY_REPORT: Report = {
   results: {

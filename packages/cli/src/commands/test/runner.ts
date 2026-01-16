@@ -4,9 +4,10 @@ import * as clack from '../../cli/theme';
 import { runSmokeTests } from "@wp-tester/smoke-tests";
 import { runPhpunitTests } from "@wp-tester/phpunit";
 import { mergeReports, printSummary, type Report } from "@wp-tester/results";
-import type { TestType } from "@wp-tester/config";
-import { validateConfig } from '../config/validate';
-import { getWorkingDirectory } from '@wp-tester/config';
+import type { TestType, ResolvedWPTesterConfig } from "@wp-tester/config";
+import { resolveConfig } from "@wp-tester/config";
+import { validateConfig } from "../config/validate";
+import { getWorkingDirectory } from "@wp-tester/config";
 
 /**
  * Options for the test runner
@@ -18,6 +19,37 @@ export interface RunTestsOptions {
   extraArgs?: string[];
   /** Allow the test suite to pass when no tests are executed (CLI override) */
   passWithNoTests?: boolean;
+  /** Only display failed tests in output (CLI override) */
+  failedOnly?: boolean;
+}
+
+/**
+ * Apply --failed-only CLI override to config reporters.
+ * Sets all filter options to false except failed: true.
+ */
+function applyFailedOnlyOverride(
+  config: ResolvedWPTesterConfig
+): ResolvedWPTesterConfig {
+  const failedOnlyFilter = {
+    passed: false,
+    failed: true,
+    skipped: false,
+    pending: false,
+    other: false,
+  };
+
+  return {
+    ...config,
+    reporters: {
+      ...config.reporters,
+      default:
+        config.reporters?.default !== undefined
+          ? typeof config.reporters.default === "object"
+            ? { ...config.reporters.default, ...failedOnlyFilter }
+            : failedOnlyFilter
+          : failedOnlyFilter,
+    },
+  };
 }
 
 async function resolveConfigPath(configPath: string): Promise<string> {
@@ -76,13 +108,19 @@ export const executeTests = async (
   configPath: string,
   options?: RunTestsOptions
 ): Promise<TestResult> => {
-  const { testType, extraArgs } = options || {};
+  const { testType, extraArgs, failedOnly } = options || {};
   const finalConfigPath = await resolveConfigPath(configPath);
 
   // Validate configuration before running tests
   const isValid = await validateConfig(finalConfigPath);
   if (!isValid) {
     process.exit(1);
+  }
+
+  // Resolve config and apply CLI overrides
+  let resolvedConfig = await resolveConfig(finalConfigPath);
+  if (failedOnly) {
+    resolvedConfig = applyFailedOnlyOverride(resolvedConfig);
   }
 
   // Run all test suites and collect results
@@ -95,7 +133,7 @@ export const executeTests = async (
   const smokeTestFilter = getSmokeTestFilter(testType);
   if (smokeTestFilter !== false) {
     const smokeTestReport = await runSmokeTests(
-      finalConfigPath,
+      resolvedConfig,
       smokeTestFilter,
       extraArgs
     );
@@ -106,7 +144,7 @@ export const executeTests = async (
 
   // Run PHPUnit tests
   if (shouldRunPhpUnit) {
-    const phpunitReport = await runPhpunitTests(finalConfigPath, extraArgs);
+    const phpunitReport = await runPhpunitTests(resolvedConfig, extraArgs);
     // Always include report if PHPUnit was configured to run
     // This ensures bootstrap failures are visible
     if (phpunitReport.results.summary.tests > 0) {
@@ -127,8 +165,18 @@ export const executeTests = async (
   const { summary } = mergedReport.results;
   const success = summary.failed === 0;
 
-  // Print final combined summary
-  printSummary(summary);
+  // Print final combined summary with default reporter options
+  const defaultReporterOptions = resolvedConfig.reporters?.default;
+
+  // Convert reporter options to summary options (handle boolean shorthand)
+  // When false or true (boolean shorthand), pass undefined to use printSummary defaults
+  // When an object, pass it directly since SummaryOptions now matches BaseReporterOptions
+  const summaryOptions =
+    typeof defaultReporterOptions === "object"
+      ? defaultReporterOptions
+      : undefined;
+
+  printSummary(summary, summaryOptions);
 
   return { success, hasTests: true };
 };

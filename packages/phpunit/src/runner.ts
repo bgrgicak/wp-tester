@@ -4,7 +4,6 @@ import type {
   ResolvedEnvironment,
 } from "@wp-tester/config";
 import {
-  resolveConfig,
   parseBootstrapPath,
   hostToVfs,
   resolveAbsolute,
@@ -136,10 +135,17 @@ async function runPhpunitTestsForEnvironment(
 
     // Create streaming reporter
     // Disable summary since the CLI will print a combined summary
-    const useStreaming = config.reporters?.some((r) => r === "default") ?? true;
+    const useStreaming = config.reporters?.default !== undefined;
+
+    // Get filter options from config reporters (only if it's an object, not boolean)
+    const filter = typeof config.reporters?.default === 'object'
+      ? config.reporters.default
+      : undefined;
+
     const reporter = new PHPUnitStreamingReporter({
       enabled: useStreaming,
       showSummary: false,
+      filter,
     });
 
     // Signal test run start to initialize timing
@@ -185,12 +191,22 @@ async function runPhpunitTestsForEnvironment(
           write(chunk) {
             const text = stderrDecoder.decode(chunk, { stream: true });
             stderrCapture += text;
+            // Try to parse as TeamCity format first
+            parser.write(text);
 
-            // If streaming is disabled, write stderr to console
+            // If streaming is disabled, also write non-TeamCity lines to stderr
             // This ensures error messages still appear
             if (!useStreaming) {
-              process.stderr.write(text);
+              const lines = text.split("\n");
+              for (const line of lines) {
+                if (!line.trim().startsWith("##teamcity[")) {
+                  process.stderr.write(line + "\n");
+                }
+              }
             }
+          },
+          close() {
+            parser.flush();
           },
         })
       ),
@@ -295,20 +311,32 @@ async function runPhpunitTestsForEnvironment(
 }
 
 /**
+ * Options for running PHPUnit tests
+ */
+export interface RunPhpunitTestsOptions {
+  /** Additional PHPUnit arguments to append */
+  phpunitArgs?: string[];
+}
+
+/**
  * Run PHPUnit tests in WordPress Playground environment
  *
- * @param config - Test configuration or path to config file
- * @param phpunitArgs - Additional PHPUnit arguments to append
+ * @param config - Resolved test configuration
+ * @param phpunitArgsOrOptions - Additional PHPUnit arguments or options object
  * @returns CTRF report with test results
  */
 export async function runPhpunitTests(
-  config: WPTesterConfig | string,
-  phpunitArgs?: string[]
+  config: ResolvedWPTesterConfig,
+  phpunitArgsOrOptions?: string[] | RunPhpunitTestsOptions
 ): Promise<Report> {
-  // Resolve config (loads from path if string, resolves paths)
-  let resolvedConfig = await resolveConfig(config);
+  // Support both old signature (string[]) and new signature (options object)
+  const options: RunPhpunitTestsOptions = Array.isArray(phpunitArgsOrOptions)
+    ? { phpunitArgs: phpunitArgsOrOptions }
+    : phpunitArgsOrOptions || {};
+  const { phpunitArgs } = options;
 
   // Merge additional PHPUnit args if provided
+  let resolvedConfig = { ...config };
   if (phpunitArgs && phpunitArgs.length > 0) {
     const configArgs = resolvedConfig.tests.phpunit?.phpunitArgs || [];
     const mergedArgs = [...configArgs, ...phpunitArgs];
@@ -317,10 +345,12 @@ export async function runPhpunitTests(
       ...resolvedConfig,
       tests: {
         ...resolvedConfig.tests,
-        phpunit: resolvedConfig.tests.phpunit ? {
-          ...resolvedConfig.tests.phpunit,
-          phpunitArgs: mergedArgs,
-        } : undefined,
+        phpunit: resolvedConfig.tests.phpunit
+          ? {
+              ...resolvedConfig.tests.phpunit,
+              phpunitArgs: mergedArgs,
+            }
+          : undefined,
       },
     };
   }
@@ -343,7 +373,9 @@ export async function runPhpunitTests(
 
   // Run tests for all enabled environments (skip those marked with skip: true)
   const reports: Report[] = [];
-  const enabledEnvironments = resolvedConfig.environments.filter(env => !env.skip);
+  const enabledEnvironments = resolvedConfig.environments.filter(
+    (env) => !env.skip
+  );
   for (const environment of enabledEnvironments) {
     const report = await runPhpunitTestsForEnvironment(
       resolvedConfig,

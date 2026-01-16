@@ -6,7 +6,9 @@ export type {
   Tests,
   PHPUnitConfig,
   TestType,
-  Reporter,
+  Reporters,
+  BaseReporterOptions,
+  DefaultReporterOptions,
   Mount,
   Blueprint,
   JsonReporterOptions,
@@ -20,6 +22,7 @@ export type {
   ResolvedPHPUnitConfig,
   ResolvedTests,
   ResolvedBlueprint,
+  ResolvedReporters,
 } from './resolved-types';
 
 // Functions
