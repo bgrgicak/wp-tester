@@ -313,7 +313,7 @@ $table_prefix = 'wptests_';
 // Use a generic domain that tests can override via update_option('home')
 // Don't use Playground's actual domain here as it prevents tests from
 // dynamically changing the home URL for mock HTTP requests
-define( 'WP_TESTS_DOMAIN', 'example.org' );
+// define( 'WP_TESTS_DOMAIN', 'example.org' ); # The domain is defined after Playground starts to correctly set the port
 define( 'WP_TESTS_EMAIL', 'admin@example.org' );
 define( 'WP_TESTS_TITLE', 'Test Blog' );
 
