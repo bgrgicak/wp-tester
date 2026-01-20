@@ -61,7 +61,7 @@ export async function startPlayground(
     internalCookieStore: true,
     port: 0, // Use any available port to avoid EADDRINUSE errors
     ...(isWordPressMounted && {
-      "wordpress-install-mode": "install-from-existing-files-if-needed",
+      "wordpress-install-mode": "do-not-attempt-installing",
     }),
   });
   await cli.playground.isReady();
