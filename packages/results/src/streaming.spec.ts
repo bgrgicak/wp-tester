@@ -406,4 +406,166 @@ describe("StreamingReporter", () => {
     // Parent's passed test should not be visible
     expect(output).not.toContain("parent passed test");
   });
+
+  it("should show correct count when failed test is added before run:end with --failed-only", () => {
+    // Create a fresh writer for this test
+    const filteredWriter = new MockWriter();
+
+    // Create a reporter with a filter that only shows failed tests (simulating --failed-only)
+    const filteredReporter = new StreamingReporter({
+      writer: filteredWriter,
+      showRunBoundaries: false,
+      showSummary: true, // Enable summary to see the counts
+      filter: {
+        passed: false,
+        failed: true,
+        skipped: false,
+        pending: false,
+        other: false,
+      },
+    });
+
+    // Simulate the bug scenario:
+    // 1. run:start
+    // 2. suite:start
+    // 3. test:fail (PHPUnit Bootstrap failure)
+    // 4. suite:end
+    // 5. run:end
+
+    filteredReporter.onEvent({ type: "run:start", toolName: "wp-tester-phpunit" });
+    filteredReporter.onEvent({ type: "suite:start", name: "PHPUnit Tests" });
+
+    // Bootstrap failure event
+    filteredReporter.onEvent({
+      type: "test:fail",
+      name: "PHPUnit Bootstrap",
+      duration: 0,
+      message: "Bootstrap failed - see trace for details",
+      trace: "No tests executed!",
+      suiteName: "PHPUnit Tests",
+    });
+
+    filteredReporter.onEvent({ type: "suite:end", name: "PHPUnit Tests" });
+    filteredReporter.onEvent({ type: "run:end" });
+
+    const output = filteredWriter.getCurrentOutput();
+
+    // The failed test should be visible
+    expect(output).toContain("PHPUnit Bootstrap");
+    expect(output).toContain("✗");
+
+    // The summary should show 1 failed test
+    expect(output).toContain("1 failed");
+
+    // Verify counts
+    const counts = filteredReporter.getCounts();
+    expect(counts.total).toBe(1);
+    expect(counts.failed).toBe(1);
+    expect(counts.passed).toBe(0);
+  });
+
+  it("should show 'no tests' correctly when filter matches no tests (exit code 255 scenario)", () => {
+    // Create a fresh writer for this test
+    const filteredWriter = new MockWriter();
+
+    // Create a reporter with a filter that only shows failed tests
+    const filteredReporter = new StreamingReporter({
+      writer: filteredWriter,
+      showRunBoundaries: false,
+      showSummary: true,
+      filter: {
+        passed: false,
+        failed: true,
+        skipped: false,
+        pending: false,
+        other: false,
+      },
+    });
+
+    // Simulate the scenario where PHPUnit filter matches no tests:
+    // 1. run:start
+    // 2. suite:start
+    // 3. suite:end (no tests executed)
+    // 4. run:end
+
+    filteredReporter.onEvent({ type: "run:start", toolName: "wp-tester-phpunit" });
+    filteredReporter.onEvent({ type: "suite:start", name: "PHPUnit Tests" });
+    filteredReporter.onEvent({ type: "suite:end", name: "PHPUnit Tests" });
+    filteredReporter.onEvent({ type: "run:end" });
+
+    const output = filteredWriter.getCurrentOutput();
+
+    // Should not show "1 failed" in summary
+    expect(output).not.toContain("1 failed");
+
+    // Should show "0 tests"
+    expect(output).toContain("0 tests");
+
+    // Verify counts
+    const counts = filteredReporter.getCounts();
+    expect(counts.total).toBe(0);
+    expect(counts.failed).toBe(0);
+    expect(counts.passed).toBe(0);
+  });
+
+  it("should properly sync state when tests are added after suite:end (regression test)", () => {
+    // This is a regression test for the bug where adding tests AFTER suite:end
+    // caused the reporter's internal state to be out of sync.
+    // The bug happened when code added test events after calling suite:end,
+    // and then the streaming reporter's counts would not match the final report.
+
+    const filteredWriter = new MockWriter();
+
+    const filteredReporter = new StreamingReporter({
+      writer: filteredWriter,
+      showRunBoundaries: false,
+      showSummary: true,
+      filter: {
+        passed: false,
+        failed: true,
+        skipped: false,
+        pending: false,
+        other: false,
+      },
+    });
+
+    filteredReporter.onEvent({ type: "run:start", toolName: "wp-tester-phpunit" });
+    filteredReporter.onEvent({ type: "suite:start", name: "PHPUnit Tests" });
+
+    // Simulate the OLD BUGGY behavior where a test was added AFTER suite:end
+    filteredReporter.onEvent({ type: "suite:end", name: "PHPUnit Tests" });
+
+    // In the old buggy code, this test event was sent AFTER suite:end,
+    // which meant the streaming reporter's internal state was already finalized
+    // BEFORE this test was added to the report
+    filteredReporter.onEvent({
+      type: "test:fail",
+      name: "PHPUnit Bootstrap",
+      duration: 0,
+      message: "Bootstrap failed",
+      suiteName: "PHPUnit Tests",
+    });
+
+    filteredReporter.onEvent({ type: "run:end" });
+
+    const output = filteredWriter.getCurrentOutput();
+
+    // The test should NOT be visible because it was added after suite:end
+    // (In the bug, this would show "1 failed" in summary but no test in output)
+    // The current implementation properly handles this by NOT allowing tests
+    // to be added after suite:end
+
+    // Verify the counts - since the test was added after suite end,
+    // it should still be counted (because it was added before run:end)
+    const counts = filteredReporter.getCounts();
+
+    // This demonstrates the fix: tests added after suite:end but before run:end
+    // are still counted and visible
+    expect(counts.total).toBe(1);
+    expect(counts.failed).toBe(1);
+
+    // And the output should show the test
+    expect(output).toContain("PHPUnit Bootstrap");
+    expect(output).toContain("1 failed");
+  });
 });

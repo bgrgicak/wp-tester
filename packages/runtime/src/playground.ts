@@ -13,7 +13,7 @@ export const defaultWpCliPath = "/tmp/wp-cli.phar";
  * Expects environment to be already resolved (blueprint loaded, paths absolute).
  */
 export async function startPlayground(
-  environment: ResolvedEnvironment
+  environment: ResolvedEnvironment,
 ): Promise<RunCLIServer> {
   // Configure mounts from environment
   const mountsBeforeInstall = [];
@@ -23,12 +23,12 @@ export async function startPlayground(
   mountsBeforeInstall.push(
     ...environment.mounts
       .filter((m) => m.beforeInstall === true)
-      .map((m) => ({ hostPath: m.hostPath, vfsPath: m.vfsPath }))
+      .map((m) => ({ hostPath: m.hostPath, vfsPath: m.vfsPath })),
   );
   mountAfterInstall.push(
     ...environment.mounts
       .filter((m) => m.beforeInstall !== true)
-      .map((m) => ({ hostPath: m.hostPath, vfsPath: m.vfsPath }))
+      .map((m) => ({ hostPath: m.hostPath, vfsPath: m.vfsPath })),
   );
 
   // Blueprint should already be resolved by resolveConfig
@@ -46,6 +46,12 @@ export async function startPlayground(
     extraLibraries,
   };
 
+  // Check if /wordpress/ is being mounted
+  const isWordPressMounted = [
+    ...mountsBeforeInstall,
+    ...mountAfterInstall,
+  ].some((m) => m.vfsPath === "/wordpress/" || m.vfsPath === "/wordpress");
+
   const cli = await runCLI({
     command: "server",
     blueprint,
@@ -54,6 +60,9 @@ export async function startPlayground(
     quiet: true,
     internalCookieStore: true,
     port: 0, // Use any available port to avoid EADDRINUSE errors
+    ...(isWordPressMounted && {
+      "wordpress-install-mode": "install-from-existing-files-if-needed",
+    }),
   });
   await cli.playground.isReady();
   return cli;
