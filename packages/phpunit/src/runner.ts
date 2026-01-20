@@ -9,6 +9,7 @@ import {
   resolveAbsolute,
 } from "@wp-tester/config";
 import { defineWpConfigConsts } from "@wp-playground/blueprints";
+import { setPhpIniEntries } from "@php-wasm/universal";
 import type { Report } from "@wp-tester/results";
 import { EMPTY_REPORT, mergeReports, PHPUnitStreamingReporter, TeamCityParser } from "@wp-tester/results";
 import { startPlayground } from "@wp-tester/runtime";
@@ -46,6 +47,25 @@ async function runPhpunitTestsForEnvironment(
   // Start playground with all mounts and steps including test library initialization
   const runtime = await startPlayground(environmentWithMount);
   const playground = runtime.playground;
+
+  // Configure PHP error handling for PHPUnit compatibility
+  // - html_errors=0: PHPUnit needs plain text errors, not HTML
+  // Note: display_errors is left enabled so test failures show useful output
+  await setPhpIniEntries(playground, {
+    html_errors: "0",
+  });
+
+  // Remove Playground's error handler file to allow PHPUnit to register its own
+  // Playground registers an error handler in /internal/shared/preload/error-handler.php
+  // to suppress certain warnings. This file is loaded via auto_prepend_file on EVERY
+  // PHP execution (including PHPUnit CLI). However, PHPUnit's ErrorHandler::register()
+  // refuses to override existing handlers, which breaks expectWarning() and similar assertions.
+  // Solution: Delete the file so it doesn't get loaded when PHPUnit runs.
+  try {
+    await playground.unlink('/internal/shared/preload/error-handler.php');
+  } catch {
+    // File might not exist, that's fine
+  }
 
   // Set WP_TESTS_DOMAIN constant
   await defineWpConfigConsts(playground, {
@@ -225,31 +245,23 @@ async function runPhpunitTestsForEnvironment(
       ),
     ]);
 
-    // Close the outer suite that was started earlier
-    reporter.onEvent({
-      type: "suite:end",
-      name: `${environment.name} - PHPUnit ${testMode} tests`,
-    });
-
-    // Signal test run end to finalize timing
-    reporter.onEvent({
-      type: "run:end",
-    });
-
     const exitCode = await result.exitCode;
 
-    // Get the report from the streaming reporter
-    const report = reporter.getReport();
-
     // PHPUnit outputs errors to stdout, not stderr, so we need to check both
-    const errorOutput = stderrCapture.trim() || stdoutCapture.trim();
+    // Combine both streams to ensure we capture all output including "No tests executed!"
+    const combinedOutput = (stderrCapture.trim() + '\n' + stdoutCapture.trim()).trim();
+    const errorOutput = combinedOutput || stderrCapture.trim() || stdoutCapture.trim();
+
+    // Get current report to check if tests were reported
+    const currentReport = reporter.getReport();
+    const hasReportedTests = currentReport.results.tests.length > 0;
 
     // Check for bad exit codes that indicate fatal errors
     // Exit code 0 = success, 1 = test failures, 2 = errors (all acceptable)
     // Other exit codes (e.g., 127 = command not found, 255 = fatal error) are not acceptable
     if (exitCode !== 0 && exitCode !== 1 && exitCode !== 2) {
       // For bad exit codes without error output or with tests that already ran, return empty report
-      if (!errorOutput || report.results.tests.length > 0) {
+      if (!errorOutput || hasReportedTests) {
         console.error("\nPHPUnit tests could not run.");
 
         // Provide specific guidance based on common exit codes
@@ -279,28 +291,51 @@ async function runPhpunitTestsForEnvironment(
 
     // Add error output to CTRF results if present and no tests ran
     // This handles both bad exit codes (from above) and acceptable exit codes with errors
-    if (errorOutput && report.results.tests.length === 0) {
+    if (errorOutput && !hasReportedTests) {
       // Check if this is a "no tests executed" scenario vs an actual error
       // PHPUnit outputs "No tests executed!" when no tests match the filter
       const noTestsPattern = /No tests executed!?/i;
+
+      // Also check if the output only contains informational messages (no actual errors)
+      // These messages appear at the start of test runs and aren't errors
+      const onlyInfoMessages =
+        /^(Installing\.\.\.|Running as|Not running|PHPUnit \d+|Warning:|Suggestion:)/m.test(errorOutput) &&
+        !/(Fatal error|Parse error|Undefined|Call to|failed to open stream|syntax error)/i.test(errorOutput);
+
       const isNoTestsExecuted =
-        noTestsPattern.test(errorOutput) && exitCode === 0;
+        (noTestsPattern.test(errorOutput) && exitCode === 0) ||
+        (onlyInfoMessages && (exitCode === 0 || exitCode === 255));
 
       if (false === isNoTestsExecuted) {
-        // Bootstrap failure - create a synthetic test with the error
-        report.results.tests.push({
+        // Bootstrap failure - send event to reporter so it appears in streaming output
+        reporter.onEvent({
+          type: "test:fail",
           name: "PHPUnit Bootstrap",
-          status: "failed",
+          suiteName: `${environment.name} - PHPUnit ${testMode} tests`,
           duration: 0,
           message: "Bootstrap failed - see trace for details",
           trace: errorOutput,
         });
-        report.results.summary.tests = 1;
-        report.results.summary.failed = 1;
       }
-      // If no tests executed (isNoTestsExecuted === true), return empty report
+      // If no tests executed (isNoTestsExecuted === true), continue without synthetic test
       // The runner will handle this based on passWithNoTests option
-    } else if (stderrCapture.trim()) {
+    }
+
+    // Close the outer suite that was started earlier
+    reporter.onEvent({
+      type: "suite:end",
+      name: `${environment.name} - PHPUnit ${testMode} tests`,
+    });
+
+    // Signal test run end to finalize timing
+    reporter.onEvent({
+      type: "run:end",
+    });
+
+    // Get the final report from the streaming reporter
+    const report = reporter.getReport();
+
+    if (stderrCapture.trim() && hasReportedTests) {
       // Tests ran but there's stderr - add it to extra field
       report.results.extra = {
         ...report.results.extra,
