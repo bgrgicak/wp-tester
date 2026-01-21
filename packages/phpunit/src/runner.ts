@@ -3,13 +3,13 @@ import type {
   ResolvedWPTesterConfig,
   ResolvedEnvironment,
 } from "@wp-tester/config";
+import { defineWpConfigConsts } from "@wp-playground/blueprints";
+import { setPhpIniEntries } from "@php-wasm/universal";
 import {
   parseBootstrapPath,
   hostToVfs,
   resolveAbsolute,
 } from "@wp-tester/config";
-import { defineWpConfigConsts } from "@wp-playground/blueprints";
-import { setPhpIniEntries } from "@php-wasm/universal";
 import type { Report } from "@wp-tester/results";
 import { EMPTY_REPORT, mergeReports, PHPUnitStreamingReporter, TeamCityParser } from "@wp-tester/results";
 import { startPlayground } from "@wp-tester/runtime";
@@ -62,7 +62,7 @@ async function runPhpunitTestsForEnvironment(
   // refuses to override existing handlers, which breaks expectWarning() and similar assertions.
   // Solution: Delete the file so it doesn't get loaded when PHPUnit runs.
   try {
-    await playground.unlink('/internal/shared/preload/error-handler.php');
+    await playground.unlink("/internal/shared/preload/error-handler.php");
   } catch {
     // File might not exist, that's fine
   }
@@ -249,8 +249,13 @@ async function runPhpunitTestsForEnvironment(
 
     // PHPUnit outputs errors to stdout, not stderr, so we need to check both
     // Combine both streams to ensure we capture all output including "No tests executed!"
-    const combinedOutput = (stderrCapture.trim() + '\n' + stdoutCapture.trim()).trim();
-    const errorOutput = combinedOutput || stderrCapture.trim() || stdoutCapture.trim();
+    const combinedOutput = (
+      stderrCapture.trim() +
+      "\n" +
+      stdoutCapture.trim()
+    ).trim();
+    const errorOutput =
+      combinedOutput || stderrCapture.trim() || stdoutCapture.trim();
 
     // Get current report to check if tests were reported
     const currentReport = reporter.getReport();
@@ -299,8 +304,12 @@ async function runPhpunitTestsForEnvironment(
       // Also check if the output only contains informational messages (no actual errors)
       // These messages appear at the start of test runs and aren't errors
       const onlyInfoMessages =
-        /^(Installing\.\.\.|Running as|Not running|PHPUnit \d+|Warning:|Suggestion:)/m.test(errorOutput) &&
-        !/(Fatal error|Parse error|Undefined|Call to|failed to open stream|syntax error)/i.test(errorOutput);
+        /^(Installing\.\.\.|Running as|Not running|PHPUnit \d+|Warning:|Suggestion:)/m.test(
+          errorOutput,
+        ) &&
+        !/(Fatal error|Parse error|Undefined|Call to|failed to open stream|syntax error)/i.test(
+          errorOutput,
+        );
 
       const isNoTestsExecuted =
         (noTestsPattern.test(errorOutput) && exitCode === 0) ||
