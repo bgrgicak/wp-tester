@@ -27,7 +27,8 @@
   "dependencies": {
     "@wp-playground/blueprints": "3.0.15",
     "@wp-playground/cli": "3.0.15",
-    "@wp-tester/config": "*"
+    "@wp-tester/config": "*",
+    "async-mutex": "^0.5.0"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

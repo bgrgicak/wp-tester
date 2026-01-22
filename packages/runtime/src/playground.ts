@@ -5,65 +5,80 @@
 import { runCLI, type RunCLIServer } from "@wp-playground/cli";
 import type { ResolvedEnvironment } from "@wp-tester/config";
 import type { BlueprintV1Declaration } from "@wp-playground/blueprints";
+import { Mutex } from "async-mutex";
 
 export const defaultWpCliPath = "/tmp/wp-cli.phar";
 
 /**
+ * Global mutex to prevent concurrent WordPress Playground downloads.
+ * Multiple parallel tests downloading the same WordPress version cause ENOENT errors
+ * when trying to rename .zip.partial files. This mutex serializes the download phase
+ * while allowing tests to run in parallel after the Playground is started.
+ */
+const playgroundStartMutex = new Mutex();
+
+/**
  * Start a WordPress Playground server from an Environment configuration.
  * Expects environment to be already resolved (blueprint loaded, paths absolute).
+ *
+ * Uses a global mutex to prevent concurrent downloads that cause race conditions.
+ * Tests can still run in parallel - only the initial Playground startup is serialized.
  */
 export async function startPlayground(
   environment: ResolvedEnvironment,
 ): Promise<RunCLIServer> {
-  // Configure mounts from environment
-  const mountsBeforeInstall = [];
-  const mountAfterInstall = [];
+  // Acquire mutex lock to prevent concurrent downloads
+  return await playgroundStartMutex.runExclusive(async () => {
+    // Configure mounts from environment
+    const mountsBeforeInstall = [];
+    const mountAfterInstall = [];
 
-  // Separate mounts into beforeInstall and afterInstall
-  mountsBeforeInstall.push(
-    ...environment.mounts
-      .filter((m) => m.beforeInstall === true)
-      .map((m) => ({ hostPath: m.hostPath, vfsPath: m.vfsPath })),
-  );
-  mountAfterInstall.push(
-    ...environment.mounts
-      .filter((m) => m.beforeInstall !== true)
-      .map((m) => ({ hostPath: m.hostPath, vfsPath: m.vfsPath })),
-  );
+    // Separate mounts into beforeInstall and afterInstall
+    mountsBeforeInstall.push(
+      ...environment.mounts
+        .filter((m) => m.beforeInstall === true)
+        .map((m) => ({ hostPath: m.hostPath, vfsPath: m.vfsPath })),
+    );
+    mountAfterInstall.push(
+      ...environment.mounts
+        .filter((m) => m.beforeInstall !== true)
+        .map((m) => ({ hostPath: m.hostPath, vfsPath: m.vfsPath })),
+    );
 
-  // Blueprint should already be resolved by resolveConfig
-  // Create a mutable copy to avoid modifying the original
-  const extraLibraries = environment.blueprint.extraLibraries
-    ? [...environment.blueprint.extraLibraries]
-    : [];
+    // Blueprint should already be resolved by resolveConfig
+    // Create a mutable copy to avoid modifying the original
+    const extraLibraries = environment.blueprint.extraLibraries
+      ? [...environment.blueprint.extraLibraries]
+      : [];
 
-  if (!extraLibraries.includes("wp-cli")) {
-    extraLibraries.push("wp-cli");
-  }
+    if (!extraLibraries.includes("wp-cli")) {
+      extraLibraries.push("wp-cli");
+    }
 
-  const blueprint: BlueprintV1Declaration = {
-    ...environment.blueprint,
-    extraLibraries,
-  };
+    const blueprint: BlueprintV1Declaration = {
+      ...environment.blueprint,
+      extraLibraries,
+    };
 
-  // Check if /wordpress/ is being mounted
-  const isWordPressMounted = [
-    ...mountsBeforeInstall,
-    ...mountAfterInstall,
-  ].some((m) => m.vfsPath === "/wordpress/" || m.vfsPath === "/wordpress");
+    // Check if /wordpress/ is being mounted
+    const isWordPressMounted = [
+      ...mountsBeforeInstall,
+      ...mountAfterInstall,
+    ].some((m) => m.vfsPath === "/wordpress/" || m.vfsPath === "/wordpress");
 
-  const cli = await runCLI({
-    command: "server",
-    blueprint,
-    mount: mountAfterInstall,
-    "mount-before-install": mountsBeforeInstall,
-    quiet: true,
-    internalCookieStore: true,
-    port: 0, // Use any available port to avoid EADDRINUSE errors
-    skipWordPressSetup: isWordPressMounted,
+    const cli = await runCLI({
+      command: "server",
+      blueprint,
+      mount: mountAfterInstall,
+      "mount-before-install": mountsBeforeInstall,
+      quiet: true,
+      internalCookieStore: true,
+      port: 0, // Use any available port to avoid EADDRINUSE errors
+      skipWordPressSetup: isWordPressMounted,
+    });
+    await cli.playground.isReady();
+    return cli;
   });
-  await cli.playground.isReady();
-  return cli;
 }
 
 /**
