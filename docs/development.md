@@ -145,6 +145,16 @@ npm version minor --workspaces
 npm version major --workspaces
 ```
 
+## Vagrant Sandbox
+
+Run Claude Code with `--dangerously-skip-permissions` in an isolated VM:
+
+```bash
+vagrant up && vagrant ssh
+claude-yolo      # alias for: claude --dangerously-skip-permissions
+vagrant suspend  # pause VM, vagrant up to resume
+```
+
 ## Contributing
 
 When contributing to WP Tester:
