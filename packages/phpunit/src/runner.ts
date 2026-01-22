@@ -3,6 +3,8 @@ import type {
   ResolvedWPTesterConfig,
   ResolvedEnvironment,
 } from "@wp-tester/config";
+import { defineWpConfigConsts } from "@wp-playground/blueprints";
+import { setPhpIniEntries } from "@php-wasm/universal";
 import {
   parseBootstrapPath,
   hostToVfs,
@@ -29,7 +31,7 @@ export function shouldRunPhpunitTests(config: WPTesterConfig): boolean {
 async function runPhpunitTestsForEnvironment(
   config: ResolvedWPTesterConfig,
   environment: ResolvedEnvironment,
-  hostPhpunitConfigPath: string
+  hostPhpunitConfigPath: string,
 ): Promise<Report> {
   const testMode = config.tests.phpunit!.testMode;
   let environmentWithMount: ResolvedEnvironment = {
@@ -46,18 +48,44 @@ async function runPhpunitTestsForEnvironment(
   const runtime = await startPlayground(environmentWithMount);
   const playground = runtime.playground;
 
+  // Configure PHP error handling for PHPUnit compatibility
+  // - html_errors=0: PHPUnit needs plain text errors, not HTML
+  // Note: display_errors is left enabled so test failures show useful output
+  await setPhpIniEntries(playground, {
+    html_errors: "0",
+  });
+
+  // Remove Playground's error handler file to allow PHPUnit to register its own
+  // Playground registers an error handler in /internal/shared/preload/error-handler.php
+  // to suppress certain warnings. This file is loaded via auto_prepend_file on EVERY
+  // PHP execution (including PHPUnit CLI). However, PHPUnit's ErrorHandler::register()
+  // refuses to override existing handlers, which breaks expectWarning() and similar assertions.
+  // Solution: Delete the file so it doesn't get loaded when PHPUnit runs.
+  try {
+    await playground.unlink("/internal/shared/preload/error-handler.php");
+  } catch {
+    // File might not exist, that's fine
+  }
+
+  // Set WP_TESTS_DOMAIN constant
+  await defineWpConfigConsts(playground, {
+    consts: {
+      WP_TESTS_DOMAIN: new URL(await playground.absoluteUrl).host,
+    },
+  });
+
   try {
     // Determine the plugin or theme being tested
     if (!config.projectType) {
       console.error(
-        "Project type must be specified in config for PHPUnit tests"
+        "Project type must be specified in config for PHPUnit tests",
       );
       return EMPTY_REPORT;
     }
 
     if (!config.projectVFSPath) {
       console.error(
-        `Project type '${config.projectType}' does not support PHPUnit tests`
+        `Project type '${config.projectType}' does not support PHPUnit tests`,
       );
       return EMPTY_REPORT;
     }
@@ -79,7 +107,7 @@ async function runPhpunitTestsForEnvironment(
         // Bootstrap path from parseBootstrapPath is relative, convert to absolute
         const absoluteBootstrapPath = resolveAbsolute(
           bootstrapPath,
-          config.projectHostPath
+          config.projectHostPath,
         );
         userBootstrap = hostToVfs(absoluteBootstrapPath, config);
       }
@@ -99,7 +127,7 @@ async function runPhpunitTestsForEnvironment(
       if (!empty('${userBootstrap}') && file_exists('${userBootstrap}')) {
         require_once '${userBootstrap}';
       }
-      `
+      `,
       );
     }
 
@@ -128,7 +156,11 @@ async function runPhpunitTestsForEnvironment(
     const phpunitArgs = config.tests.phpunit!.phpunitArgs;
     if (phpunitArgs && phpunitArgs.length > 0) {
       // Use the helper to resolve arguments
-      const resolvedArgs = await resolvePhpunitArgs(phpunitArgs, config, playground);
+      const resolvedArgs = await resolvePhpunitArgs(
+        phpunitArgs,
+        config,
+        playground,
+      );
 
       cliArgs.push(...resolvedArgs);
     }
@@ -138,9 +170,10 @@ async function runPhpunitTestsForEnvironment(
     const useStreaming = config.reporters?.default !== undefined;
 
     // Get filter options from config reporters (only if it's an object, not boolean)
-    const filter = typeof config.reporters?.default === 'object'
-      ? config.reporters.default
-      : undefined;
+    const filter =
+      typeof config.reporters?.default === "object"
+        ? config.reporters.default
+        : undefined;
 
     const reporter = new PHPUnitStreamingReporter({
       enabled: useStreaming,
@@ -171,8 +204,8 @@ async function runPhpunitTestsForEnvironment(
     // PHPUnit outputs TeamCity format to both stdout and stderr
     const textDecoder = new TextDecoder();
     const stderrDecoder = new TextDecoder();
-    let stdoutCapture = '';
-    let stderrCapture = '';
+    let stdoutCapture = "";
+    let stderrCapture = "";
     await Promise.all([
       result.stdout.pipeTo(
         new WritableStream({
@@ -184,7 +217,7 @@ async function runPhpunitTestsForEnvironment(
           close() {
             parser.flush();
           },
-        })
+        }),
       ),
       result.stderr.pipeTo(
         new WritableStream({
@@ -208,9 +241,94 @@ async function runPhpunitTestsForEnvironment(
           close() {
             parser.flush();
           },
-        })
+        }),
       ),
     ]);
+
+    const exitCode = await result.exitCode;
+
+    // PHPUnit outputs errors to stdout, not stderr, so we need to check both
+    // Combine both streams to ensure we capture all output including "No tests executed!"
+    const combinedOutput = (
+      stderrCapture.trim() +
+      "\n" +
+      stdoutCapture.trim()
+    ).trim();
+    const errorOutput =
+      combinedOutput || stderrCapture.trim() || stdoutCapture.trim();
+
+    // Get current report to check if tests were reported
+    const currentReport = reporter.getReport();
+    const hasReportedTests = currentReport.results.tests.length > 0;
+
+    // Check for bad exit codes that indicate fatal errors
+    // Exit code 0 = success, 1 = test failures, 2 = errors (all acceptable)
+    // Other exit codes (e.g., 127 = command not found, 255 = fatal error) are not acceptable
+    if (exitCode !== 0 && exitCode !== 1 && exitCode !== 2) {
+      // For bad exit codes without error output or with tests that already ran, return empty report
+      if (!errorOutput || hasReportedTests) {
+        console.error("\nPHPUnit tests could not run.");
+
+        // Provide specific guidance based on common exit codes
+        if (exitCode === 127) {
+          console.error("The PHPUnit executable was not found.");
+          console.error("Check that:");
+          console.error("  - PHPUnit is installed (run: composer install)");
+          console.error(
+            "  - The phpunitPath in your config points to the correct location",
+          );
+        } else if (exitCode === 255) {
+          console.error("PHPUnit encountered a fatal error.");
+          console.error(
+            "Check your phpunit.xml configuration and test bootstrap files.",
+          );
+        } else {
+          console.error(`Unexpected error occurred (exit code: ${exitCode})`);
+          console.error(
+            "Check your PHPUnit configuration and ensure all dependencies are installed.",
+          );
+        }
+
+        return EMPTY_REPORT;
+      }
+      // Fall through to create synthetic test below
+    }
+
+    // Add error output to CTRF results if present and no tests ran
+    // This handles both bad exit codes (from above) and acceptable exit codes with errors
+    if (errorOutput && !hasReportedTests) {
+      // Check if this is a "no tests executed" scenario vs an actual error
+      // PHPUnit outputs "No tests executed!" when no tests match the filter
+      const noTestsPattern = /No tests executed!?/i;
+
+      // Also check if the output only contains informational messages (no actual errors)
+      // These messages appear at the start of test runs and aren't errors
+      const onlyInfoMessages =
+        /^(Installing\.\.\.|Running as|Not running|PHPUnit \d+|Warning:|Suggestion:)/m.test(
+          errorOutput,
+        ) &&
+        !/(Fatal error|Parse error|Undefined|Call to|failed to open stream|syntax error)/i.test(
+          errorOutput,
+        );
+
+      const isNoTestsExecuted =
+        (noTestsPattern.test(errorOutput) && exitCode === 0) ||
+        (onlyInfoMessages && (exitCode === 0 || exitCode === 255));
+
+      if (false === isNoTestsExecuted) {
+        // Bootstrap failure - send event to reporter so it appears in streaming output
+        reporter.onEvent({
+          type: "test:fail",
+          name: "PHPUnit Bootstrap",
+          suiteName: `${environment.name} - PHPUnit ${testMode} tests`,
+          duration: 0,
+          message: "Bootstrap failed - see trace for details",
+          trace: errorOutput,
+        });
+      }
+      // If no tests executed (isNoTestsExecuted === true), continue without synthetic test
+      // The runner will handle this based on passWithNoTests option
+    }
 
     // Close the outer suite that was started earlier
     reporter.onEvent({
@@ -223,68 +341,14 @@ async function runPhpunitTestsForEnvironment(
       type: "run:end",
     });
 
-    const exitCode = await result.exitCode;
-
-    // Get the report from the streaming reporter
+    // Get the final report from the streaming reporter
     const report = reporter.getReport();
 
-    // PHPUnit outputs errors to stdout, not stderr, so we need to check both
-    const errorOutput = stderrCapture.trim() || stdoutCapture.trim();
-
-    // Check for bad exit codes that indicate fatal errors
-    // Exit code 0 = success, 1 = test failures, 2 = errors (all acceptable)
-    // Other exit codes (e.g., 127 = command not found, 255 = fatal error) are not acceptable
-    if (exitCode !== 0 && exitCode !== 1 && exitCode !== 2) {
-      // For bad exit codes without error output or with tests that already ran, return empty report
-      if (!errorOutput || report.results.tests.length > 0) {
-        console.error('\nPHPUnit tests could not run.');
-
-        // Provide specific guidance based on common exit codes
-        if (exitCode === 127) {
-          console.error('The PHPUnit executable was not found.');
-          console.error('Check that:');
-          console.error('  - PHPUnit is installed (run: composer install)');
-          console.error('  - The phpunitPath in your config points to the correct location');
-        } else if (exitCode === 255) {
-          console.error('PHPUnit encountered a fatal error.');
-          console.error('Check your phpunit.xml configuration and test bootstrap files.');
-        } else {
-          console.error(`Unexpected error occurred (exit code: ${exitCode})`);
-          console.error('Check your PHPUnit configuration and ensure all dependencies are installed.');
-        }
-
-        return EMPTY_REPORT;
-      }
-      // Fall through to create synthetic test below
-    }
-
-    // Add error output to CTRF results if present and no tests ran
-    // This handles both bad exit codes (from above) and acceptable exit codes with errors
-    if (errorOutput && report.results.tests.length === 0) {
-      // Check if this is a "no tests executed" scenario vs an actual error
-      // PHPUnit outputs "No tests executed!" when no tests match the filter
-      const noTestsPattern = /No tests executed!?/i;
-      const isNoTestsExecuted = noTestsPattern.test(errorOutput) && exitCode === 0;
-
-      if (false === isNoTestsExecuted) {
-        // Bootstrap failure - create a synthetic test with the error
-        report.results.tests.push({
-          name: 'PHPUnit Bootstrap',
-          status: 'failed',
-          duration: 0,
-          message: 'Bootstrap failed - see trace for details',
-          trace: errorOutput,
-        });
-        report.results.summary.tests = 1;
-        report.results.summary.failed = 1;
-      }
-      // If no tests executed (isNoTestsExecuted === true), return empty report
-      // The runner will handle this based on passWithNoTests option
-    } else if (stderrCapture.trim()) {
+    if (stderrCapture.trim() && hasReportedTests) {
       // Tests ran but there's stderr - add it to extra field
       report.results.extra = {
         ...report.results.extra,
-        stderr: stderrCapture.split('\n'),
+        stderr: stderrCapture.split("\n"),
       };
     }
 
@@ -295,7 +359,7 @@ async function runPhpunitTestsForEnvironment(
   } catch (error) {
     console.error(
       `Error running PHPUnit tests for environment "${environment.name}":`,
-      error
+      error,
     );
     return EMPTY_REPORT;
   } finally {

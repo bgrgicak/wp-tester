@@ -82,7 +82,7 @@ describe("PHPUnit error handling", () => {
 		// Should create a synthetic failed test with the error (1 per environment = 2)
 		expect(result.results.summary.tests).toBe(2);
 		expect(result.results.summary.failed).toBe(2);
-		expect(result.results.tests[0].name).toBe('PHPUnit Bootstrap');
+		expect(result.results.tests[0].name).toContain('PHPUnit Bootstrap');
 		expect(result.results.tests[0].status).toBe('failed');
 		expect(result.results.tests[0].trace).toContain('Could not open input file');
 	});
