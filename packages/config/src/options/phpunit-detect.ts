@@ -43,9 +43,49 @@ export async function findPhpUnitConfig(basePath: string): Promise<string | null
 
 /**
  * Find the PHPUnit bootstrap file
- * @param basePath
+ *
+ * Detection order:
+ * 1. Use resolved config's bootstrapPath if provided (must exist - no fallback)
+ * 2. Parse bootstrap path from phpunit.xml/phpunit.xml.dist (if configPath provided)
+ * 3. Fall back to hardcoded tests/bootstrap.php
+ *
+ * @param basePath - Project root directory
+ * @param configPath - Optional path to phpunit.xml config file (absolute)
+ * @param resolvedBootstrapPath - Optional bootstrap path from resolved config (relative to basePath)
+ * @returns Absolute path to bootstrap file, or null if not found
  */
-export async function findPhpUnitBootstrap(basePath: string): Promise<string | null> {
+export async function findPhpUnitBootstrap(
+  basePath: string,
+  configPath?: string | null,
+  resolvedBootstrapPath?: string | null
+): Promise<string | null> {
+  // If config explicitly specifies bootstrapPath, use it (no fallback if it doesn't exist)
+  if (resolvedBootstrapPath) {
+    const absoluteBootstrapPath = join(basePath, resolvedBootstrapPath);
+    try {
+      await access(absoluteBootstrapPath);
+      return absoluteBootstrapPath;
+    } catch {
+      // Config path doesn't exist - return null, don't fall back
+      return null;
+    }
+  }
+
+  // Try to parse bootstrap path from phpunit.xml config
+  if (configPath) {
+    const parsedBootstrap = await parseBootstrapPath(configPath);
+    if (parsedBootstrap) {
+      const absoluteBootstrapPath = join(basePath, parsedBootstrap);
+      try {
+        await access(absoluteBootstrapPath);
+        return absoluteBootstrapPath;
+      } catch {
+        // Parsed path doesn't exist, fall back to default detection
+      }
+    }
+  }
+
+  // Fall back to checking common bootstrap locations
   const bootstrapFiles = ['tests/bootstrap.php'];
 
   for (const file of bootstrapFiles) {
@@ -119,23 +159,7 @@ export async function detectPhpUnitConfig(
     return null;
   }
 
-  // First try to parse bootstrap path from phpunit.xml config
-  let bootstrapPath: string | null = null;
-  const parsedBootstrap = await parseBootstrapPath(configPath);
-  if (parsedBootstrap) {
-    const absoluteBootstrapPath = join(basePath, parsedBootstrap);
-    try {
-      await access(absoluteBootstrapPath);
-      bootstrapPath = absoluteBootstrapPath;
-    } catch {
-      // Parsed path doesn't exist, fall back to default detection
-    }
-  }
-
-  // Fall back to checking common bootstrap locations
-  if (!bootstrapPath) {
-    bootstrapPath = await findPhpUnitBootstrap(basePath);
-  }
+  const bootstrapPath = await findPhpUnitBootstrap(basePath, configPath);
 
   return {
     phpunitPath: relative(basePath, phpunitPath),

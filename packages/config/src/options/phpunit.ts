@@ -296,7 +296,7 @@ async function handlePartialDetection(
     const executable = await findPhpUnitExecutable(projectHostPath);
     if (executable) {
       // Success! Now we have both config and executable
-      const bootstrap = await findPhpUnitBootstrap(projectHostPath);
+      const bootstrap = await findPhpUnitBootstrap(projectHostPath, configFile);
       return handleFullDetection(
         config,
         projectHostPath,
@@ -378,7 +378,7 @@ export async function phpunitOption(
   // Handle different detection states
   if (configFile && executable) {
     // Full detection - both found
-    const bootstrap = await findPhpUnitBootstrap(projectHostPath);
+    const bootstrap = await findPhpUnitBootstrap(projectHostPath, configFile);
     return handleFullDetection(config, projectHostPath, configFile, executable, bootstrap);
   } else if (configFile && !executable) {
     // Partial detection - config found but executable missing

@@ -6,7 +6,7 @@ import type {
 import { defineWpConfigConsts } from "@wp-playground/blueprints";
 import { setPhpIniEntries } from "@php-wasm/universal";
 import {
-  parseBootstrapPath,
+  findPhpUnitBootstrap,
   hostToVfs,
   resolveAbsolute,
 } from "@wp-tester/config";
@@ -99,17 +99,23 @@ async function runPhpunitTestsForEnvironment(
     // Only create WordPress bootstrap in integration mode
     let bootstrapFilePath: string | null = null;
     if (testMode === "integration") {
-      // Parse bootstrap path from PHPUnit config and map to VFS
-      const bootstrapPath = await parseBootstrapPath(hostPhpunitConfigPath);
       // Determine bootstrap file path in the playground filesystem
+      // Priority: 1) config.bootstrapPath, 2) phpunit.xml bootstrap attr, 3) tests/bootstrap.php
       let userBootstrap = `${config.projectVFSPath}/tests/bootstrap.php`; // Default fallback
-      if (bootstrapPath) {
-        // Bootstrap path from parseBootstrapPath is relative, convert to absolute
-        const absoluteBootstrapPath = resolveAbsolute(
-          bootstrapPath,
+
+      // If config explicitly specifies bootstrapPath, use it directly (already absolute in resolved config)
+      if (config.tests.phpunit!.bootstrapPath) {
+        userBootstrap = hostToVfs(config.tests.phpunit!.bootstrapPath, config);
+      } else {
+        // Otherwise, use findPhpUnitBootstrap to detect from phpunit.xml or fallback
+        const bootstrapPath = await findPhpUnitBootstrap(
           config.projectHostPath,
+          hostPhpunitConfigPath,
+          null
         );
-        userBootstrap = hostToVfs(absoluteBootstrapPath, config);
+        if (bootstrapPath) {
+          userBootstrap = hostToVfs(bootstrapPath, config);
+        }
       }
 
       // Create a custom bootstrap file that loads WordPress, then user's bootstrap if it exists

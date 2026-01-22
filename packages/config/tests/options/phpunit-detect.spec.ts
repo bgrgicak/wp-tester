@@ -45,7 +45,7 @@ describe('parseBootstrapPath', () => {
   it('should parse bootstrap path from theme phpunit.xml.dist', async () => {
     const configPath = path.join(THEME_FIXTURE, 'phpunit.xml.dist');
     const bootstrapPath = await parseBootstrapPath(configPath);
-    expect(bootstrapPath).toBe('tests/bootstrap.php');
+    expect(bootstrapPath).toBe('tests/phpunit/bootstrap.php');
   });
 
   it('should return null for non-existent config file', async () => {
@@ -98,7 +98,7 @@ describe('detectPhpUnitConfig', () => {
     expect(config).toEqual({
       phpunitPath: 'vendor/bin/phpunit',
       configPath: 'phpunit.xml.dist',
-      bootstrapPath: 'tests/bootstrap.php',
+      bootstrapPath: 'tests/phpunit/bootstrap.php',
     });
   });
 
@@ -175,5 +175,29 @@ describe('detectPhpUnitConfig integration', () => {
     expect(typeof config?.phpunitPath).toBe('string');
     expect(typeof config?.configPath).toBe('string');
     expect(typeof config?.bootstrapPath).toBe('string');
+  });
+});
+
+describe('custom bootstrap path detection', () => {
+  it('should parse custom bootstrap path from phpunit.xml.dist', async () => {
+    const configPath = path.join(THEME_FIXTURE, 'phpunit.xml.dist');
+    const bootstrapPath = await parseBootstrapPath(configPath);
+    expect(bootstrapPath).toBe('tests/phpunit/bootstrap.php');
+  });
+
+  it('should detect custom bootstrap path in detectPhpUnitConfig', async () => {
+    const config = await detectPhpUnitConfig(THEME_FIXTURE);
+    expect(config).not.toBeNull();
+    expect(config).toEqual({
+      phpunitPath: 'vendor/bin/phpunit',
+      configPath: 'phpunit.xml.dist',
+      bootstrapPath: 'tests/phpunit/bootstrap.php',
+    });
+  });
+
+  it('should not use default bootstrap when custom path exists in config', async () => {
+    const config = await detectPhpUnitConfig(THEME_FIXTURE);
+    expect(config?.bootstrapPath).not.toBe('tests/bootstrap.php');
+    expect(config?.bootstrapPath).toBe('tests/phpunit/bootstrap.php');
   });
 });
