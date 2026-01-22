@@ -72,6 +72,11 @@ vagrant suspend
 vagrant halt
 ```
 
+**Reload and reprovision (after Vagrantfile changes):**
+```bash
+vagrant reload --provision
+```
+
 **Destroy the VM (clean slate):**
 ```bash
 vagrant destroy

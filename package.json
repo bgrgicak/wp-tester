@@ -21,7 +21,7 @@
     "prepublishOnly": "npm run build && npm run test:package-install && npm test",
     "docs:serve": "docsify serve docs",
     "docs:dev": "docsify serve docs --open",
-    "claude": "vagrant up && vagrant ssh -c 'claude-yolo'; vagrant suspend"
+    "claude": "vagrant up && vagrant ssh -c 'cd /agent-workspace && claude-yolo'; vagrant suspend"
   },
   "repository": {
     "type": "git",
