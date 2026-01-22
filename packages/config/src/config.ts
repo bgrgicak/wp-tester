@@ -540,12 +540,19 @@ export async function resolveConfig(
       // Auto-detect and add mounts if needed
       let mounts = env.mounts ? [...env.mounts] : []; // Create a copy to avoid mutating original
 
-      // If projectHostPath is specified, always add the project root mount
+      // Always add the project root mount if the directory exists
       // This ensures the project root is accessible even when custom mounts are specified
-      // Only create the mount if the directory exists to avoid mount errors with invalid paths
-      if (resolvedConfig.projectHostPath && existsSync(projectDir)) {
-        const mount = getProjectRootMount(projectDir, projectType);
-        if (mount) {
+      if (existsSync(projectDir)) {
+        // Use projectVFSPath if specified, otherwise derive from projectType
+        const baseMount = resolvedConfig.projectVFSPath
+          ? { hostPath: projectDir, vfsPath: resolvedConfig.projectVFSPath }
+          : getProjectRootMount(projectDir, projectType);
+
+        if (baseMount) {
+          // Auto-mounts use beforeInstall: true so the project is available
+          // before the blueprint runs (e.g., for activatePlugin steps)
+          const mount = { ...baseMount, beforeInstall: true };
+
           // Check if this mount already exists (by vfsPath) to avoid duplicates
           // Normalize paths by removing trailing slashes for comparison
           const normalizeVfsPath = (path: string) => path.replace(/\/+$/, '');
