@@ -119,7 +119,23 @@ export async function detectPhpUnitConfig(
     return null;
   }
 
-  const bootstrapPath = await findPhpUnitBootstrap(basePath);
+  // First try to parse bootstrap path from phpunit.xml config
+  let bootstrapPath: string | null = null;
+  const parsedBootstrap = await parseBootstrapPath(configPath);
+  if (parsedBootstrap) {
+    const absoluteBootstrapPath = join(basePath, parsedBootstrap);
+    try {
+      await access(absoluteBootstrapPath);
+      bootstrapPath = absoluteBootstrapPath;
+    } catch {
+      // Parsed path doesn't exist, fall back to default detection
+    }
+  }
+
+  // Fall back to checking common bootstrap locations
+  if (!bootstrapPath) {
+    bootstrapPath = await findPhpUnitBootstrap(basePath);
+  }
 
   return {
     phpunitPath: relative(basePath, phpunitPath),
