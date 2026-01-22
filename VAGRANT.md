@@ -17,32 +17,39 @@ You need to have installed on your host machine:
 vagrant up
 ```
 
-This will:
-- Download the Ubuntu 24.04 base box (if needed)
-- Create a VM with 4GB RAM and 2 CPUs
-- Install Docker, Node.js, npm, git, and Claude Code
-- Mount your project directory to `/agent-workspace` in the VM
-- Configure the vagrant user for Docker access
-
 ### Start Claude Code
 
+**Quick start (recommended):**
+```bash
+npm run claude
+```
+
+This command will:
+1. Start the VM (`vagrant up`)
+2. Run Claude Code in the VM (`claude-yolo`)
+3. Suspend the VM when you exit (`vagrant suspend`)
+
+**Manual approach:**
 ```bash
 # SSH into the VM
 vagrant ssh
 
-# Navigate to your project (automatically synced)
-cd /agent-workspace
-
 # Run Claude Code without permission prompts
 claude --dangerously-skip-permissions
-```
 
-Or use the alias:
-```bash
+# Or use the alias
 claude-yolo
 ```
 
+
 ## Daily Usage
+
+**Quick workflow (recommended):**
+```bash
+npm run claude  # Starts VM, runs Claude, then suspends on exit
+```
+
+**Manual VM control:**
 
 **Start the VM:**
 ```bash
@@ -70,40 +77,3 @@ vagrant halt
 vagrant destroy
 vagrant up  # Rebuild from scratch
 ```
-
-## VM Configuration
-
-- **OS:** Ubuntu 24.04 (bento/ubuntu-24.04)
-- **Memory:** 4096 MB
-- **CPUs:** 2
-- **Shared Folder:** Current directory → `/agent-workspace`
-- **Sync Type:** VirtualBox shared folders
-
-## Security Notes
-
-### Protected Against:
-- Accidental filesystem damage outside the project
-- Unintended package installations on host
-- Configuration modifications on host
-- User errors during agent operation
-
-### Not Protected Against:
-- Project deletion (bidirectional file sync)
-- VM escape exploits
-- Network-level incidents
-- Data exfiltration risks
-
-## Installed Software (in VM)
-
-- Docker
-- Node.js & npm
-- Git
-- Unzip
-- Claude Code (global installation)
-
-## Tips
-
-- The VM name will automatically be set to your project directory name (wp-tester)
-- All changes in `/agent-workspace` are immediately reflected on your host machine
-- You can rebuild the VM anytime with `vagrant destroy && vagrant up` for a fresh environment
-- Use `vagrant status` to check the VM state
