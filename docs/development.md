@@ -9,6 +9,58 @@ This guide covers setting up the WP Tester monorepo for development.
 - Node.js 18 or higher
 - npm or yarn
 
+## Isolated Development Environment (Optional)
+
+For a safe isolated development environment where you can run Claude Code with `--dangerously-skip-permissions`, this project includes a Vagrant configuration. This approach is based on [Running Claude Code Dangerously Safely](https://blog.emilburzo.com/2026/01/running-claude-code-dangerously-safely/) by Emil Burzo.
+
+### Why Use Vagrant?
+
+Running Claude Code with unrestricted permissions in a VM provides:
+- Full VM isolation (no shared kernel with your host system)
+- Easy to nuke and rebuild if something goes wrong
+- Shared folders that make it feel like local development
+- Protection against accidental filesystem damage
+
+### Requirements
+
+- [Vagrant](https://www.vagrantup.com/downloads)
+- [VirtualBox](https://www.virtualbox.org/wiki/Downloads)
+
+### Quick Start
+
+```bash
+# Start the VM (first run will download Ubuntu and install dependencies)
+vagrant up
+
+# Connect to the VM
+vagrant ssh
+
+# Navigate to your project (auto-synced from host)
+cd /agent-workspace
+
+# Run Claude Code without permission prompts
+claude --dangerously-skip-permissions
+```
+
+### VM Management
+
+```bash
+# Suspend the VM (preserves state, recommended when done)
+vagrant suspend
+
+# Resume a suspended VM
+vagrant up
+
+# Stop the VM completely
+vagrant halt
+
+# Destroy and rebuild (fresh environment)
+vagrant destroy
+vagrant up
+```
+
+For complete Vagrant usage instructions, see [VAGRANT.md](../VAGRANT.md).
+
 ## Setup
 
 ### Install Dependencies
