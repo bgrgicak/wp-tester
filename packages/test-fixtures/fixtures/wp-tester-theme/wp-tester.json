@@ -22,7 +22,7 @@
     "phpunit": {
       "phpunitPath": "vendor/bin/phpunit",
       "configPath": "phpunit.xml.dist",
-      "bootstrapPath": "tests/bootstrap.php",
+      "bootstrapPath": "tests/phpunit/bootstrap.php",
       "testMode": "integration"
     }
   }
