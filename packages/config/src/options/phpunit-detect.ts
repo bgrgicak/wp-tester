@@ -1,26 +1,5 @@
 import { access, readFile } from 'fs/promises';
-import { join, relative } from 'path';
-
-/**
- * Detected PHPUnit configuration
- */
-export interface DetectedPHPUnitConfig {
-  /**
-   * Path to PHPUnit executable (relative to project root)
-   */
-  phpunitPath: string;
-
-  /**
-   * Path to PHPUnit configuration file (relative to project root)
-   */
-  configPath: string;
-
-  /**
-   * Path to PHPUnit bootstrap file (relative to project root)
-   * Optional - if not provided, only the custom wp-tester bootstrap will be used
-   */
-  bootstrapPath?: string;
-}
+import { join, resolve, isAbsolute } from 'path';
 
 /**
  * Find the PHPUnit config file (phpunit.xml or phpunit.xml.dist)
@@ -33,26 +12,6 @@ export async function findPhpUnitConfig(basePath: string): Promise<string | null
     try {
       await access(configPath);
       return configPath;
-    } catch {
-      // File doesn't exist, continue checking
-    }
-  }
-
-  return null;
-}
-
-/**
- * Find the PHPUnit bootstrap file
- * @param basePath
- */
-export async function findPhpUnitBootstrap(basePath: string): Promise<string | null> {
-  const bootstrapFiles = ['tests/bootstrap.php'];
-
-  for (const file of bootstrapFiles) {
-    const bootstrapPath = join(basePath, file);
-    try {
-      await access(bootstrapPath);
-      return bootstrapPath;
     } catch {
       // File doesn't exist, continue checking
     }
@@ -105,25 +64,60 @@ export async function parseBootstrapPath(configPath: string): Promise<string | n
 }
 
 /**
- * Detect PHPUnit configuration from a project directory
- * Returns a complete PHPUnit configuration or null if PHPUnit is not detected
+ * Resolve the bootstrap file path for PHPUnit tests
+ * Returns the absolute path to the bootstrap file or null if not found
+ *
+ * Priority order:
+ * 1. Explicit bootstrapPath from user config
+ * 2. Parse from phpunit.xml config file
+ * 3. Fall back to tests/bootstrap.php
+ *
+ * @param configPath - Absolute path to PHPUnit config file
+ * @param projectDir - Absolute path to project directory
+ * @param explicitBootstrapPath - Optional explicit bootstrap path from user config (relative or absolute)
+ * @returns Absolute path to bootstrap file, or null if not found
  */
-export async function detectPhpUnitConfig(
-  basePath: string
-): Promise<DetectedPHPUnitConfig | null> {
-  const configPath = await findPhpUnitConfig(basePath);
-  const phpunitPath = await findPhpUnitExecutable(basePath);
-
-  // Bootstrap path is optional
-  if (!configPath || !phpunitPath) {
-    return null;
+export async function resolveBootstrapPath(
+  configPath: string,
+  projectDir: string,
+  explicitBootstrapPath?: string
+): Promise<string | null> {
+  // Priority 1: Explicit bootstrapPath from config
+  if (explicitBootstrapPath) {
+    // Handle both relative and absolute paths
+    const absoluteBootstrapPath = isAbsolute(explicitBootstrapPath)
+      ? explicitBootstrapPath
+      : resolve(projectDir, explicitBootstrapPath);
+    try {
+      await access(absoluteBootstrapPath);
+      return absoluteBootstrapPath;
+    } catch {
+      // Explicit path doesn't exist, fall through to other priorities
+    }
   }
 
-  const bootstrapPath = await findPhpUnitBootstrap(basePath);
+  // Priority 2: Parse from phpunit.xml
+  const parsedBootstrap = await parseBootstrapPath(configPath);
+  if (parsedBootstrap) {
+    // Handle both relative and absolute paths
+    const absoluteBootstrapPath = isAbsolute(parsedBootstrap)
+      ? parsedBootstrap
+      : resolve(projectDir, parsedBootstrap);
+    try {
+      await access(absoluteBootstrapPath);
+      return absoluteBootstrapPath;
+    } catch {
+      // Parsed path doesn't exist, try fallback
+    }
+  }
 
-  return {
-    phpunitPath: relative(basePath, phpunitPath),
-    configPath: relative(basePath, configPath),
-    ...(bootstrapPath && { bootstrapPath: relative(basePath, bootstrapPath) }),
-  };
+  // Priority 3: Fallback to tests/bootstrap.php
+  const fallbackBootstrap = join(projectDir, 'tests/bootstrap.php');
+  try {
+    await access(fallbackBootstrap);
+    return fallbackBootstrap;
+  } catch {
+    // No bootstrap found
+    return null;
+  }
 }

@@ -1,10 +1,9 @@
 import type { WPTesterConfig, PHPUnitConfig } from "../types";
 import * as clack from "@clack/prompts";
-import { getProjectDir } from "../config";
+import { getProjectDir } from "../path-utils";
 import {
   findPhpUnitConfig,
   findPhpUnitExecutable,
-  findPhpUnitBootstrap,
 } from "./phpunit-detect";
 import { access } from "fs/promises";
 import { join, relative } from "path";
@@ -168,19 +167,16 @@ async function handleFullDetection(
   config: WPTesterConfig,
   projectHostPath: string,
   configFile: string,
-  executable: string,
-  bootstrap: string | null
+  executable: string
 ): Promise<WPTesterConfig> {
   // Convert to relative paths
   const relativeConfig = relative(projectHostPath, configFile);
   const relativeExecutable = relative(projectHostPath, executable);
-  const relativeBootstrap = bootstrap ? relative(projectHostPath, bootstrap) : null;
 
   // Display detected configuration
   const configNote =
     `PHPUnit executable: ${relativeExecutable}\n` +
-    `Config file: ${relativeConfig}` +
-    (relativeBootstrap ? `\nBootstrap file: ${relativeBootstrap}` : "");
+    `Config file: ${relativeConfig}`;
 
   clack.note(configNote, "Detected PHPUnit Configuration");
 
@@ -221,11 +217,11 @@ async function handleFullDetection(
       process.exit(0);
     }
 
+    // Bootstrap path will be detected and resolved later by resolveTests
     finalConfig = {
       phpunitPath: relativeExecutable,
       configPath: relativeConfig,
       testMode: testMode,
-      ...(relativeBootstrap && { bootstrapPath: relativeBootstrap }),
     };
   }
 
@@ -296,13 +292,11 @@ async function handlePartialDetection(
     const executable = await findPhpUnitExecutable(projectHostPath);
     if (executable) {
       // Success! Now we have both config and executable
-      const bootstrap = await findPhpUnitBootstrap(projectHostPath);
       return handleFullDetection(
         config,
         projectHostPath,
         configFile,
-        executable,
-        bootstrap
+        executable
       );
     }
 
@@ -378,8 +372,7 @@ export async function phpunitOption(
   // Handle different detection states
   if (configFile && executable) {
     // Full detection - both found
-    const bootstrap = await findPhpUnitBootstrap(projectHostPath);
-    return handleFullDetection(config, projectHostPath, configFile, executable, bootstrap);
+    return handleFullDetection(config, projectHostPath, configFile, executable);
   } else if (configFile && !executable) {
     // Partial detection - config found but executable missing
     return handlePartialDetection(config, projectHostPath, configFile);

@@ -2,7 +2,7 @@ import type { WPTesterConfig } from '../types';
 import * as clack from '@clack/prompts';
 import * as path from 'path';
 import * as fs from 'fs';
-import { getWorkingDirectory } from '../config';
+import { getWorkingDirectory } from '../path-utils';
 
 export function validatePath(value: string | undefined): string | undefined {
   // Allow empty value - will be replaced with cwd

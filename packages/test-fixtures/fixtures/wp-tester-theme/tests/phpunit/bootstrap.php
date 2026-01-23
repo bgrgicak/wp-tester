@@ -12,7 +12,7 @@ if ( $_tests_dir && file_exists( $_tests_dir . '/includes/functions.php' ) ) {
 
 	// Load theme before WordPress is loaded
 	tests_add_filter( 'muplugins_loaded', function() {
-		require dirname( __DIR__ ) . '/functions.php';
+		require dirname( dirname( __DIR__ ) ) . '/functions.php';
 	} );
 
 	require $_tests_dir . '/includes/bootstrap.php';
@@ -59,5 +59,5 @@ if ( $_tests_dir && file_exists( $_tests_dir . '/includes/functions.php' ) ) {
 	}
 
 	// Load the theme functions AFTER mock functions are defined
-	require_once dirname( __DIR__ ) . '/functions.php';
+	require_once dirname( dirname( __DIR__ ) ) . '/functions.php';
 }

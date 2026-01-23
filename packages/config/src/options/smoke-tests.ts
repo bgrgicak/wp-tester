@@ -1,6 +1,6 @@
 import type { WPTesterConfig, Tests } from '../types';
 import * as clack from '@clack/prompts';
-import { getProjectDir } from '../config';
+import { getProjectDir } from '../path-utils';
 
 export function validateSlug(value: string): string | undefined {
   if (!value || value.trim().length === 0) {

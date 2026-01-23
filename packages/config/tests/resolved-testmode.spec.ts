@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveConfig } from '../src/config';
+import { resolveConfig } from '../src';
 import type { WPTesterConfig } from '../src/wp-tester-config';
 
 describe('Resolved config - testMode', () => {

@@ -1,10 +1,10 @@
 import { defineConfig, mergeConfig } from 'vitest/config';
 import baseConfig from '../../vitest.config.js';
-import type { WPTesterConfig } from '@wp-tester/config';
+import type { ResolvedWPTesterConfig } from '@wp-tester/config';
 
 declare module 'vitest' {
   export interface ProvidedContext {
-    config: WPTesterConfig;
+    config: ResolvedWPTesterConfig;
   }
 }
 
@@ -23,9 +23,12 @@ export default mergeConfig(
       maxConcurrency: process.env.CI ? 1 : 5,
       provide: {
         config: {
+          projectPath: { hostPath: '', vfsPath: '' },
+          projectType: 'other',
           environments: [],
           tests: {},
-        } as WPTesterConfig,
+          reporters: {},
+        } as ResolvedWPTesterConfig,
       },
     },
   })

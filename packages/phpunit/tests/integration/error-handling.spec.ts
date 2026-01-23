@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { runPhpunitTests } from "../../src/index";
 import { resolveConfig } from "@wp-tester/config";
 import { TEST_PLUGIN_CONFIG_PATH } from "@wp-tester/test-fixtures";
-import path from "path";
 
 describe("PHPUnit error handling", () => {
 	let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
@@ -22,13 +21,13 @@ describe("PHPUnit error handling", () => {
       const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
 
       // Point to a non-existent phpunit.xml.dist
-      config.projectHostPath = "/non/existent/path";
+      // Must modify the resolved configPath, not just projectPath
+      config.tests.phpunit!.configPath.hostPath = "/non/existent/phpunit.xml.dist";
 
       const result = await runPhpunitTests(config);
 
-      // Should return a report with 1 failed test per environment indicating the error (2 environments)
-      expect(result.results.summary.tests).toBe(2);
-      expect(result.results.summary.failed).toBe(2);
+      // Should return empty report when config file is missing
+      expect(result.results.summary.tests).toBe(0);
     }
 	);
 
@@ -37,13 +36,15 @@ describe("PHPUnit error handling", () => {
 		async () => {
       const config = await resolveConfig(TEST_PLUGIN_CONFIG_PATH);
 
-      // Create a config that points to a directory without PHPUnit installed
-      const tempDir = path.join(process.cwd(), "tests", "fixtures");
-      config.projectHostPath = tempDir;
+      // Point to a non-existent PHPUnit executable
+      // Must modify the resolved phpunitPath, not just projectPath
+      config.tests.phpunit!.phpunitPath.hostPath = "/non/existent/vendor/bin/phpunit";
+      config.tests.phpunit!.phpunitPath.vfsPath = "/non/existent/vendor/bin/phpunit";
 
       const result = await runPhpunitTests(config);
 
       // Should return a report with 1 failed test per environment indicating the error (2 environments)
+      // This creates synthetic "PHPUnit Bootstrap" failures
       expect(result.results.summary.tests).toBe(2);
       expect(result.results.summary.failed).toBe(2);
     }

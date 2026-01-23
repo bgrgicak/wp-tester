@@ -1,12 +1,6 @@
 import { defineConfig } from 'vitest/config';
 import { resolve } from 'node:path';
-import type { WPTesterConfig } from '@wp-tester/config';
-
-declare module 'vitest' {
-  export interface ProvidedContext {
-    config: WPTesterConfig;
-  }
-}
+import type { ResolvedWPTesterConfig } from '@wp-tester/config';
 
 export default defineConfig({
   resolve: {
@@ -29,10 +23,14 @@ export default defineConfig({
     // Run test files in parallel - output buffering ensures clean display
     fileParallelism: true,
     provide: {
+      // Default config - will be overridden by runSmokeTests
       config: {
+        projectPath: { hostPath: '', vfsPath: '' },
+        projectType: 'other',
         environments: [],
         tests: {},
-      } as WPTesterConfig,
+        reporters: {},
+      } as ResolvedWPTesterConfig,
     },
   },
 });

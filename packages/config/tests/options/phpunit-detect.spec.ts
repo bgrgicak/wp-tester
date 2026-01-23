@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { findPhpUnitConfig, parseBootstrapPath, detectPhpUnitConfig } from '../../src/options/phpunit-detect';
+import { findPhpUnitConfig, parseBootstrapPath } from '../../src/options/phpunit-detect';
 import * as path from 'path';
 
 const FIXTURES_DIR = path.resolve(__dirname, '../../../test-fixtures/fixtures');
@@ -45,7 +45,7 @@ describe('parseBootstrapPath', () => {
   it('should parse bootstrap path from theme phpunit.xml.dist', async () => {
     const configPath = path.join(THEME_FIXTURE, 'phpunit.xml.dist');
     const bootstrapPath = await parseBootstrapPath(configPath);
-    expect(bootstrapPath).toBe('tests/bootstrap.php');
+    expect(bootstrapPath).toBe('tests/phpunit/bootstrap.php');
   });
 
   it('should return null for non-existent config file', async () => {
@@ -79,101 +79,10 @@ describe('parseBootstrapPath', () => {
     const bootstrapPath = await parseBootstrapPath(configPath);
     expect(bootstrapPath).toBeTruthy();
   });
-});
 
-describe('detectPhpUnitConfig', () => {
-  it('should detect complete PHPUnit config from plugin fixture', async () => {
-    const config = await detectPhpUnitConfig(PLUGIN_FIXTURE);
-    expect(config).not.toBeNull();
-    expect(config).toEqual({
-      phpunitPath: 'vendor/bin/phpunit',
-      configPath: 'phpunit.xml.dist',
-      bootstrapPath: 'tests/bootstrap.php',
-    });
-  });
-
-  it('should detect complete PHPUnit config from theme fixture', async () => {
-    const config = await detectPhpUnitConfig(THEME_FIXTURE);
-    expect(config).not.toBeNull();
-    expect(config).toEqual({
-      phpunitPath: 'vendor/bin/phpunit',
-      configPath: 'phpunit.xml.dist',
-      bootstrapPath: 'tests/bootstrap.php',
-    });
-  });
-
-  it('should return null for directory without PHPUnit config', async () => {
-    const config = await detectPhpUnitConfig('/tmp');
-    expect(config).toBeNull();
-  });
-
-  it('should return null for non-existent directory', async () => {
-    const config = await detectPhpUnitConfig('/this/path/does/not/exist');
-    expect(config).toBeNull();
-  });
-
-  it('should use default bootstrap path when not found in config', async () => {
-    // This would require a fixture without bootstrap attribute
-    // For now, we verify the behavior through the plugin fixture
-    const config = await detectPhpUnitConfig(PLUGIN_FIXTURE);
-    expect(config?.bootstrapPath).toBeTruthy();
-  });
-
-  it('should always set phpunitPath to vendor/bin/phpunit', async () => {
-    const config = await detectPhpUnitConfig(PLUGIN_FIXTURE);
-    expect(config?.phpunitPath).toBe('vendor/bin/phpunit');
-  });
-
-  it('should return relative paths from basePath', async () => {
-    const config = await detectPhpUnitConfig(PLUGIN_FIXTURE);
-    expect(config?.configPath).not.toContain(PLUGIN_FIXTURE);
-    expect(config?.configPath).toBe('phpunit.xml.dist');
-  });
-
-  it('should handle absolute basePath correctly', async () => {
-    const absolutePath = path.resolve(PLUGIN_FIXTURE);
-    const config = await detectPhpUnitConfig(absolutePath);
-    expect(config).not.toBeNull();
-    expect(config?.configPath).toBe('phpunit.xml.dist');
-  });
-});
-
-describe('detectPhpUnitConfig integration', () => {
-  it('should integrate with findPhpUnitConfig and parseBootstrapPath', async () => {
-    // Test that all three functions work together
-    const configPath = await findPhpUnitConfig(PLUGIN_FIXTURE);
-    expect(configPath).not.toBeNull();
-
-    if (configPath) {
-      const bootstrapPath = await parseBootstrapPath(configPath);
-      expect(bootstrapPath).not.toBeNull();
-
-      const fullConfig = await detectPhpUnitConfig(PLUGIN_FIXTURE);
-      expect(fullConfig).not.toBeNull();
-      expect(fullConfig?.bootstrapPath).toBe(bootstrapPath);
-    }
-  });
-
-  it('should handle missing bootstrap gracefully', async () => {
-    // Even if parseBootstrapPath returns null, detectPhpUnitConfig should provide a default
-    const config = await detectPhpUnitConfig(PLUGIN_FIXTURE);
-    expect(config).not.toBeNull();
-    expect(config?.bootstrapPath).toBeTruthy();
-    expect(config?.bootstrapPath).toBe('tests/bootstrap.php');
-  });
-
-  it('should produce config compatible with PHPUnitConfig type', async () => {
-    const config = await detectPhpUnitConfig(PLUGIN_FIXTURE);
-    expect(config).not.toBeNull();
-
-    // Verify it has all required properties
-    expect(config).toHaveProperty('phpunitPath');
-    expect(config).toHaveProperty('configPath');
-    expect(config).toHaveProperty('bootstrapPath');
-
-    // Verify property types
-    expect(typeof config?.phpunitPath).toBe('string');
-    expect(typeof config?.configPath).toBe('string');
-    expect(typeof config?.bootstrapPath).toBe('string');
+  it('should parse custom bootstrap path from phpunit.xml.dist', async () => {
+    const configPath = path.join(THEME_FIXTURE, 'phpunit.xml.dist');
+    const bootstrapPath = await parseBootstrapPath(configPath);
+    expect(bootstrapPath).toBe('tests/phpunit/bootstrap.php');
   });
 });
