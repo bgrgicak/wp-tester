@@ -23,6 +23,7 @@ export type {
   ResolvedTests,
   ResolvedBlueprint,
   ResolvedReporters,
+  ResolvedPath,
 } from './resolved-types';
 
 // Functions
@@ -39,6 +40,7 @@ export {
   getConfigPath,
   normalizeConfigPath,
   resolveAbsolute,
+  resolvePhpunitArgs,
   getWorkingDirectory,
 } from "./config";
 

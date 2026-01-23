@@ -1,5 +1,5 @@
 import { access, readFile } from 'fs/promises';
-import { join } from 'path';
+import { join, resolve, isAbsolute } from 'path';
 
 /**
  * Find the PHPUnit config file (phpunit.xml or phpunit.xml.dist)
@@ -84,7 +84,10 @@ export async function resolveBootstrapPath(
 ): Promise<string | null> {
   // Priority 1: Explicit bootstrapPath from config
   if (explicitBootstrapPath) {
-    const absoluteBootstrapPath = join(projectDir, explicitBootstrapPath);
+    // Handle both relative and absolute paths
+    const absoluteBootstrapPath = isAbsolute(explicitBootstrapPath)
+      ? explicitBootstrapPath
+      : resolve(projectDir, explicitBootstrapPath);
     try {
       await access(absoluteBootstrapPath);
       return absoluteBootstrapPath;
@@ -96,7 +99,10 @@ export async function resolveBootstrapPath(
   // Priority 2: Parse from phpunit.xml
   const parsedBootstrap = await parseBootstrapPath(configPath);
   if (parsedBootstrap) {
-    const absoluteBootstrapPath = join(projectDir, parsedBootstrap);
+    // Handle both relative and absolute paths
+    const absoluteBootstrapPath = isAbsolute(parsedBootstrap)
+      ? parsedBootstrap
+      : resolve(projectDir, parsedBootstrap);
     try {
       await access(absoluteBootstrapPath);
       return absoluteBootstrapPath;

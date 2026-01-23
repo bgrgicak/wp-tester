@@ -3,19 +3,16 @@ import type {
   ResolvedWPTesterConfig,
   ResolvedEnvironment,
 } from "@wp-tester/config";
+import { resolvePhpunitArgs } from "@wp-tester/config";
 import { defineWpConfigConsts } from "@wp-playground/blueprints";
 import { setPhpIniEntries } from "@php-wasm/universal";
-import {
-  hostToVfs,
-  resolveAbsolute,
-} from "@wp-tester/config";
 import type { Report } from "@wp-tester/results";
 import { EMPTY_REPORT, mergeReports, PHPUnitStreamingReporter, TeamCityParser } from "@wp-tester/results";
 import { startPlayground } from "@wp-tester/runtime";
 import { mountWordPressTestLibrary } from "./wordpress-test-lib";
 import { access } from "fs/promises";
 
-export function shouldRunPhpunitTests(config: WPTesterConfig): boolean {
+export function shouldRunPhpunitTests(config: WPTesterConfig | ResolvedWPTesterConfig): boolean {
   return config.tests?.phpunit !== undefined;
 }
 
@@ -24,13 +21,11 @@ export function shouldRunPhpunitTests(config: WPTesterConfig): boolean {
  *
  * @param config - Resolved test configuration
  * @param environment - Environment configuration
- * @param hostPhpunitConfigPath - Absolute path to PHPUnit config on host
  * @returns CTRF report with test results
  */
 async function runPhpunitTestsForEnvironment(
   config: ResolvedWPTesterConfig,
   environment: ResolvedEnvironment,
-  hostPhpunitConfigPath: string,
 ): Promise<Report> {
   const testMode = config.tests.phpunit!.testMode;
   let environmentWithMount: ResolvedEnvironment = {
@@ -82,18 +77,16 @@ async function runPhpunitTestsForEnvironment(
       return EMPTY_REPORT;
     }
 
-    if (!config.projectVFSPath) {
+    if (!config.projectPath.vfsPath) {
       console.error(
         `Project type '${config.projectType}' does not support PHPUnit tests`,
       );
       return EMPTY_REPORT;
     }
 
-    // Map host PHPUnit config path to VFS
-    const vfsPhpunitConfigPath = hostToVfs(hostPhpunitConfigPath, config);
-
-    // Map host PHPUnit executable path to VFS
-    const vfsPhpunitPath = hostToVfs(config.tests.phpunit!.phpunitPath, config);
+    // Get VFS paths from resolved config
+    const vfsPhpunitConfigPath = config.tests.phpunit!.configPath.vfsPath;
+    const vfsPhpunitPath = config.tests.phpunit!.phpunitPath.vfsPath;
 
     // Only create WordPress bootstrap in integration mode
     let bootstrapFilePath: string | null = null;
@@ -101,10 +94,9 @@ async function runPhpunitTestsForEnvironment(
       // Use resolved bootstrap path from config (already resolved during config resolution)
       const bootstrapPath = config.tests.phpunit!.bootstrapPath;
 
-      // Convert to VFS path (or use default if not found)
-      const userBootstrap = bootstrapPath
-        ? hostToVfs(bootstrapPath, config)
-        : `${config.projectVFSPath}/tests/bootstrap.php`;
+      // Get VFS path directly from resolved path (or use default if not found)
+      const userBootstrap = bootstrapPath?.vfsPath
+        ?? `${config.projectPath.vfsPath}/tests/bootstrap.php`;
 
       // Create a custom bootstrap file that loads WordPress, then user's bootstrap if it exists
       bootstrapFilePath = `/tmp/wp-tester-bootstrap.php`;
@@ -145,18 +137,10 @@ async function runPhpunitTestsForEnvironment(
       cliArgs.push("--bootstrap", bootstrapFilePath);
     }
 
-    // Append additional PHPUnit arguments from config
-    // Resolve file/directory paths from host to VFS
+    // Append additional PHPUnit arguments from config (already resolved to VFS paths)
     const phpunitArgs = config.tests.phpunit!.phpunitArgs;
     if (phpunitArgs && phpunitArgs.length > 0) {
-      // Use the helper to resolve arguments
-      const resolvedArgs = await resolvePhpunitArgs(
-        phpunitArgs,
-        config,
-        playground,
-      );
-
-      cliArgs.push(...resolvedArgs);
+      cliArgs.push(...phpunitArgs);
     }
 
     // Create streaming reporter
@@ -393,11 +377,13 @@ export async function runPhpunitTests(
     : phpunitArgsOrOptions || {};
   const { phpunitArgs } = options;
 
-  // Merge additional PHPUnit args if provided
+  // Merge additional PHPUnit args if provided (resolve them first)
   let resolvedConfig = { ...config };
   if (phpunitArgs && phpunitArgs.length > 0) {
+    // Resolve the additional args before merging
+    const resolvedAdditionalArgs = resolvePhpunitArgs(phpunitArgs, config.projectPath);
     const configArgs = resolvedConfig.tests.phpunit?.phpunitArgs || [];
-    const mergedArgs = [...configArgs, ...phpunitArgs];
+    const mergedArgs = [...configArgs, ...resolvedAdditionalArgs];
 
     resolvedConfig = {
       ...resolvedConfig,
@@ -419,13 +405,13 @@ export async function runPhpunitTests(
   }
 
   // Get PHPUnit config path from resolved config (already absolute after resolveConfig)
-  const hostPhpunitConfigPath = resolvedConfig.tests.phpunit!.configPath;
+  const phpunitConfigPath = resolvedConfig.tests.phpunit!.configPath;
 
   // Verify the config file exists
   try {
-    await access(hostPhpunitConfigPath);
+    await access(phpunitConfigPath.hostPath);
   } catch {
-    console.error(`PHPUnit config file not found: ${hostPhpunitConfigPath}`);
+    console.error(`PHPUnit config file not found: ${phpunitConfigPath.hostPath}`);
     return Promise.resolve(EMPTY_REPORT);
   }
 
@@ -437,8 +423,7 @@ export async function runPhpunitTests(
   for (const environment of enabledEnvironments) {
     const report = await runPhpunitTestsForEnvironment(
       resolvedConfig,
-      environment,
-      hostPhpunitConfigPath
+      environment
     );
     // Include report only if it has tests
     if (report.results.summary.tests > 0) {
@@ -458,102 +443,5 @@ export async function runPhpunitTests(
 
   // Import mergeReports for multiple environments
   return mergeReports(reports);
-}
-
-/**
- * PHPUnit flags that are boolean (do not take a value).
- * If a flag is NOT in this list, we assume it takes a value,
- * and therefore the next argument should NOT be resolved as a path.
- */
-const booleanFlags = new Set([
-  '--teamcity', '--debug', '--verbose', '--testdox',
-  '--stderr', '--stop-on-error', '--stop-on-failure', '--stop-on-warning',
-  '--stop-on-defect', '--stop-on-risky', '--stop-on-skipped', '--stop-on-incomplete',
-  '--stop-on-deprecation', '--stop-on-notice', // Added in recent versions
-  '--fail-on-warning', '--fail-on-risky', '--fail-on-incomplete', '--fail-on-skipped',
-  '--fail-on-deprecation', '--fail-on-notice', // Added in recent versions
-  '--strict-coverage', '--strict-global-state', '--disallow-test-output',
-  '--disallow-resource-usage', '--enforce-time-limit',
-  '--process-isolation', '--no-globals-backup', '--static-backup',
-  '--no-configuration', '--no-coverage', '--no-logging', '--no-interaction',
-  '--no-extensions', '--no-output', '--dont-report-useless-tests',
-  '--no-progress', // Added
-  '--display-deprecations', '--display-errors', '--display-incomplete', // Added
-  '--display-notices', '--display-skipped', '--display-warnings', // Added
-  '--strict',
-  '--help', '--version',
-  '--list-groups', '--list-suites', '--list-tests', '--list-tests-xml',
-  // Colors often handled as boolean in simple usage
-]);
-
-// Minimal interface for Playground client
-interface PlaygroundClient {
-  fileExists(path: string): Promise<boolean>;
-}
-
-/**
- * Resolve PHPUnit arguments to map host paths to VFS paths
- *
- * @param args - Original arguments
- * @param config - Resolved configuration
- * @param playground - Playground client for checking VFS file existence
- * @returns Resolved arguments
- */
-export async function resolvePhpunitArgs(
-  args: string[],
-  config: ResolvedWPTesterConfig,
-  playground: PlaygroundClient
-): Promise<string[]> {
-  const resolvedArgs: string[] = [];
-
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
-
-    // Don't resolve flags
-    if (arg.startsWith('-')) {
-      resolvedArgs.push(arg);
-      continue;
-    }
-
-    // Check if the previous argument was a flag that takes a value
-    const prevArg = args[i - 1];
-    if (prevArg?.startsWith('-') && !prevArg.includes('=')) {
-      // If the previous flag is NOT a known boolean flag, assume it takes a value
-      const flagName = prevArg.split('=')[0];
-      if (!booleanFlags.has(flagName)) {
-        resolvedArgs.push(arg); // This is the flag's value, not a path
-        continue;
-      }
-    }
-
-    // Resolve arguments that look like file/directory paths
-    const looksLikePath = arg.includes('/') ||
-                          arg.endsWith('.php') ||
-                          arg === 'tests' || arg === 'test';
-
-    if (looksLikePath) {
-      const absoluteHostPath = resolveAbsolute(arg, config.projectHostPath);
-      const vfsPath = hostToVfs(absoluteHostPath, config);
-
-      try {
-        // Validate that the file actually exists in the VFS
-        const exists = await playground.fileExists(vfsPath);
-        if (exists) {
-            resolvedArgs.push(vfsPath);
-            continue;
-        }
-      } catch {
-        // Ignore validation errors and fallback to original arg (or should we?)
-        // If file check fails, it's safer to probably not resolve it if we are strict,
-        // but existing behavior was "looksLikePath -> resolve".
-        // If we add this check, we might break things that "look like path" but aren't files YET?
-        // But for running tests, the files must exist.
-      }
-    }
-
-    resolvedArgs.push(arg);
-  }
-
-  return resolvedArgs;
 }
 

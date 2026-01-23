@@ -1,8 +1,8 @@
-import type { WPTesterConfig } from '@wp-tester/config';
+import type { ResolvedWPTesterConfig } from '@wp-tester/config';
 
 declare module 'vitest' {
   export interface ProvidedContext {
-    config: WPTesterConfig;
+    config: ResolvedWPTesterConfig;
   }
 
   export interface TaskMeta {

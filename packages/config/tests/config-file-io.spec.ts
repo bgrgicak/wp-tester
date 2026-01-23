@@ -69,14 +69,14 @@ describe('Config File I/O', () => {
       const resolved = await resolveConfig(configFile);
       expect(resolved.environments).toHaveLength(1);
       expect(resolved.environments[0].name).toBe('Test Environment');
-      expect(resolved.projectHostPath).toBe(configDir);
+      expect(resolved.projectPath.hostPath).toBe(configDir);
     });
 
     it('should resolve config from directory path', async () => {
       const resolved = await resolveConfig(configDir);
       expect(resolved.environments).toHaveLength(1);
       expect(resolved.environments[0].name).toBe('Test Environment');
-      expect(resolved.projectHostPath).toBe(configDir);
+      expect(resolved.projectPath.hostPath).toBe(configDir);
     });
 
     it('should resolve config from object', async () => {

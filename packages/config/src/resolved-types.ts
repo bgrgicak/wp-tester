@@ -1,5 +1,5 @@
 import type { BlueprintV1Declaration } from "@wp-playground/blueprints";
-import type { Mount, PHPUnitConfig, Tests, Environment, WPTesterConfig, TestMode, ProjectType, BaseReporterOptions, JsonReporterOptions } from "./wp-tester-config";
+import type { Mount, Tests, Environment, WPTesterConfig, TestMode, ProjectType, BaseReporterOptions, JsonReporterOptions } from "./wp-tester-config";
 
 /**
  * Resolved reporters configuration.
@@ -13,11 +13,19 @@ export interface ResolvedReporters {
 }
 
 /**
- * Resolved PHPUnit configuration with absolute paths and required testMode.
+ * Resolved PHPUnit configuration with resolved paths and required testMode.
  */
-export interface ResolvedPHPUnitConfig extends Omit<PHPUnitConfig, 'testMode'> {
+export interface ResolvedPHPUnitConfig {
+  /** Path to PHPUnit executable with host and VFS paths */
+  phpunitPath: ResolvedPath;
+  /** Path to PHPUnit configuration file with host and VFS paths */
+  configPath: ResolvedPath;
+  /** Path to PHPUnit bootstrap file with host and VFS paths */
+  bootstrapPath?: ResolvedPath;
   /** Test mode (always defined after resolution, defaults to "unit") */
   testMode: TestMode;
+  /** Additional arguments to pass to PHPUnit */
+  phpunitArgs?: string[];
 }
 
 /**
@@ -27,6 +35,16 @@ export interface ResolvedTests extends Omit<Tests, 'phpunit'> {
   phpunit?: ResolvedPHPUnitConfig;
   /** Allow the test suite to pass when no tests are executed */
   passWithNoTests?: boolean;
+}
+
+/**
+ * Resolved path type with a host and VFS path.
+ */
+export interface ResolvedPath {
+  /** Absolute path on host system */
+  hostPath: string;
+  /** Absolute path in VFS */
+  vfsPath: string;
 }
 
 /**
@@ -55,10 +73,8 @@ export interface ResolvedEnvironment extends Omit<Environment, 'blueprint' | 'mo
  * Resolved config with all paths absolute and optional fields set.
  */
 export interface ResolvedWPTesterConfig extends Omit<WPTesterConfig, 'projectHostPath' | 'projectVFSPath' | 'projectType' | 'reporters' | 'environments' | 'tests'> {
-  /** Absolute path to project on host (always defined after resolution) */
-  projectHostPath: string;
-  /** VFS path determined by project type or explicit config (always defined after resolution) */
-  projectVFSPath: string;
+  /** Resolved project path with both host and VFS paths */
+  projectPath: ResolvedPath;
   /** Project type (always defined after resolution) */
   projectType: ProjectType;
   /** Resolved environments with loaded blueprints */

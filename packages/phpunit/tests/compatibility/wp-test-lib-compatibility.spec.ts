@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { runPhpunitTests } from '../../src/runner.js';
+import { resolveConfig } from "@wp-tester/config";
 import type { WPTesterConfig } from "@wp-tester/config";
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -338,8 +339,11 @@ describe("WordPress compatibility tests", () => {
           projectHostPath: projectDir,
         };
 
-        // Run tests using the config
-        const report = await runPhpunitTests(config);
+        // Resolve config before running tests
+        const resolvedConfig = await resolveConfig(config);
+
+        // Run tests using the resolved config
+        const report = await runPhpunitTests(resolvedConfig);
 
         // Validate results
         expect(report.results.summary.tests).toBeGreaterThan(0);

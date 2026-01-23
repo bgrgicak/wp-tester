@@ -1,5 +1,5 @@
 import type { WPTesterConfig, Tests, Environment } from "./wp-tester-config";
-import type { ResolvedWPTesterConfig, ResolvedEnvironment, ResolvedTests, ResolvedPHPUnitConfig, ResolvedBlueprint, ResolvedReporters } from "./resolved-types";
+import type { ResolvedWPTesterConfig, ResolvedEnvironment, ResolvedTests, ResolvedPHPUnitConfig, ResolvedBlueprint, ResolvedReporters, ResolvedPath } from "./resolved-types";
 import type { BlueprintV1Declaration } from "@wp-playground/blueprints";
 import { readFile, writeFile, access, constants as fsConstants } from "fs/promises";
 import { existsSync, statSync } from "fs";
@@ -8,6 +8,7 @@ import { fileURLToPath } from "url";
 import { getProjectRootMount } from "./auto-mount";
 import { detectProjectType } from "./options/project-type-detect";
 import { resolveBootstrapPath } from './options/phpunit-detect';
+import { hostToVfs } from './path-mappers';
 
 /**
  * Internal interface for expanded environments with resolved version arrays.
@@ -371,12 +372,98 @@ async function expandEnvironments(
 }
 
 /**
+ * Convert a host path to a ResolvedPath using the project path mapping
+ * @param hostPath - Absolute path on host
+ * @param projectPath - Project path mapping
+ * @returns ResolvedPath with both host and VFS paths
+ */
+function toResolvedPath(hostPath: string, projectPath: ResolvedPath): ResolvedPath {
+  return {
+    hostPath,
+    vfsPath: hostToVfs(hostPath, projectPath),
+  };
+}
+
+/**
+ * PHPUnit flags that are boolean (do not take a value).
+ * If a flag is NOT in this list, we assume it takes a value,
+ * and therefore the next argument should NOT be resolved as a path.
+ */
+const PHPUNIT_BOOLEAN_FLAGS = new Set([
+  '--teamcity', '--debug', '--verbose', '--testdox',
+  '--stderr', '--stop-on-error', '--stop-on-failure', '--stop-on-warning',
+  '--stop-on-defect', '--stop-on-risky', '--stop-on-skipped', '--stop-on-incomplete',
+  '--stop-on-deprecation', '--stop-on-notice',
+  '--fail-on-warning', '--fail-on-risky', '--fail-on-incomplete', '--fail-on-skipped',
+  '--fail-on-deprecation', '--fail-on-notice',
+  '--strict-coverage', '--strict-global-state', '--disallow-test-output',
+  '--disallow-resource-usage', '--enforce-time-limit',
+  '--process-isolation', '--no-globals-backup', '--static-backup',
+  '--no-configuration', '--no-coverage', '--no-logging', '--no-interaction',
+  '--no-extensions', '--no-output', '--dont-report-useless-tests',
+  '--no-progress',
+  '--display-deprecations', '--display-errors', '--display-incomplete',
+  '--display-notices', '--display-skipped', '--display-warnings',
+  '--strict',
+  '--help', '--version',
+  '--list-groups', '--list-suites', '--list-tests', '--list-tests-xml',
+]);
+
+/**
+ * Resolve PHPUnit arguments to map host paths to VFS paths
+ *
+ * @param args - Original arguments from config
+ * @param projectPath - Project path with host and VFS paths
+ * @returns Resolved arguments with paths converted to VFS paths
+ */
+export function resolvePhpunitArgs(args: string[], projectPath: ResolvedPath): string[] {
+  const resolvedArgs: string[] = [];
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+
+    // Don't resolve flags
+    if (arg.startsWith('-')) {
+      resolvedArgs.push(arg);
+      continue;
+    }
+
+    // Check if the previous argument was a flag that takes a value
+    const prevArg = args[i - 1];
+    if (prevArg?.startsWith('-') && !prevArg.includes('=')) {
+      // If the previous flag is NOT a known boolean flag, assume it takes a value
+      const flagName = prevArg.split('=')[0];
+      if (!PHPUNIT_BOOLEAN_FLAGS.has(flagName)) {
+        resolvedArgs.push(arg); // This is the flag's value, not a path
+        continue;
+      }
+    }
+
+    // Resolve arguments that look like file/directory paths
+    const looksLikePath = arg.includes('/') ||
+                          arg.endsWith('.php') ||
+                          arg === 'tests' || arg === 'test';
+
+    if (looksLikePath) {
+      const absoluteHostPath = resolveAbsolute(arg, projectPath.hostPath);
+      const vfsPath = hostToVfs(absoluteHostPath, projectPath);
+      resolvedArgs.push(vfsPath);
+      continue;
+    }
+
+    resolvedArgs.push(arg);
+  }
+
+  return resolvedArgs;
+}
+
+/**
  * Resolve PHPUnit config paths and set default testMode
  * @param tests - Tests configuration
- * @param projectDir - Project directory for resolving relative paths
+ * @param projectPath - Project path with host and VFS paths
  * @returns Resolved tests configuration
  */
-async function resolveTests(tests: Tests, projectDir: string): Promise<ResolvedTests> {
+async function resolveTests(tests: Tests, projectPath: ResolvedPath): Promise<ResolvedTests> {
   // If no PHPUnit config, return tests as-is (but explicitly typed)
   if (!tests.phpunit) {
     return {
@@ -389,25 +476,25 @@ async function resolveTests(tests: Tests, projectDir: string): Promise<ResolvedT
 
   // Resolve PHPUnit config with absolute paths and default testMode
   const phpunit = tests.phpunit;
-  const resolvedConfigPath = resolveAbsolute(phpunit.configPath, projectDir);
+  const resolvedConfigHostPath = resolveAbsolute(phpunit.configPath, projectPath.hostPath);
 
   // Resolve bootstrap path using centralized logic
-  const bootstrapPath = await resolveBootstrapPath(
-    resolvedConfigPath,
-    projectDir,
+  const bootstrapHostPath = await resolveBootstrapPath(
+    resolvedConfigHostPath,
+    projectPath.hostPath,
     phpunit.bootstrapPath
   );
 
   const resolvedPhpunit: ResolvedPHPUnitConfig = {
-    phpunitPath: resolveAbsolute(phpunit.phpunitPath, projectDir),
-    configPath: resolvedConfigPath,
+    phpunitPath: toResolvedPath(resolveAbsolute(phpunit.phpunitPath, projectPath.hostPath), projectPath),
+    configPath: toResolvedPath(resolvedConfigHostPath, projectPath),
     testMode: phpunit.testMode ?? "unit",
-    bootstrapPath: bootstrapPath ?? undefined,
+    bootstrapPath: bootstrapHostPath ? toResolvedPath(bootstrapHostPath, projectPath) : undefined,
   };
 
-  // Preserve phpunitArgs if present
+  // Resolve phpunitArgs paths if present
   if (phpunit.phpunitArgs) {
-    resolvedPhpunit.phpunitArgs = phpunit.phpunitArgs;
+    resolvedPhpunit.phpunitArgs = resolvePhpunitArgs(phpunit.phpunitArgs, projectPath);
   }
 
   return {
@@ -595,12 +682,6 @@ export async function resolveConfig(
     })
   );
 
-  // Resolve PHPUnit paths to absolute paths and ensure testMode has a default
-  const resolvedTests: ResolvedTests = await resolveTests(
-    resolvedConfig.tests,
-    projectDir
-  );
-
   // Determine project VFS path
   let projectVFSPath: string;
   if (resolvedConfig.projectVFSPath !== undefined) {
@@ -624,11 +705,22 @@ export async function resolveConfig(
     }
   }
 
+  // Create project path with both host and VFS paths
+  const projectPath: ResolvedPath = {
+    hostPath: projectDir,
+    vfsPath: projectVFSPath,
+  };
+
+  // Resolve PHPUnit paths to absolute paths and ensure testMode has a default
+  const resolvedTests: ResolvedTests = await resolveTests(
+    resolvedConfig.tests,
+    projectPath
+  );
+
   // Return fully resolved config with all required fields
   return {
     ...resolvedConfig,
-    projectHostPath: projectDir,
-    projectVFSPath,
+    projectPath,
     projectType,
     reporters,
     environments: resolvedEnvironments,

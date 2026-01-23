@@ -7,7 +7,7 @@
 import { startVitest, parseCLI, type Reporter } from "vitest/node";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { WPTesterConfig, Tests, TestType, ResolvedWPTesterConfig } from "@wp-tester/config";
+import type { WPTesterConfig, Tests, TestType, ResolvedWPTesterConfig, ResolvedTests } from "@wp-tester/config";
 import {
   EMPTY_REPORT,
   VitestStreamingReporter,
@@ -22,7 +22,7 @@ const TEST_DIR = "src";
 const TEST_EXT = "ts";
 const CONFIG_FILE = "src/smoke-tests/vitest.config.ts";
 
-export function shouldRunSmokeTests(config: WPTesterConfig): boolean {
+export function shouldRunSmokeTests(config: WPTesterConfig | ResolvedWPTesterConfig): boolean {
   return (
     config.tests.wp === true ||
     config.tests.plugin !== undefined ||
@@ -38,7 +38,7 @@ export function shouldRunSmokeTests(config: WPTesterConfig): boolean {
  * @throws Error if no test files match configuration
  */
 export function selectTestFiles(
-  tests: Tests,
+  tests: Tests | ResolvedTests,
   test?: TestType | false
 ): string[] {
   if (test === false) {
@@ -131,7 +131,7 @@ export async function runSmokeTests(
     run: true,
     reporters,
     provide: {
-      config: config,
+      config,
     },
     // Spread parsed CLI options - these will override defaults but be overridden by explicit options above
     ...parsedArgs.options,
