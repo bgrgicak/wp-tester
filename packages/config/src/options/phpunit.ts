@@ -1,6 +1,6 @@
 import type { WPTesterConfig, PHPUnitConfig } from "../types";
 import * as clack from "@clack/prompts";
-import { getProjectDir } from "../config";
+import { getProjectDir } from "../path-utils";
 import {
   findPhpUnitConfig,
   findPhpUnitExecutable,

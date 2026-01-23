@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { readConfigFile, resolveConfig, normalizeConfigPath } from '../src/config';
+import { readConfigFile, resolveConfig, normalizeConfigPath } from '../src';
 import { mkdir, writeFile, rm } from 'fs/promises';
 import { join } from 'path';
 import * as os from 'os';

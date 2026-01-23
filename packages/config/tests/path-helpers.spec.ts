@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { getConfigPath, getConfigDir, getProjectDir } from '../src/config';
+import { getConfigPath, getConfigDir, getProjectDir } from '../src';
 import type { WPTesterConfig } from '../src/types';
 import * as path from 'path';
 

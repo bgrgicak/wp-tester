@@ -28,21 +28,37 @@ export type {
 
 // Functions
 export {
+  resolveConfig,
+} from "./config";
+
+export {
   readConfigFile,
   writeConfigFile,
-  configPath,
-  getSchemaPath,
   getDefaultConfig,
   isConfigWritable,
-  resolveConfig,
+} from "./config-file";
+
+export {
+  configPath,
+  getSchemaPath,
   getProjectDir,
   getConfigDir,
   getConfigPath,
   normalizeConfigPath,
   resolveAbsolute,
-  resolvePhpunitArgs,
   getWorkingDirectory,
-} from "./config";
+  toResolvedPath,
+} from "./path-utils";
+
+export {
+  resolvePhpunitArgs,
+  resolveTests,
+} from "./test-resolver";
+
+export {
+  expandEnvironments,
+  type ExpandedEnvironment,
+} from "./environment-resolver";
 
 export { getProjectRootMount } from './auto-mount';
 export { hostToVfs, vfsToHost } from './path-mappers';

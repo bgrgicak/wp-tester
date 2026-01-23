@@ -1,6 +1,6 @@
 import type { WPTesterConfig } from "../types";
 import * as clack from "@clack/prompts";
-import { getProjectDir } from "../config";
+import { getProjectDir } from "../path-utils";
 import { detectProjectType, type ProjectType } from "./project-type-detect";
 
 /**
