@@ -193,6 +193,41 @@ const COMPATIBILITY_TESTS: CompatibilityTestCase[] = [
     allowedFailures: 0,
   },
 
+  // ActivityPub plugin - WordPress plugin for ActivityPub protocol support
+  {
+    name: "ActivityPub Plugin",
+    repo: "Automattic/wordpress-activitypub",
+    branch: "trunk",
+    dirName: "wordpress-activitypub",
+    setupCommands: [
+      "composer install --no-interaction --prefer-dist --ignore-platform-reqs",
+    ],
+    config: {
+      projectType: "plugin",
+      tests: {
+        phpunit: {
+          phpunitPath: "vendor/bin/phpunit",
+          configPath: "phpunit.xml.dist",
+          testMode: "unit",
+        },
+      },
+      environments: [
+        {
+          name: "PHP latest + WP latest",
+          blueprint: {
+            preferredVersions: {
+              php: "latest",
+              wp: "latest",
+            },
+          },
+        },
+      ],
+      reporters: {},
+    },
+    expectedMinTests: 140,
+    allowedFailures: 10,
+  },
+
   // WordPress Core - Tests the framework against WordPress's own test suite
   {
     name: "WordPress Core",
