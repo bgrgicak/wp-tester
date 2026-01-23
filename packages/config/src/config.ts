@@ -7,6 +7,7 @@ import { join, dirname, resolve, isAbsolute } from "path";
 import { fileURLToPath } from "url";
 import { getProjectRootMount } from "./auto-mount";
 import { detectProjectType } from "./options/project-type-detect";
+import { resolveBootstrapPath } from './options/phpunit-detect';
 
 /**
  * Internal interface for expanded environments with resolved version arrays.
@@ -375,7 +376,7 @@ async function expandEnvironments(
  * @param projectDir - Project directory for resolving relative paths
  * @returns Resolved tests configuration
  */
-function resolveTests(tests: Tests, projectDir: string): ResolvedTests {
+async function resolveTests(tests: Tests, projectDir: string): Promise<ResolvedTests> {
   // If no PHPUnit config, return tests as-is (but explicitly typed)
   if (!tests.phpunit) {
     return {
@@ -388,19 +389,21 @@ function resolveTests(tests: Tests, projectDir: string): ResolvedTests {
 
   // Resolve PHPUnit config with absolute paths and default testMode
   const phpunit = tests.phpunit;
+  const resolvedConfigPath = resolveAbsolute(phpunit.configPath, projectDir);
+
+  // Resolve bootstrap path using centralized logic
+  const bootstrapPath = await resolveBootstrapPath(
+    resolvedConfigPath,
+    projectDir,
+    phpunit.bootstrapPath
+  );
+
   const resolvedPhpunit: ResolvedPHPUnitConfig = {
     phpunitPath: resolveAbsolute(phpunit.phpunitPath, projectDir),
-    configPath: resolveAbsolute(phpunit.configPath, projectDir),
+    configPath: resolvedConfigPath,
     testMode: phpunit.testMode ?? "unit",
+    bootstrapPath: bootstrapPath ?? undefined,
   };
-
-  // Add optional bootstrapPath if present
-  if (phpunit.bootstrapPath) {
-    resolvedPhpunit.bootstrapPath = resolveAbsolute(
-      phpunit.bootstrapPath,
-      projectDir
-    );
-  }
 
   // Preserve phpunitArgs if present
   if (phpunit.phpunitArgs) {
@@ -593,7 +596,7 @@ export async function resolveConfig(
   );
 
   // Resolve PHPUnit paths to absolute paths and ensure testMode has a default
-  const resolvedTests: ResolvedTests = resolveTests(
+  const resolvedTests: ResolvedTests = await resolveTests(
     resolvedConfig.tests,
     projectDir
   );

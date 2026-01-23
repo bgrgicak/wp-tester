@@ -50,4 +50,4 @@ export type { ProjectType } from './options/project-type-detect';
 export { optionNames, optionMap, setupOptions, type OptionName, type ConfigOption, type ConfigOptionContext } from './options/index';
 export { smokeTestsOption } from './options/smoke-tests';
 export { phpunitOption } from './options/phpunit';
-export { findPhpUnitConfig, findPhpUnitExecutable, findPhpUnitBootstrap, parseBootstrapPath, detectPhpUnitConfig, type DetectedPHPUnitConfig } from './options/phpunit-detect';
+export { findPhpUnitConfig, findPhpUnitExecutable, parseBootstrapPath } from './options/phpunit-detect';
