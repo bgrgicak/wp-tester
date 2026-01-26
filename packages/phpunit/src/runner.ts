@@ -10,6 +10,7 @@ import type { Report } from "@wp-tester/results";
 import { EMPTY_REPORT, mergeReports, PHPUnitStreamingReporter, TeamCityParser } from "@wp-tester/results";
 import { startPlayground } from "@wp-tester/runtime";
 import { mountWordPressTestLibrary } from "./wordpress-test-lib";
+import { downloadWpCli, WP_CLI_VFS_PATH } from "./wp-cli-cache";
 import { access } from "fs/promises";
 
 export function shouldRunPhpunitTests(config: WPTesterConfig | ResolvedWPTesterConfig): boolean {
@@ -27,6 +28,12 @@ async function runPhpunitTestsForEnvironment(
   config: ResolvedWPTesterConfig,
   environment: ResolvedEnvironment,
 ): Promise<Report> {
+  const timingStart = performance.now();
+  const logTiming = (label: string, startTime: number) => {
+    const elapsed = (performance.now() - startTime).toFixed(0);
+    console.error(`[TIMING] ${label}: ${elapsed}ms`);
+  };
+
   const testMode = config.tests.phpunit!.testMode;
   let environmentWithMount: ResolvedEnvironment = {
     ...environment,
@@ -35,19 +42,42 @@ async function runPhpunitTestsForEnvironment(
   // Prepare environment with WordPress test library for unit tests only
   // Integration tests use standard WordPress installation via wp-load.php
   if (testMode === "unit") {
+    const mountStart = performance.now();
     environmentWithMount = await mountWordPressTestLibrary(environment);
+    logTiming("mountWordPressTestLibrary", mountStart);
   }
 
+  // Download and cache wp-cli.phar locally to avoid re-downloading on every run
+  const wpCliStart = performance.now();
+  const wpCliPath = await downloadWpCli();
+  logTiming("downloadWpCli", wpCliStart);
+
+  // Add wp-cli.phar as a mount so Playground doesn't need to download it
+  environmentWithMount = {
+    ...environmentWithMount,
+    mounts: [
+      ...environmentWithMount.mounts,
+      {
+        hostPath: wpCliPath,
+        vfsPath: WP_CLI_VFS_PATH,
+      },
+    ],
+  };
+
   // Start playground with all mounts and steps including test library initialization
+  const playgroundStart = performance.now();
   const runtime = await startPlayground(environmentWithMount);
+  logTiming("startPlayground", playgroundStart);
   const playground = runtime.playground;
 
   // Configure PHP error handling for PHPUnit compatibility
   // - html_errors=0: PHPUnit needs plain text errors, not HTML
   // Note: display_errors is left enabled so test failures show useful output
+  const phpConfigStart = performance.now();
   await setPhpIniEntries(playground, {
     html_errors: "0",
   });
+  logTiming("setPhpIniEntries", phpConfigStart);
 
   // Remove Playground's error handler file to allow PHPUnit to register its own
   // Playground registers an error handler in /internal/shared/preload/error-handler.php
@@ -174,6 +204,8 @@ async function runPhpunitTestsForEnvironment(
     const parser = TeamCityParser.withReporter(reporter);
 
     // Run PHPUnit tests
+    logTiming("Pre-PHPUnit setup total", timingStart);
+    const phpunitStart = performance.now();
     const result = await playground.cli(cliArgs, {
       env: environmentWithMount.env,
     });
@@ -205,14 +237,15 @@ async function runPhpunitTestsForEnvironment(
             // Try to parse as TeamCity format first
             parser.write(text);
 
-            // If streaming is disabled, also write non-TeamCity lines to stderr
-            // This ensures error messages still appear
-            if (!useStreaming) {
-              const lines = text.split("\n");
-              for (const line of lines) {
-                if (!line.trim().startsWith("##teamcity[")) {
-                  process.stderr.write(line + "\n");
-                }
+            // Always pass through timing logs
+            const lines = text.split("\n");
+            for (const line of lines) {
+              if (line.includes("[PHP TIMING]") || line.includes("[PHP INSTALL TIMING]")) {
+                process.stderr.write(line + "\n");
+              } else if (!useStreaming && !line.trim().startsWith("##teamcity[")) {
+                // If streaming is disabled, also write non-TeamCity lines to stderr
+                // This ensures error messages still appear
+                process.stderr.write(line + "\n");
               }
             }
           },
@@ -224,6 +257,8 @@ async function runPhpunitTestsForEnvironment(
     ]);
 
     const exitCode = await result.exitCode;
+    logTiming("PHPUnit CLI execution", phpunitStart);
+    logTiming("Total test run", timingStart);
 
     // PHPUnit outputs errors to stdout, not stderr, so we need to check both
     // Combine both streams to ensure we capture all output including "No tests executed!"

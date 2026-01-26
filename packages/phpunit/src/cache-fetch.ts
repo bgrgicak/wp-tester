@@ -35,13 +35,137 @@ export interface CacheFetchOptions {
    * - Positive number: cache expires after that many milliseconds
    * - 0 (CACHE_FOREVER): cache never expires
    * - -1 (CACHE_DISABLED): always re-download, no caching
+   *
+   * Ignored when useEtagValidation is true.
    */
   cacheExpiration?: number;
+
+  /**
+   * Use HTTP ETag/Last-Modified headers for cache validation.
+   * When true, makes a conditional request to check if the remote file has changed.
+   * Only re-downloads if the server returns a new version (ignores cacheExpiration).
+   * Falls back to cached file if the server is unreachable.
+   */
+  useEtagValidation?: boolean;
 
   /**
    * Maximum number of retry attempts
    */
   maxRetries?: number;
+}
+
+interface CacheMetadata {
+  etag?: string;
+  lastModified?: string;
+  contentLength?: number;
+}
+
+/**
+ * Read cache metadata (ETag, Last-Modified) from file
+ */
+function readCacheMetadata(metadataPath: string): CacheMetadata | null {
+  try {
+    if (fs.existsSync(metadataPath)) {
+      const content = fs.readFileSync(metadataPath, 'utf-8');
+      return JSON.parse(content) as CacheMetadata;
+    }
+  } catch {
+    // Ignore parse errors, treat as no metadata
+  }
+  return null;
+}
+
+/**
+ * Write cache metadata to file
+ */
+function writeCacheMetadata(metadataPath: string, metadata: CacheMetadata): void {
+  fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+}
+
+/**
+ * Check if remote file has changed using HEAD request.
+ * Compares Content-Length as a simple validation when ETag/Last-Modified aren't available.
+ * Returns: { changed: false } if not modified, { changed: true } if modified
+ */
+function checkRemoteChanged(
+  url: string,
+  metadata: CacheMetadata
+): Promise<{ changed: boolean }> {
+  return new Promise((resolve) => {
+    const headers: Record<string, string> = { 'User-Agent': 'wp-tester' };
+
+    // Use conditional headers if available
+    if (metadata.etag) {
+      headers['If-None-Match'] = metadata.etag;
+    }
+    if (metadata.lastModified) {
+      headers['If-Modified-Since'] = metadata.lastModified;
+    }
+
+    // Use HEAD request to avoid downloading the file just to check
+    const urlObj = new URL(url);
+    const options = {
+      hostname: urlObj.hostname,
+      path: urlObj.pathname + urlObj.search,
+      method: 'HEAD',
+      headers,
+    };
+
+    const req = https.request(options, (response) => {
+      // Handle redirects
+      if (response.statusCode === 301 || response.statusCode === 302) {
+        const redirectUrl = response.headers.location;
+        if (redirectUrl) {
+          checkRemoteChanged(redirectUrl, metadata).then(resolve);
+          return;
+        }
+      }
+
+      if (response.statusCode === 304) {
+        // Not modified - cached version is still valid
+        resolve({ changed: false });
+      } else if (response.statusCode === 200) {
+        // Check Content-Length if we have it stored
+        if (metadata.contentLength !== undefined) {
+          const remoteLength = parseInt(response.headers['content-length'] || '0', 10);
+          if (remoteLength === metadata.contentLength) {
+            // Same size - assume not changed
+            resolve({ changed: false });
+            return;
+          }
+        }
+        // Modified or no Content-Length to compare
+        resolve({ changed: true });
+      } else {
+        // Other status codes - assume not changed to be safe
+        resolve({ changed: false });
+      }
+    });
+
+    req.on('error', () => {
+      // Network error - fall back to cached version
+      resolve({ changed: false });
+    });
+
+    req.end();
+  });
+}
+
+/**
+ * Extract cache metadata from response headers
+ */
+function extractMetadata(response: import('http').IncomingMessage): CacheMetadata {
+  const metadata: CacheMetadata = {};
+  if (response.headers.etag) {
+    metadata.etag = response.headers.etag;
+  }
+  if (response.headers['last-modified']) {
+    metadata.lastModified = response.headers['last-modified'];
+  }
+  if (response.headers['content-length']) {
+    metadata.contentLength = parseInt(response.headers['content-length'], 10);
+  }
+  return metadata;
 }
 
 /**
@@ -93,14 +217,67 @@ export async function cacheFetch(options: CacheFetchOptions): Promise<string> {
     cacheKey,
     url,
     cacheExpiration = CACHE_1_DAY,
+    useEtagValidation = false,
     maxRetries = 1,
   } = options;
 
   const cacheDir = path.join(baseCacheDir, cacheKey);
   const cacheFilePath = path.join(cacheDir, 'download');
+  const metadataPath = path.join(cacheDir, 'metadata.json');
 
-  // Check if cached file exists and is still valid
-  if (fs.existsSync(cacheFilePath)) {
+  // ETag/Content-Length based validation: check if remote has changed
+  if (useEtagValidation && fs.existsSync(cacheFilePath)) {
+    const metadata = readCacheMetadata(metadataPath);
+    const localStats = fs.statSync(cacheFilePath);
+
+    // If we have metadata with contentLength, validate local file size matches
+    if (metadata?.contentLength !== undefined && localStats.size === metadata.contentLength) {
+      // File size matches - assume file is still valid (no network request needed)
+      try {
+        if (url.endsWith('.zip')) {
+          validateZipFile(cacheFilePath);
+        }
+        return cacheFilePath;
+      } catch {
+        // Cached file is corrupted, will re-download below
+      }
+    } else if (metadata && (metadata.etag || metadata.lastModified)) {
+      // Have ETag/Last-Modified but no content length - make HEAD request to check
+      const result = await checkRemoteChanged(url, metadata);
+
+      if (!result.changed) {
+        // File hasn't changed, validate and return cached version
+        try {
+          if (url.endsWith('.zip')) {
+            validateZipFile(cacheFilePath);
+          }
+          // Update metadata with actual file size for future runs
+          metadata.contentLength = localStats.size;
+          writeCacheMetadata(metadataPath, metadata);
+          return cacheFilePath;
+        } catch {
+          // Cached file is corrupted, will re-download below
+        }
+      }
+      // If changed, fall through to download section below
+    } else if (localStats.size > 0) {
+      // No metadata but file exists with content - validate and return it
+      // Save the file size as metadata for future runs
+      try {
+        if (url.endsWith('.zip')) {
+          validateZipFile(cacheFilePath);
+        }
+        writeCacheMetadata(metadataPath, { contentLength: localStats.size });
+        return cacheFilePath;
+      } catch {
+        // Cached file is corrupted, delete it
+        fs.unlinkSync(cacheFilePath);
+      }
+    }
+  }
+
+  // Time-based cache validation (original behavior)
+  if (!useEtagValidation && fs.existsSync(cacheFilePath)) {
     // If cacheExpiration is -1 (CACHE_DISABLED), always re-download
     if (cacheExpiration === -1) {
       // Delete existing cache
@@ -147,7 +324,17 @@ export async function cacheFetch(options: CacheFetchOptions): Promise<string> {
   fs.mkdirSync(cacheDir, { recursive: true });
 
   try {
-    await downloadFileWithRetry(url, cacheFilePath, maxRetries);
+    const metadata = await downloadFileWithRetryAndMetadata(url, cacheFilePath, maxRetries);
+
+    // Save metadata for future validation
+    if (useEtagValidation) {
+      // Get actual file size if not in response headers
+      if (metadata.contentLength === undefined) {
+        const stats = fs.statSync(cacheFilePath);
+        metadata.contentLength = stats.size;
+      }
+      writeCacheMetadata(metadataPath, metadata);
+    }
 
     // Validate the downloaded file if it's a zip
     if (url.endsWith('.zip')) {
@@ -171,9 +358,9 @@ export async function cacheFetch(options: CacheFetchOptions): Promise<string> {
 }
 
 /**
- * Download a file from URL with redirect support
+ * Download a file from URL with redirect support, returning metadata
  */
-async function downloadFile(url: string, destPath: string): Promise<void> {
+async function downloadFile(url: string, destPath: string): Promise<CacheMetadata> {
   return new Promise((resolve, reject) => {
     https.get(url, { headers: { 'User-Agent': 'wp-tester' } }, (response) => {
       if (response.statusCode === 302 || response.statusCode === 301) {
@@ -194,26 +381,27 @@ async function downloadFile(url: string, destPath: string): Promise<void> {
 
       const fileStream = createWriteStream(destPath);
       pipeline(response, fileStream)
-        .then(() => resolve())
+        .then(() => {
+          resolve(extractMetadata(response));
+        })
         .catch(reject);
     }).on('error', reject);
   });
 }
 
 /**
- * Download file with retry logic and exponential backoff
+ * Download file with retry logic and exponential backoff, returning metadata
  */
-async function downloadFileWithRetry(
+async function downloadFileWithRetryAndMetadata(
   url: string,
   destPath: string,
   maxRetries: number
-): Promise<void> {
+): Promise<CacheMetadata> {
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      await downloadFile(url, destPath);
-      return; // Success
+      return await downloadFile(url, destPath);
     } catch (error) {
       lastError = error as Error;
 

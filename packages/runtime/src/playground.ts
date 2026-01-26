@@ -27,6 +27,12 @@ const playgroundStartMutex = new Mutex();
 export async function startPlayground(
   environment: ResolvedEnvironment,
 ): Promise<RunCLIServer> {
+  const timingStart = performance.now();
+  const logTiming = (label: string) => {
+    const elapsed = (performance.now() - timingStart).toFixed(0);
+    console.error(`[TIMING startPlayground] ${label}: ${elapsed}ms`);
+  };
+
   // Acquire mutex lock to prevent concurrent downloads
   return await playgroundStartMutex.runExclusive(async () => {
     // Configure mounts from environment
@@ -47,13 +53,12 @@ export async function startPlayground(
 
     // Blueprint should already be resolved by resolveConfig
     // Create a mutable copy to avoid modifying the original
+    // Note: wp-cli is NOT added to extraLibraries here because the runner
+    // mounts a cached wp-cli.phar directly to /tmp/wp-cli.phar, avoiding
+    // the need to download it on every test run
     const extraLibraries = environment.blueprint.extraLibraries
       ? [...environment.blueprint.extraLibraries]
       : [];
-
-    if (!extraLibraries.includes("wp-cli")) {
-      extraLibraries.push("wp-cli");
-    }
 
     const blueprint: BlueprintV1Declaration = {
       ...environment.blueprint,
@@ -66,17 +71,20 @@ export async function startPlayground(
       ...mountAfterInstall,
     ].some((m) => m.vfsPath === "/wordpress/" || m.vfsPath === "/wordpress");
 
+    logTiming('Before runCLI');
     const cli = await runCLI({
       command: "server",
       blueprint,
       mount: mountAfterInstall,
       "mount-before-install": mountsBeforeInstall,
-      quiet: true,
+      quiet: false, // Temporarily verbose to analyze remaining bottlenecks
       internalCookieStore: true,
       port: 0, // Use any available port to avoid EADDRINUSE errors
       skipWordPressSetup: isWordPressMounted,
     });
+    logTiming('After runCLI');
     await cli.playground.isReady();
+    logTiming('After isReady');
     return cli;
   });
 }
