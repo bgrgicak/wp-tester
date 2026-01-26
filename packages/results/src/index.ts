@@ -36,6 +36,14 @@ export {
   type ReporterFilterOptions,
 } from './streaming.js';
 export {
+  createInkRenderer,
+  type InkRenderer,
+  type TestState,
+  type SuiteState,
+  type FileState,
+  type ReporterState,
+} from './ink-ui.js';
+export {
   VitestStreamingBase,
 } from './vitest-streaming.js';
 export { applyDiffHighlighting, highlightStringDiff } from './diff-utils.js';
