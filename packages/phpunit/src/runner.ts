@@ -11,6 +11,8 @@ import { EMPTY_REPORT, mergeReports, PHPUnitStreamingReporter, TeamCityParser } 
 import { startPlayground } from "@wp-tester/runtime";
 import { mountWordPressTestLibrary } from "./wordpress-test-lib";
 import { downloadWpCli, WP_CLI_VFS_PATH } from "./wp-cli-cache";
+import { hasTestDbCache, restoreTestDbFromCache, saveTestDbToCache } from "./test-db-cache";
+import { resolveWordPressRelease } from "@wp-playground/wordpress";
 import { access } from "fs/promises";
 
 export function shouldRunPhpunitTests(config: WPTesterConfig | ResolvedWPTesterConfig): boolean {
@@ -97,6 +99,31 @@ async function runPhpunitTestsForEnvironment(
       WP_TESTS_DOMAIN: new URL(await playground.absoluteUrl).host,
     },
   });
+
+  // Check if we have a cached test database for this WordPress version
+  // If yes, restore it and skip install.php to save ~1.6 seconds
+  const wpRelease = await resolveWordPressRelease(environment.blueprint.preferredVersions.wp);
+  const wpVersion = wpRelease.version as string;
+  let usedCachedDb = false;
+
+  if (testMode === "unit") {
+    const dbCacheStart = performance.now();
+    if (hasTestDbCache(wpVersion)) {
+      const restored = await restoreTestDbFromCache(playground, wpVersion);
+      if (restored) {
+        usedCachedDb = true;
+        // Set environment variable to skip install.php
+        environmentWithMount = {
+          ...environmentWithMount,
+          env: {
+            ...environmentWithMount.env,
+            WP_TESTS_SKIP_INSTALL: "1",
+          },
+        };
+        logTiming("restoreTestDbFromCache", dbCacheStart);
+      }
+    }
+  }
 
   try {
     // Determine the plugin or theme being tested
@@ -367,6 +394,19 @@ async function runPhpunitTestsForEnvironment(
 
     // Update tool name with environment
     report.results.tool.name = `wp-tester-phpunit (${environment.name})`;
+
+    // Cache the test database after first successful run
+    // This allows subsequent runs to skip install.php (~1.6s savings)
+    if (testMode === "unit" && !usedCachedDb && hasReportedTests) {
+      const saveCacheStart = performance.now();
+      try {
+        await saveTestDbToCache(playground, wpVersion);
+        logTiming("saveTestDbToCache", saveCacheStart);
+      } catch (err) {
+        // Non-fatal - just log and continue
+        console.error(`Failed to cache test database: ${(err as Error).message}`);
+      }
+    }
 
     return report;
   } catch (error) {
