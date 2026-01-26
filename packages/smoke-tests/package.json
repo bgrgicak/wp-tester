@@ -1,6 +1,6 @@
 {
   "name": "@wp-tester/smoke-tests",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "WordPress smoke test suite for environment validation",
   "type": "module",
   "private": false,

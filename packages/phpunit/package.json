@@ -1,6 +1,6 @@
 {
   "name": "@wp-tester/phpunit",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "PHPUnit test runner for WordPress projects",
   "type": "module",
   "private": false,
