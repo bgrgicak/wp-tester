@@ -27,12 +27,6 @@ const playgroundStartMutex = new Mutex();
 export async function startPlayground(
   environment: ResolvedEnvironment,
 ): Promise<RunCLIServer> {
-  const timingStart = performance.now();
-  const logTiming = (label: string) => {
-    const elapsed = (performance.now() - timingStart).toFixed(0);
-    console.error(`[TIMING startPlayground] ${label}: ${elapsed}ms`);
-  };
-
   // Acquire mutex lock to prevent concurrent downloads
   return await playgroundStartMutex.runExclusive(async () => {
     // Configure mounts from environment
@@ -71,20 +65,17 @@ export async function startPlayground(
       ...mountAfterInstall,
     ].some((m) => m.vfsPath === "/wordpress/" || m.vfsPath === "/wordpress");
 
-    logTiming('Before runCLI');
     const cli = await runCLI({
       command: "server",
       blueprint,
       mount: mountAfterInstall,
       "mount-before-install": mountsBeforeInstall,
-      quiet: false, // Temporarily verbose to analyze remaining bottlenecks
+      quiet: true,
       internalCookieStore: true,
       port: 0, // Use any available port to avoid EADDRINUSE errors
       skipWordPressSetup: isWordPressMounted,
     });
-    logTiming('After runCLI');
     await cli.playground.isReady();
-    logTiming('After isReady');
     return cli;
   });
 }

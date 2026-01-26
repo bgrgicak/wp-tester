@@ -30,12 +30,6 @@ async function runPhpunitTestsForEnvironment(
   config: ResolvedWPTesterConfig,
   environment: ResolvedEnvironment,
 ): Promise<Report> {
-  const timingStart = performance.now();
-  const logTiming = (label: string, startTime: number) => {
-    const elapsed = (performance.now() - startTime).toFixed(0);
-    console.error(`[TIMING] ${label}: ${elapsed}ms`);
-  };
-
   const testMode = config.tests.phpunit!.testMode;
   let environmentWithMount: ResolvedEnvironment = {
     ...environment,
@@ -44,15 +38,11 @@ async function runPhpunitTestsForEnvironment(
   // Prepare environment with WordPress test library for unit tests only
   // Integration tests use standard WordPress installation via wp-load.php
   if (testMode === "unit") {
-    const mountStart = performance.now();
     environmentWithMount = await mountWordPressTestLibrary(environment);
-    logTiming("mountWordPressTestLibrary", mountStart);
   }
 
   // Download and cache wp-cli.phar locally to avoid re-downloading on every run
-  const wpCliStart = performance.now();
   const wpCliPath = await downloadWpCli();
-  logTiming("downloadWpCli", wpCliStart);
 
   // Add wp-cli.phar as a mount so Playground doesn't need to download it
   environmentWithMount = {
@@ -67,19 +57,15 @@ async function runPhpunitTestsForEnvironment(
   };
 
   // Start playground with all mounts and steps including test library initialization
-  const playgroundStart = performance.now();
   const runtime = await startPlayground(environmentWithMount);
-  logTiming("startPlayground", playgroundStart);
   const playground = runtime.playground;
 
   // Configure PHP error handling for PHPUnit compatibility
   // - html_errors=0: PHPUnit needs plain text errors, not HTML
   // Note: display_errors is left enabled so test failures show useful output
-  const phpConfigStart = performance.now();
   await setPhpIniEntries(playground, {
     html_errors: "0",
   });
-  logTiming("setPhpIniEntries", phpConfigStart);
 
   // Remove Playground's error handler file to allow PHPUnit to register its own
   // Playground registers an error handler in /internal/shared/preload/error-handler.php
@@ -107,7 +93,6 @@ async function runPhpunitTestsForEnvironment(
   let usedCachedDb = false;
 
   if (testMode === "unit") {
-    const dbCacheStart = performance.now();
     if (hasTestDbCache(wpVersion)) {
       const restored = await restoreTestDbFromCache(playground, wpVersion);
       if (restored) {
@@ -120,7 +105,6 @@ async function runPhpunitTestsForEnvironment(
             WP_TESTS_SKIP_INSTALL: "1",
           },
         };
-        logTiming("restoreTestDbFromCache", dbCacheStart);
       }
     }
   }
@@ -231,8 +215,6 @@ async function runPhpunitTestsForEnvironment(
     const parser = TeamCityParser.withReporter(reporter);
 
     // Run PHPUnit tests
-    logTiming("Pre-PHPUnit setup total", timingStart);
-    const phpunitStart = performance.now();
     const result = await playground.cli(cliArgs, {
       env: environmentWithMount.env,
     });
@@ -264,15 +246,14 @@ async function runPhpunitTestsForEnvironment(
             // Try to parse as TeamCity format first
             parser.write(text);
 
-            // Always pass through timing logs
-            const lines = text.split("\n");
-            for (const line of lines) {
-              if (line.includes("[PHP TIMING]") || line.includes("[PHP INSTALL TIMING]")) {
-                process.stderr.write(line + "\n");
-              } else if (!useStreaming && !line.trim().startsWith("##teamcity[")) {
-                // If streaming is disabled, also write non-TeamCity lines to stderr
-                // This ensures error messages still appear
-                process.stderr.write(line + "\n");
+            // Pass through non-TeamCity lines when streaming is disabled
+            // This ensures error messages still appear
+            if (!useStreaming) {
+              const lines = text.split("\n");
+              for (const line of lines) {
+                if (!line.trim().startsWith("##teamcity[")) {
+                  process.stderr.write(line + "\n");
+                }
               }
             }
           },
@@ -284,8 +265,6 @@ async function runPhpunitTestsForEnvironment(
     ]);
 
     const exitCode = await result.exitCode;
-    logTiming("PHPUnit CLI execution", phpunitStart);
-    logTiming("Total test run", timingStart);
 
     // PHPUnit outputs errors to stdout, not stderr, so we need to check both
     // Combine both streams to ensure we capture all output including "No tests executed!"
@@ -398,13 +377,10 @@ async function runPhpunitTestsForEnvironment(
     // Cache the test database after first successful run
     // This allows subsequent runs to skip install.php (~1.6s savings)
     if (testMode === "unit" && !usedCachedDb && hasReportedTests) {
-      const saveCacheStart = performance.now();
       try {
         await saveTestDbToCache(playground, wpVersion);
-        logTiming("saveTestDbToCache", saveCacheStart);
-      } catch (err) {
-        // Non-fatal - just log and continue
-        console.error(`Failed to cache test database: ${(err as Error).message}`);
+      } catch {
+        // Non-fatal - caching failure doesn't affect test results
       }
     }
 
