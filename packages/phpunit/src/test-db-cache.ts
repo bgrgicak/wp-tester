@@ -1,16 +1,14 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
+import type { RemoteAPI } from '@php-wasm/universal';
+import type { PlaygroundCliBlueprintV1Worker } from '@wp-playground/cli/blueprints-v1/worker-thread-v1';
+import type { PlaygroundCliBlueprintV2Worker } from '@wp-playground/cli/blueprints-v2/worker-thread-v2';
 
-/**
- * Interface for Playground-like objects that can read/write files
- */
-interface PlaygroundLike {
-  readFileAsBuffer(path: string): Promise<Uint8Array>;
-  writeFile(path: string, data: Uint8Array | string): Promise<void>;
-  isDir(path: string): Promise<boolean>;
-  mkdir(path: string): Promise<void>;
-}
+// TODO Remove once @wp-playground/cli exports this type
+type PlaygroundCliWorker =
+  | PlaygroundCliBlueprintV1Worker
+  | PlaygroundCliBlueprintV2Worker;
 
 /**
  * Path to the SQLite database file inside the Playground VFS
@@ -48,7 +46,7 @@ export function hasTestDbCache(wpVersion: string, baseCacheDir?: string): boolea
  * @param baseCacheDir - Optional base cache directory
  */
 export async function saveTestDbToCache(
-  playground: PlaygroundLike,
+  playground: RemoteAPI<PlaygroundCliWorker>,
   wpVersion: string,
   baseCacheDir?: string
 ): Promise<void> {
@@ -77,7 +75,7 @@ export async function saveTestDbToCache(
  * @returns true if database was restored, false if no cache exists
  */
 export async function restoreTestDbFromCache(
-  playground: PlaygroundLike,
+  playground: RemoteAPI<PlaygroundCliWorker>,
   wpVersion: string,
   baseCacheDir?: string
 ): Promise<boolean> {
