@@ -13,8 +13,8 @@ export const defaultWpCliPath = WP_CLI_VFS_PATH;
 /**
  * Global mutex to prevent concurrent WordPress Playground downloads.
  * Multiple parallel tests downloading the same WordPress version cause ENOENT errors
- * when trying to rename .zip.partial files. This mutex serializes the download phase
- * while allowing tests to run in parallel after the Playground is started.
+ * when trying to rename .zip.partial files. This mutex serializes the Playground
+ * startup while allowing wp-cli download to run outside the lock.
  */
 const playgroundStartMutex = new Mutex();
 
@@ -23,45 +23,34 @@ const playgroundStartMutex = new Mutex();
  * Expects environment to be already resolved (blueprint loaded, paths absolute).
  *
  * Uses a global mutex to prevent concurrent downloads that cause race conditions.
- * Tests can still run in parallel - only the initial Playground startup is serialized.
+ * wp-cli download runs outside the mutex since it has its own caching.
  */
 export async function startPlayground(
   environment: ResolvedEnvironment,
 ): Promise<RunCLIServer> {
-  // Acquire mutex lock to prevent concurrent downloads
+  // Download and cache wp-cli.phar locally before acquiring the mutex.
+  // This has its own file-based caching and is safe to call concurrently.
+  const wpCliHostPath = await downloadWpCli();
+
   return await playgroundStartMutex.runExclusive(async () => {
     // Configure mounts from environment
-    const mountsBeforeInstall = [];
-    const mountAfterInstall = [];
+    const mountsBeforeInstall = environment.mounts
+      .filter((m) => m.beforeInstall === true)
+      .map((m) => ({ hostPath: m.hostPath, vfsPath: m.vfsPath }));
 
-    // Separate mounts into beforeInstall and afterInstall
-    mountsBeforeInstall.push(
-      ...environment.mounts
-        .filter((m) => m.beforeInstall === true)
-        .map((m) => ({ hostPath: m.hostPath, vfsPath: m.vfsPath })),
-    );
-    mountAfterInstall.push(
-      ...environment.mounts
-        .filter((m) => m.beforeInstall !== true)
-        .map((m) => ({ hostPath: m.hostPath, vfsPath: m.vfsPath })),
-    );
+    const mountAfterInstall = environment.mounts
+      .filter((m) => m.beforeInstall !== true)
+      .map((m) => ({ hostPath: m.hostPath, vfsPath: m.vfsPath }));
 
-    // Download and cache wp-cli.phar locally
-    // This avoids re-downloading on every Playground startup
-    const wpCliHostPath = await downloadWpCli();
-
-    // Add wp-cli.phar as a mount so Playground has access to it
     mountAfterInstall.push({
       hostPath: wpCliHostPath,
       vfsPath: WP_CLI_VFS_PATH,
     });
 
-    // Blueprint should already be resolved by resolveConfig
     const blueprint: BlueprintV1Declaration = {
       ...environment.blueprint,
     };
 
-    // Check if /wordpress/ is being mounted
     const isWordPressMounted = [
       ...mountsBeforeInstall,
       ...mountAfterInstall,
