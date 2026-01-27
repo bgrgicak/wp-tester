@@ -1,4 +1,4 @@
-import { cacheFetch } from './cache-fetch';
+import { cacheFetch } from './cache-fetch.js';
 
 /**
  * URL for wp-cli.phar download

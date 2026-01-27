@@ -116,7 +116,7 @@ function checkRemoteChanged(
       if (response.statusCode === 301 || response.statusCode === 302) {
         const redirectUrl = response.headers.location;
         if (redirectUrl) {
-          checkRemoteChanged(redirectUrl, metadata).then(resolve);
+          void checkRemoteChanged(redirectUrl, metadata).then(resolve);
           return;
         }
       }

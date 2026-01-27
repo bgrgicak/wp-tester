@@ -10,7 +10,6 @@ import type { Report } from "@wp-tester/results";
 import { EMPTY_REPORT, mergeReports, PHPUnitStreamingReporter, TeamCityParser } from "@wp-tester/results";
 import { startPlayground } from "@wp-tester/runtime";
 import { mountWordPressTestLibrary } from "./wordpress-test-lib";
-import { downloadWpCli, WP_CLI_VFS_PATH } from "./wp-cli-cache";
 import { hasTestDbCache, restoreTestDbFromCache, saveTestDbToCache } from "./test-db-cache";
 import { resolveWordPressRelease } from "@wp-playground/wordpress";
 import { access } from "fs/promises";
@@ -41,22 +40,8 @@ async function runPhpunitTestsForEnvironment(
     environmentWithMount = await mountWordPressTestLibrary(environment);
   }
 
-  // Download and cache wp-cli.phar locally to avoid re-downloading on every run
-  const wpCliPath = await downloadWpCli();
-
-  // Add wp-cli.phar as a mount so Playground doesn't need to download it
-  environmentWithMount = {
-    ...environmentWithMount,
-    mounts: [
-      ...environmentWithMount.mounts,
-      {
-        hostPath: wpCliPath,
-        vfsPath: WP_CLI_VFS_PATH,
-      },
-    ],
-  };
-
   // Start playground with all mounts and steps including test library initialization
+  // Note: wp-cli.phar is automatically mounted by startPlayground
   const runtime = await startPlayground(environmentWithMount);
   const playground = runtime.playground;
 

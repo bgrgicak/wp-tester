@@ -6,8 +6,9 @@ import { runCLI, type RunCLIServer } from "@wp-playground/cli";
 import type { ResolvedEnvironment } from "@wp-tester/config";
 import type { BlueprintV1Declaration } from "@wp-playground/blueprints";
 import { Mutex } from "async-mutex";
+import { downloadWpCli, WP_CLI_VFS_PATH } from "./wp-cli-cache.js";
 
-export const defaultWpCliPath = "/tmp/wp-cli.phar";
+export const defaultWpCliPath = WP_CLI_VFS_PATH;
 
 /**
  * Global mutex to prevent concurrent WordPress Playground downloads.
@@ -45,18 +46,19 @@ export async function startPlayground(
         .map((m) => ({ hostPath: m.hostPath, vfsPath: m.vfsPath })),
     );
 
-    // Blueprint should already be resolved by resolveConfig
-    // Create a mutable copy to avoid modifying the original
-    // Note: wp-cli is NOT added to extraLibraries here because the runner
-    // mounts a cached wp-cli.phar directly to /tmp/wp-cli.phar, avoiding
-    // the need to download it on every test run
-    const extraLibraries = environment.blueprint.extraLibraries
-      ? [...environment.blueprint.extraLibraries]
-      : [];
+    // Download and cache wp-cli.phar locally
+    // This avoids re-downloading on every Playground startup
+    const wpCliHostPath = await downloadWpCli();
 
+    // Add wp-cli.phar as a mount so Playground has access to it
+    mountAfterInstall.push({
+      hostPath: wpCliHostPath,
+      vfsPath: WP_CLI_VFS_PATH,
+    });
+
+    // Blueprint should already be resolved by resolveConfig
     const blueprint: BlueprintV1Declaration = {
       ...environment.blueprint,
-      extraLibraries,
     };
 
     // Check if /wordpress/ is being mounted

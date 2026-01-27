@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
-import { cacheFetch, CACHE_DISABLED, CACHE_FOREVER } from '../../src/cache-fetch';
+import { cacheFetch, CACHE_DISABLED, CACHE_FOREVER } from '../../src/cache-fetch.js';
 
 describe('cacheFetch', () => {
   let testCacheDir: string;
