@@ -12,9 +12,8 @@ export const defaultWpCliPath = "/tmp/wp-cli.phar";
 /**
  * Global mutex to prevent concurrent WordPress Playground downloads.
  * Multiple parallel tests downloading the same WordPress version cause ENOENT errors
- * when trying to rename .zip.partial files. This mutex serializes only the runCLI call
- * (which triggers downloads) while allowing Playground boot (isReady) to run in
- * parallel across tests.
+ * when trying to rename .zip.partial files. This mutex serializes the download phase
+ * while allowing tests to run in parallel after the Playground is started.
  */
 const playgroundStartMutex = new Mutex();
 
@@ -22,46 +21,52 @@ const playgroundStartMutex = new Mutex();
  * Start a WordPress Playground server from an Environment configuration.
  * Expects environment to be already resolved (blueprint loaded, paths absolute).
  *
- * Uses a global mutex around runCLI() to prevent concurrent download race conditions.
- * Playground boot (isReady) runs outside the mutex for parallel execution.
+ * Uses a global mutex to prevent concurrent downloads that cause race conditions.
+ * Tests can still run in parallel - only the initial Playground startup is serialized.
  */
 export async function startPlayground(
   environment: ResolvedEnvironment,
 ): Promise<RunCLIServer> {
-  // Configure mounts from environment
-  const mountsBeforeInstall = environment.mounts
-    .filter((m) => m.beforeInstall === true)
-    .map((m) => ({ hostPath: m.hostPath, vfsPath: m.vfsPath }));
+  // Acquire mutex lock to prevent concurrent downloads
+  return await playgroundStartMutex.runExclusive(async () => {
+    // Configure mounts from environment
+    const mountsBeforeInstall = [];
+    const mountAfterInstall = [];
 
-  const mountAfterInstall = environment.mounts
-    .filter((m) => m.beforeInstall !== true)
-    .map((m) => ({ hostPath: m.hostPath, vfsPath: m.vfsPath }));
+    // Separate mounts into beforeInstall and afterInstall
+    mountsBeforeInstall.push(
+      ...environment.mounts
+        .filter((m) => m.beforeInstall === true)
+        .map((m) => ({ hostPath: m.hostPath, vfsPath: m.vfsPath })),
+    );
+    mountAfterInstall.push(
+      ...environment.mounts
+        .filter((m) => m.beforeInstall !== true)
+        .map((m) => ({ hostPath: m.hostPath, vfsPath: m.vfsPath })),
+    );
 
-  // Blueprint should already be resolved by resolveConfig
-  // Create a mutable copy to avoid modifying the original
-  const extraLibraries = environment.blueprint.extraLibraries
-    ? [...environment.blueprint.extraLibraries]
-    : [];
+    // Blueprint should already be resolved by resolveConfig
+    // Create a mutable copy to avoid modifying the original
+    const extraLibraries = environment.blueprint.extraLibraries
+      ? [...environment.blueprint.extraLibraries]
+      : [];
 
-  if (!extraLibraries.includes("wp-cli")) {
-    extraLibraries.push("wp-cli");
-  }
+    if (!extraLibraries.includes("wp-cli")) {
+      extraLibraries.push("wp-cli");
+    }
 
-  const blueprint: BlueprintV1Declaration = {
-    ...environment.blueprint,
-    extraLibraries,
-  };
+    const blueprint: BlueprintV1Declaration = {
+      ...environment.blueprint,
+      extraLibraries,
+    };
 
-  // Check if /wordpress/ is being mounted
-  const isWordPressMounted = [
-    ...mountsBeforeInstall,
-    ...mountAfterInstall,
-  ].some((m) => m.vfsPath === "/wordpress/" || m.vfsPath === "/wordpress");
+    // Check if /wordpress/ is being mounted
+    const isWordPressMounted = [
+      ...mountsBeforeInstall,
+      ...mountAfterInstall,
+    ].some((m) => m.vfsPath === "/wordpress/" || m.vfsPath === "/wordpress");
 
-  // Only serialize runCLI() which triggers WordPress .zip downloads.
-  // This prevents .zip.partial rename race conditions.
-  const cli = await playgroundStartMutex.runExclusive(() =>
-    runCLI({
+    const cli = await runCLI({
       command: "server",
       blueprint,
       mount: mountAfterInstall,
@@ -70,14 +75,10 @@ export async function startPlayground(
       internalCookieStore: true,
       port: 0, // Use any available port to avoid EADDRINUSE errors
       skipWordPressSetup: isWordPressMounted,
-    }),
-  );
-
-  // Wait for Playground to be ready OUTSIDE the mutex.
-  // This is the expensive part (WordPress install, plugin activation, etc.)
-  // and can safely run in parallel across tests.
-  await cli.playground.isReady();
-  return cli;
+    });
+    await cli.playground.isReady();
+    return cli;
+  });
 }
 
 /**
