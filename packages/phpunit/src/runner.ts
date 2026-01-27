@@ -41,7 +41,6 @@ async function runPhpunitTestsForEnvironment(
   }
 
   // Start playground with all mounts and steps including test library initialization
-  // Note: wp-cli.phar is automatically mounted by startPlayground
   const runtime = await startPlayground(environmentWithMount);
   const playground = runtime.playground;
 

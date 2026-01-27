@@ -3,7 +3,7 @@ import * as path from 'node:path';
 import * as os from 'node:os';
 import * as crypto from 'node:crypto';
 import * as yauzl from 'yauzl';
-import { cacheFetch } from '@wp-tester/runtime';
+import { cacheFetch } from './cache-fetch';
 import type { ResolvedEnvironment } from '@wp-tester/config';
 import { resolveWordPressRelease } from '@wp-playground/wordpress';
 import type { StepDefinition } from '@wp-playground/blueprints';
