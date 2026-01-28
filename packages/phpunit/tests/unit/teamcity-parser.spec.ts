@@ -171,6 +171,79 @@ describe("TeamCityParser", () => {
       expect(passEvents).toHaveLength(2);
       expect(failEvents).toHaveLength(1);
     });
+
+    it("should handle tests with flowId for parallel execution", () => {
+      const output = `
+##teamcity[testSuiteStarted name='Suite' flowId='1']
+##teamcity[testSuiteStarted name='Suite' flowId='2']
+##teamcity[testStarted name='testMethod' flowId='1']
+##teamcity[testStarted name='testMethod' flowId='2']
+##teamcity[testFinished name='testMethod' duration='100' flowId='1']
+##teamcity[testFinished name='testMethod' duration='200' flowId='2']
+##teamcity[testSuiteFinished name='Suite' flowId='1']
+##teamcity[testSuiteFinished name='Suite' flowId='2']
+`;
+      const events = parseTeamCityOutput(output);
+
+      // Should have: 2x (suite:start, test:start, test:pass, suite:end)
+      const startEvents = events.filter((e) => e.type === "test:start");
+      const passEvents = events.filter((e) => e.type === "test:pass");
+
+      expect(startEvents).toHaveLength(2);
+      expect(passEvents).toHaveLength(2);
+
+      // Both should be for the same test name
+      expect((startEvents[0] as { name: string }).name).toBe("testMethod");
+      expect((startEvents[1] as { name: string }).name).toBe("testMethod");
+
+      // But with different durations, showing they're different test instances
+      expect((passEvents[0] as { duration: number }).duration).toBe(100);
+      expect((passEvents[1] as { duration: number }).duration).toBe(200);
+    });
+
+    it("should handle test failures with flowId", () => {
+      const output = `
+##teamcity[testSuiteStarted name='Suite' flowId='1']
+##teamcity[testSuiteStarted name='Suite' flowId='2']
+##teamcity[testStarted name='testMethod' flowId='1']
+##teamcity[testStarted name='testMethod' flowId='2']
+##teamcity[testFailed name='testMethod' message='Assertion failed' details='Stack trace 1' flowId='1']
+##teamcity[testFinished name='testMethod' duration='50' flowId='1']
+##teamcity[testFailed name='testMethod' message='Assertion failed' details='Stack trace 2' flowId='2']
+##teamcity[testFinished name='testMethod' duration='75' flowId='2']
+##teamcity[testSuiteFinished name='Suite' flowId='1']
+##teamcity[testSuiteFinished name='Suite' flowId='2']
+`;
+      const events = parseTeamCityOutput(output);
+
+      const failEvents = events.filter((e) => e.type === "test:fail");
+
+      expect(failEvents).toHaveLength(2);
+      expect((failEvents[0] as { trace?: string }).trace).toBe("Stack trace 1");
+      expect((failEvents[1] as { trace?: string }).trace).toBe("Stack trace 2");
+    });
+
+    it("should handle skipped tests with flowId", () => {
+      const output = `
+##teamcity[testSuiteStarted name='Suite' flowId='1']
+##teamcity[testSuiteStarted name='Suite' flowId='2']
+##teamcity[testStarted name='testMethod' flowId='1']
+##teamcity[testStarted name='testMethod' flowId='2']
+##teamcity[testIgnored name='testMethod' message='Not implemented' flowId='1']
+##teamcity[testFinished name='testMethod' flowId='1']
+##teamcity[testIgnored name='testMethod' message='Skipped' flowId='2']
+##teamcity[testFinished name='testMethod' flowId='2']
+##teamcity[testSuiteFinished name='Suite' flowId='1']
+##teamcity[testSuiteFinished name='Suite' flowId='2']
+`;
+      const events = parseTeamCityOutput(output);
+
+      const skipEvents = events.filter((e) => e.type === "test:skip");
+
+      expect(skipEvents).toHaveLength(2);
+      expect((skipEvents[0] as { message?: string }).message).toBe("Not implemented");
+      expect((skipEvents[1] as { message?: string }).message).toBe("Skipped");
+    });
   });
 
   describe("TeamCityParser streaming", () => {

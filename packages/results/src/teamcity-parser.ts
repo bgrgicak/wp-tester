@@ -176,11 +176,22 @@ export class TeamCityParser {
   }
 
   /**
+   * Get a unique identifier for a test from its attributes.
+   * Uses flowId when present (for parallel test execution), otherwise falls back to name.
+   */
+  private getTestIdentifier(attributes: Record<string, string>): string {
+    const flowId = attributes.flowId;
+    const name = attributes.name || "Unknown";
+    return flowId ? `${flowId}:${name}` : name;
+  }
+
+  /**
    * Handle a parsed TeamCity message
    */
   private handleMessage(message: TeamCityMessage): void {
     const { type, attributes } = message;
     const name = attributes.name || "Unknown";
+    const identifier = this.getTestIdentifier(attributes);
 
     switch (type) {
       case "testSuiteStarted":
@@ -202,7 +213,7 @@ export class TeamCityParser {
         break;
 
       case "testStarted":
-        this.testStartTimes.set(name, Date.now());
+        this.testStartTimes.set(identifier, Date.now());
         this.emit({
           type: "test:start",
           name,
@@ -213,19 +224,19 @@ export class TeamCityParser {
       case "testFinished": {
         // In TeamCity format, testFailed/testIgnored is followed by testFinished
         // Skip if we already reported this test as failed/skipped
-        if (this.completedTests.has(name)) {
-          this.completedTests.delete(name);
+        if (this.completedTests.has(identifier)) {
+          this.completedTests.delete(identifier);
           break;
         }
 
-        const startTime = this.testStartTimes.get(name);
+        const startTime = this.testStartTimes.get(identifier);
         const duration = attributes.duration
           ? parseInt(attributes.duration, 10)
           : startTime
             ? Date.now() - startTime
             : 0;
 
-        this.testStartTimes.delete(name);
+        this.testStartTimes.delete(identifier);
 
         this.emit({
           type: "test:pass",
@@ -237,15 +248,15 @@ export class TeamCityParser {
       }
 
       case "testFailed": {
-        const startTime = this.testStartTimes.get(name);
+        const startTime = this.testStartTimes.get(identifier);
         const duration = attributes.duration
           ? parseInt(attributes.duration, 10)
           : startTime
             ? Date.now() - startTime
             : 0;
 
-        this.testStartTimes.delete(name);
-        this.completedTests.add(name); // Mark as completed to skip testFinished
+        this.testStartTimes.delete(identifier);
+        this.completedTests.add(identifier); // Mark as completed to skip testFinished
 
         // Build trace with comparison diff if available
         let trace = attributes.details || '';
@@ -283,8 +294,8 @@ export class TeamCityParser {
       }
 
       case "testIgnored": {
-        this.testStartTimes.delete(name);
-        this.completedTests.add(name); // Mark as completed to skip testFinished
+        this.testStartTimes.delete(identifier);
+        this.completedTests.add(identifier); // Mark as completed to skip testFinished
         this.emit({
           type: "test:skip",
           name,
