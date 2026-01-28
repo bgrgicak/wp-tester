@@ -201,6 +201,7 @@ async function downloadFile(url: string, destPath: string, timeoutMs = 30_000): 
     req.on('timeout', () => {
       req.destroy(new Error(`Download timed out after ${timeoutMs}ms: ${url}`));
     });
+  });
 }
 
 /**
