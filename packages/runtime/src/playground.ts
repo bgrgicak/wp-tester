@@ -38,7 +38,8 @@ export async function startPlayground(
   const wpCliHostPath = await downloadWpCli();
 
   // Get or create a mutex for this specific WordPress version
-  const wpVersion = environment.blueprint.preferredVersions.wp;
+  // Normalize to "latest" if undefined/empty to ensure consistent mutex sharing
+  const wpVersion = environment.blueprint.preferredVersions.wp || "latest";
   if (!playgroundStartMutexes.has(wpVersion)) {
     playgroundStartMutexes.set(wpVersion, new Mutex());
   }
@@ -81,7 +82,19 @@ export async function startPlayground(
       port: 0, // Use any available port to avoid EADDRINUSE errors
       skipWordPressSetup: isWordPressMounted,
     });
-    await cli.playground.isReady();
+
+    // Wait for Playground to be ready with a timeout (3 minutes)
+    // This prevents indefinite hangs in CI environments
+    const PLAYGROUND_READY_TIMEOUT = 180_000;
+    const playgroundReadyPromise = cli.playground.isReady();
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`Playground failed to become ready after ${PLAYGROUND_READY_TIMEOUT}ms`)),
+        PLAYGROUND_READY_TIMEOUT
+      )
+    );
+
+    await Promise.race([playgroundReadyPromise, timeoutPromise]);
     return cli;
   });
 }
