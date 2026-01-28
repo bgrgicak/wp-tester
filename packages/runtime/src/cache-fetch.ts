@@ -173,9 +173,9 @@ export async function cacheFetch(options: CacheFetchOptions): Promise<string> {
 /**
  * Download a file from URL with redirect support
  */
-async function downloadFile(url: string, destPath: string): Promise<void> {
+async function downloadFile(url: string, destPath: string, timeoutMs = 30_000): Promise<void> {
   return new Promise((resolve, reject) => {
-    https.get(url, { headers: { 'User-Agent': 'wp-tester' } }, (response) => {
+    const req = https.get(url, { headers: { 'User-Agent': 'wp-tester' }, timeout: timeoutMs }, (response) => {
       if (response.statusCode === 302 || response.statusCode === 301) {
         // Follow redirect
         const redirectUrl = response.headers.location;
@@ -183,7 +183,7 @@ async function downloadFile(url: string, destPath: string): Promise<void> {
           reject(new Error('Redirect without location header'));
           return;
         }
-        downloadFile(redirectUrl, destPath).then(resolve).catch(reject);
+        downloadFile(redirectUrl, destPath, timeoutMs).then(resolve).catch(reject);
         return;
       }
 
@@ -196,8 +196,11 @@ async function downloadFile(url: string, destPath: string): Promise<void> {
       pipeline(response, fileStream)
         .then(() => resolve())
         .catch(reject);
-    }).on('error', reject);
-  });
+    });
+    req.on('error', reject);
+    req.on('timeout', () => {
+      req.destroy(new Error(`Download timed out after ${timeoutMs}ms: ${url}`));
+    });
 }
 
 /**
