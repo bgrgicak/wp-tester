@@ -39,6 +39,14 @@ const response = await request(runtime.playground, {
 await stopPlayground(runtime);
 ```
 
+## Caching
+
+Downloaded assets (wp-cli.phar, WordPress test library) are cached in `~/.wp-tester/cache/`. Cached files expire automatically (typically after 24 hours), but you can manually clear the cache at any time:
+
+```bash
+rm -rf ~/.wp-tester/cache
+```
+
 ## Development
 
 ```bash
