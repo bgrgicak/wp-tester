@@ -11,19 +11,20 @@ import { downloadWpCli, WP_CLI_VFS_PATH } from "./wp-cli-cache.js";
 export const defaultWpCliPath = WP_CLI_VFS_PATH;
 
 /**
- * Global mutex to prevent concurrent WordPress Playground downloads.
+ * Per-version mutexes to prevent concurrent WordPress Playground downloads.
  * Multiple parallel tests downloading the same WordPress version cause ENOENT errors
- * when trying to rename .zip.partial files. This mutex serializes the download phase
- * while allowing tests to run in parallel after the Playground is started.
+ * when trying to rename .zip.partial files. These mutexes serialize the download phase
+ * per WordPress version, allowing tests with different versions to start in parallel.
  */
-const playgroundStartMutex = new Mutex();
+const playgroundStartMutexes = new Map<string, Mutex>();
 
 /**
  * Start a WordPress Playground server from an Environment configuration.
  * Expects environment to be already resolved (blueprint loaded, paths absolute).
  *
- * Uses a global mutex to prevent concurrent downloads that cause race conditions.
- * Tests can still run in parallel - only the initial Playground startup is serialized.
+ * Uses per-version mutexes to prevent concurrent downloads that cause race conditions.
+ * Tests with different WordPress versions can start in parallel, while tests with the
+ * same version are serialized to prevent download conflicts.
  *
  * wp-cli is downloaded and cached BEFORE acquiring the mutex to avoid holding
  * the lock during a potentially slow network operation (and to avoid deadlock
@@ -36,8 +37,15 @@ export async function startPlayground(
   // This is safe to call concurrently — it uses atomic file writes.
   const wpCliHostPath = await downloadWpCli();
 
-  // Acquire mutex lock to prevent concurrent Playground downloads
-  return await playgroundStartMutex.runExclusive(async () => {
+  // Get or create a mutex for this specific WordPress version
+  const wpVersion = environment.blueprint.preferredVersions.wp;
+  if (!playgroundStartMutexes.has(wpVersion)) {
+    playgroundStartMutexes.set(wpVersion, new Mutex());
+  }
+  const mutex = playgroundStartMutexes.get(wpVersion)!;
+
+  // Acquire mutex lock to prevent concurrent Playground downloads for this version
+  return await mutex.runExclusive(async () => {
     // Configure mounts from environment
     const mountsBeforeInstall = environment.mounts
       .filter((m) => m.beforeInstall === true)

@@ -34,6 +34,7 @@
     "@wp-tester/phpunit": "*",
     "@wp-tester/results": "*",
     "@wp-tester/smoke-tests": "*",
+    "@wp-tester/runtime": "*",
     "ajv": "^8.17.1",
     "picocolors": "^1.1.1",
     "picomatch": "^4.0.3",
