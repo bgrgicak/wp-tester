@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "ctrf": "^0.0.17",
+    "log-update": "^7.0.2",
     "picocolors": "^1.1.1",
     "vitest": "^4.0.13"
   },
