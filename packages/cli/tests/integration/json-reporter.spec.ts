@@ -96,8 +96,10 @@ describe('JSON Reporter Integration', { timeout: 120000 }, () => {
     const content = await readFile(jsonOutputFile, 'utf-8');
     const report = JSON.parse(content);
 
-    // All tests in the output should be failed
-    expect(report.results.tests.length).toBeGreaterThan(0);
+    // Filtered count should match summary.failed
+    expect(report.results.tests.length).toBe(report.results.summary.failed);
+
+    // All tests in the output should be failed (if any)
     for (const test of report.results.tests) {
       expect(test.status).toBe('failed');
     }
@@ -116,11 +118,14 @@ describe('JSON Reporter Integration', { timeout: 120000 }, () => {
     const content = await readFile(jsonOutputFile, 'utf-8');
     const report = JSON.parse(content);
 
+    // Filtered count should match passed + skipped
+    const expectedCount = report.results.summary.passed + report.results.summary.skipped;
+    expect(report.results.tests.length).toBe(expectedCount);
+
     // No failed tests should be in the output
-    const failedTests = report.results.tests.filter(
-      (test: { status: string }) => test.status === 'failed'
-    );
-    expect(failedTests.length).toBe(0);
+    for (const test of report.results.tests) {
+      expect(test.status).not.toBe('failed');
+    }
   });
 
   it('should include all tests when no filters are specified', async () => {
