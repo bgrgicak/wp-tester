@@ -126,7 +126,8 @@ export const executeTests = async (
   const smokeTestFilter = getSmokeTestFilter(testType);
 
   // Get streaming configuration
-  const useStreaming = resolvedConfig.reporters?.default !== undefined;
+  // Default to true if not explicitly disabled (was causing regression where no output showed)
+  const useStreaming = resolvedConfig.reporters?.default !== false;
   const filter = typeof resolvedConfig.reporters?.default === 'object'
     ? resolvedConfig.reporters.default
     : undefined;

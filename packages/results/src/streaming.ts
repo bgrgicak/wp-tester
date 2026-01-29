@@ -201,11 +201,11 @@ export class StreamingReporter {
     this.showSummary = options.showSummary ?? true;
     this.enabled = options.enabled ?? true;
 
-    // Use log-update only if:
+    // Use log-update when:
     // - Reporter is enabled
     // - We're using the default stdout writer (not a custom writer)
-    // - stdout is a TTY (log-update handles this check internally)
-    this.useLogUpdate = this.enabled && this.writer === stdoutWriter && (process.stdout.isTTY ?? false);
+    // log-update handles TTY detection internally (clears in TTY, appends in non-TTY)
+    this.useLogUpdate = this.enabled && this.writer === stdoutWriter;
 
     // Default filter: show all statuses (for backwards compatibility)
     this.filter = options.filter ?? {
@@ -402,14 +402,16 @@ export class StreamingReporter {
       this.renderFile(file, lines);
     }
 
-    // Render output based on environment
+    // Render output using log-update
+    // In TTY mode: clears and rewrites (live updates)
+    // In non-TTY mode: appends new lines (streaming output)
     if (this.useLogUpdate) {
-      // TTY mode: use log-update for live updates with clearing
       logUpdate(lines.join('\n'));
     } else {
-      // Non-TTY mode or custom writer: render once only when tests complete
-      // Skip intermediate renders to avoid duplicate output
-      // Tests and non-interactive environments see final state only
+      // Custom writer: write directly
+      for (const line of lines) {
+        this.writer.writeLine(line);
+      }
     }
 
     // Start/stop spinner based on running tests
