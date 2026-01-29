@@ -12,6 +12,7 @@ import type { Test, TestStatus, Report } from "ctrf";
 import pc from "picocolors";
 import { applyDiffHighlighting } from "./diff-utils.js";
 import { SPINNER_FRAMES } from "./spinner.js";
+import logUpdate from "log-update";
 
 /**
  * Test event emitted during test execution
@@ -20,6 +21,7 @@ export interface TestEvent {
   type: "test:start" | "test:pass" | "test:fail" | "test:skip" | "test:pending";
   name: string;
   suiteName?: string;
+  suiteStack?: string[]; // Full suite hierarchy (e.g., ['ClassName', 'testMethod'] for data providers)
   duration?: number;
   message?: string;
   trace?: string;
@@ -119,6 +121,7 @@ export interface StreamingReporterOptions {
 interface TestState {
   name: string;
   suiteName?: string;
+  suiteStack?: string[]; // Full suite hierarchy for generating filters
   status: "running" | "passed" | "failed" | "skipped" | "pending";
   duration?: number;
   message?: string;
@@ -133,6 +136,7 @@ interface SuiteState {
   depth: number;
   tests: TestState[];
   isLoading: boolean; // True when suite has started but no tests have been reported yet
+  parentStack: string[]; // Stack of parent suite names when this suite was created
 }
 
 /**
@@ -177,20 +181,32 @@ export class StreamingReporter {
   private showRunBoundaries = true;
   private showSummary = true;
   private filter: ReporterFilterOptions;
+  private useLogUpdate: boolean;
 
   // Unified state
   private state: ReporterState;
 
   // Rendering state
-  private lastOutputLineCount = 0;
   private spinnerFrame = 0;
   private spinnerInterval: NodeJS.Timeout | null = null;
+
+  // Throttling state
+  private renderThrottleTimeout: NodeJS.Timeout | null = null;
+  private pendingRender = false;
+  private readonly renderInterval = 50; // Render at most every 50ms (~20fps)
 
   constructor(options: StreamingReporterOptions = {}) {
     this.writer = options.writer ?? stdoutWriter;
     this.showRunBoundaries = options.showRunBoundaries ?? true;
     this.showSummary = options.showSummary ?? true;
     this.enabled = options.enabled ?? true;
+
+    // Use log-update only if:
+    // - Reporter is enabled
+    // - We're using the default stdout writer (not a custom writer)
+    // - stdout is a TTY (log-update handles this check internally)
+    this.useLogUpdate = this.enabled && this.writer === stdoutWriter && (process.stdout.isTTY ?? false);
+
     // Default filter: show all statuses (for backwards compatibility)
     this.filter = options.filter ?? {
       passed: true,
@@ -217,7 +233,11 @@ export class StreamingReporter {
    * Generate filter command for re-running a specific test
    * Override in subclasses for framework-specific behavior
    */
-  protected getFilterCommand(_testName: string, _suiteName?: string): string | null {
+  protected getFilterCommand(
+    _testName: string,
+    _suiteName?: string,
+    _suiteStack?: string[],
+  ): string | null {
     return null;
   }
 
@@ -252,14 +272,15 @@ export class StreamingReporter {
         this.onSuiteEnd(event.name, event.fileId);
         break;
       case "test:start":
-        this.onTestStart(event.name, event.suiteName, event.fileId);
+        this.onTestStart(event.name, event.suiteName, event.suiteStack, event.fileId);
         break;
       case "test:pass":
         this.onTestPass(
           event.name,
           event.duration || 0,
           event.suiteName,
-          event.fileId
+          event.suiteStack,
+          event.fileId,
         );
         break;
       case "test:fail":
@@ -269,7 +290,8 @@ export class StreamingReporter {
           event.message,
           event.trace,
           event.suiteName,
-          event.fileId
+          event.suiteStack,
+          event.fileId,
         );
         break;
       case "test:skip":
@@ -277,11 +299,12 @@ export class StreamingReporter {
           event.name,
           event.message,
           event.suiteName,
-          event.fileId
+          event.suiteStack,
+          event.fileId,
         );
         break;
       case "test:pending":
-        this.onTestPending(event.name, event.suiteName, event.fileId);
+        this.onTestPending(event.name, event.suiteName, event.suiteStack, event.fileId);
         break;
     }
   }
@@ -309,22 +332,52 @@ export class StreamingReporter {
   }
 
   /**
-   * Clear the previous output
+   * Clear throttle timeout and execute any pending render
    */
-  private clearPreviousOutput(): void {
-    if (!this.enabled || this.lastOutputLineCount === 0) return;
-
-    // Move cursor up and clear each line
-    for (let i = 0; i < this.lastOutputLineCount; i++) {
-      this.writer.write("\x1b[1A\x1b[2K");
+  private clearThrottle(): void {
+    if (this.renderThrottleTimeout) {
+      clearTimeout(this.renderThrottleTimeout);
+      this.renderThrottleTimeout = null;
+    }
+    // Execute any pending render
+    if (this.pendingRender) {
+      this.renderImmediate();
     }
   }
 
   /**
-   * Render the current state to output
+   * Render the current state to output (throttled)
    */
   private render(): void {
     if (!this.enabled) return;
+
+    // Mark that a render is pending
+    this.pendingRender = true;
+
+    // If we're already waiting for a throttled render, just update the flag
+    if (this.renderThrottleTimeout) {
+      return;
+    }
+
+    // Execute render immediately and schedule the next allowed render time
+    this.renderThrottleTimeout = setTimeout(() => {
+      this.renderThrottleTimeout = null;
+
+      // If another render was requested while throttled, execute it now
+      if (this.pendingRender) {
+        this.renderImmediate();
+      }
+    }, this.renderInterval);
+
+    // Execute the first render immediately
+    this.renderImmediate();
+  }
+
+  /**
+   * Execute render immediately without throttling
+   */
+  private renderImmediate(): void {
+    this.pendingRender = false;
 
     // Build output lines
     const lines: string[] = [];
@@ -349,20 +402,38 @@ export class StreamingReporter {
       this.renderFile(file, lines);
     }
 
-    // Clear previous output and render new output
-    this.clearPreviousOutput();
-
-    for (const line of lines) {
-      this.writer.writeLine(line);
+    // Render output based on environment
+    if (this.useLogUpdate) {
+      // TTY mode: use log-update for live updates with clearing
+      logUpdate(lines.join('\n'));
+    } else {
+      // Non-TTY mode or custom writer: render once only when tests complete
+      // Skip intermediate renders to avoid duplicate output
+      // Tests and non-interactive environments see final state only
     }
-
-    this.lastOutputLineCount = lines.length;
 
     // Start/stop spinner based on running tests
     if (hasRunningTests && !this.spinnerInterval) {
       this.startSpinner();
     } else if (!hasRunningTests && this.spinnerInterval) {
       this.stopSpinner();
+    }
+  }
+
+  /**
+   * Render final output (used in non-interactive mode)
+   */
+  private renderFinal(): void {
+    const lines: string[] = [];
+
+    // Render each file
+    for (const file of this.state.files.values()) {
+      this.renderFile(file, lines);
+    }
+
+    // Write final output
+    for (const line of lines) {
+      this.writer.writeLine(line);
     }
   }
 
@@ -378,7 +449,9 @@ export class StreamingReporter {
     }
 
     // Check if suite has any visible tests
-    const hasVisibleTests = suite.tests.some(test => this.shouldShowStatus(test.status));
+    const hasVisibleTests = suite.tests.some((test) =>
+      this.shouldShowStatus(test.status),
+    );
     if (hasVisibleTests) {
       return true;
     }
@@ -416,7 +489,11 @@ export class StreamingReporter {
   /**
    * Render a suite and its tests
    */
-  private renderSuite(file: FileState, suiteIndex: number, lines: string[]): void {
+  private renderSuite(
+    file: FileState,
+    suiteIndex: number,
+    lines: string[],
+  ): void {
     const suite = file.suites[suiteIndex];
     const indent = "  ".repeat(suite.depth);
 
@@ -460,7 +537,10 @@ export class StreamingReporter {
     }
 
     // Map status to filter property
-    const filterMap: Record<Exclude<TestState["status"], "running">, keyof ReporterFilterOptions> = {
+    const filterMap: Record<
+      Exclude<TestState["status"], "running">,
+      keyof ReporterFilterOptions
+    > = {
       passed: "passed",
       failed: "failed",
       skipped: "skipped",
@@ -527,7 +607,7 @@ export class StreamingReporter {
 
                 if (valueTrimmed) {
                   lines.push(
-                    `${traceIndent}${applyDiffHighlighting(valueLine, pc.red)}`
+                    `${traceIndent}${applyDiffHighlighting(valueLine, pc.red)}`,
                   );
                 }
                 i++;
@@ -551,8 +631,8 @@ export class StreamingReporter {
                   lines.push(
                     `${traceIndent}${applyDiffHighlighting(
                       valueLine,
-                      pc.green
-                    )}`
+                      pc.green,
+                    )}`,
                   );
                 }
                 i++;
@@ -568,10 +648,10 @@ export class StreamingReporter {
 
           // Add filter to re-run this specific test
           if (test.name) {
-            const filterCmd = this.getFilterCommand(test.name, test.suiteName);
+            const filterCmd = this.getFilterCommand(test.name, test.suiteName, test.suiteStack);
             if (filterCmd) {
               lines.push(
-                `${traceIndent}${pc.dim("Re-run only this test by appending:")}`
+                `${traceIndent}${pc.dim("Re-run only this test by appending:")}`,
               );
               lines.push(`${traceIndent}${pc.dim(filterCmd)}`);
             }
@@ -584,7 +664,7 @@ export class StreamingReporter {
           ? ` ${pc.dim(`(${test.message})`)}`
           : ` ${pc.dim("(Skipped)")}`;
         lines.push(
-          `${indent}${pc.yellow("○")} ${pc.dim(test.name)}${reasonStr}`
+          `${indent}${pc.yellow("○")} ${pc.dim(test.name)}${reasonStr}`,
         );
         break;
       }
@@ -617,14 +697,42 @@ export class StreamingReporter {
    * Find or create a suite in a file
    */
   private getOrCreateSuite(file: FileState, suiteName: string): SuiteState {
-    // Find existing suite
-    let suite = file.suites.find((s) => s.name === suiteName);
+    // Find existing suite with matching name, depth, AND parent context
+    // This prevents suites with the same name from being confused when they're
+    // in different branches of the suite tree (e.g., Test_Accept::test_method
+    // vs Test_Reject::test_method both creating a "test_method" sub-suite)
+    const currentDepth = file.currentSuiteStack.length;
+
+    // Create a snapshot of the current parent stack (excluding the current suite name)
+    const parentStack = [...file.currentSuiteStack];
+
+    // Find a suite with matching name, depth, and parent stack
+    let suite = file.suites.find((s) => {
+      if (s.name !== suiteName || s.depth !== currentDepth) {
+        return false;
+      }
+
+      // Check if parent stacks match
+      if (s.parentStack.length !== parentStack.length) {
+        return false;
+      }
+
+      for (let i = 0; i < parentStack.length; i++) {
+        if (s.parentStack[i] !== parentStack[i]) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
     if (!suite) {
       suite = {
         name: suiteName,
-        depth: file.currentSuiteStack.length,
+        depth: currentDepth,
         tests: [],
         isLoading: true, // Start in loading state
+        parentStack: parentStack,
       };
       file.suites.push(suite);
     }
@@ -661,7 +769,17 @@ export class StreamingReporter {
       isRunning: true,
     };
 
-    this.lastOutputLineCount = 0;
+    // Clear any previous log-update state
+    if (this.useLogUpdate) {
+      logUpdate.clear();
+    }
+
+    // Clear any previous throttle state
+    if (this.renderThrottleTimeout) {
+      clearTimeout(this.renderThrottleTimeout);
+      this.renderThrottleTimeout = null;
+    }
+    this.pendingRender = false;
   }
 
   /**
@@ -669,6 +787,7 @@ export class StreamingReporter {
    */
   onRunEnd(): void {
     this.stopSpinner();
+    this.clearThrottle(); // Clear any pending throttled renders
     this.state.isRunning = false;
 
     // Clean up any tests still in "running" state across all files
@@ -688,7 +807,15 @@ export class StreamingReporter {
     }
 
     // Final render
-    this.render();
+    if (this.useLogUpdate) {
+      // Clear the live updating display
+      logUpdate.clear();
+      logUpdate.done();
+    }
+
+    // Always use renderFinal for the final output to avoid truncation
+    // log-update is only for live updates, not for final large output
+    this.renderFinal();
 
     if (!this.enabled || !this.showSummary) return;
 
@@ -770,7 +897,7 @@ export class StreamingReporter {
   /**
    * Called when a test starts
    */
-  onTestStart(name: string, suiteName?: string, fileId?: string): void {
+  onTestStart(name: string, suiteName?: string, suiteStack?: string[], fileId?: string): void {
     const file = fileId
       ? this.getOrCreateFile(fileId)
       : this.getOrCreateFile("__global__");
@@ -783,12 +910,15 @@ export class StreamingReporter {
     }
 
     // Check if test already exists (completion event arrived before start event)
-    const existingTest = suite.tests.find((t) => t.name === name && t.suiteName === suiteName);
+    const existingTest = suite.tests.find(
+      (t) => t.name === name && t.suiteName === suiteName,
+    );
     if (!existingTest) {
       // Test doesn't exist yet - create it in running state
       suite.tests.push({
         name,
         suiteName,
+        suiteStack,
         status: "running",
       });
     }
@@ -804,7 +934,8 @@ export class StreamingReporter {
     name: string,
     duration: number,
     suiteName?: string,
-    fileId?: string
+    suiteStack?: string[],
+    fileId?: string,
   ): void {
     const file = fileId
       ? this.getOrCreateFile(fileId)
@@ -820,23 +951,27 @@ export class StreamingReporter {
     // Find and update the test
     // Look for a test in "running" state first (most common case - completion follows start)
     let test = suite.tests.find(
-      (t) => t.name === name && t.status === "running"
+      (t) => t.name === name && t.status === "running",
     );
 
     if (!test) {
       // Fallback: try exact match with suiteName (handles case where test completed before start event)
-      test = suite.tests.find((t) => t.name === name && t.suiteName === suiteName);
+      test = suite.tests.find(
+        (t) => t.name === name && t.suiteName === suiteName,
+      );
     }
 
     if (test) {
       test.status = "passed";
       test.duration = duration;
       test.suiteName = suiteName; // Ensure suiteName is set
+      test.suiteStack = suiteStack;
     } else {
       // Test start event hasn't arrived yet - create the test with completed state
       suite.tests.push({
         name,
         suiteName,
+        suiteStack,
         status: "passed",
         duration,
       });
@@ -856,7 +991,8 @@ export class StreamingReporter {
     message?: string,
     trace?: string,
     suiteName?: string,
-    fileId?: string
+    suiteStack?: string[],
+    fileId?: string,
   ): void {
     const file = fileId
       ? this.getOrCreateFile(fileId)
@@ -871,11 +1007,15 @@ export class StreamingReporter {
 
     // Find and update the test
     // Look for a test in "running" state first (most common case - completion follows start)
-    let test = suite.tests.find((t) => t.name === name && t.status === "running");
+    let test = suite.tests.find(
+      (t) => t.name === name && t.status === "running",
+    );
 
     if (!test) {
       // Fallback: try exact match with suiteName (handles case where test completed before start event)
-      test = suite.tests.find((t) => t.name === name && t.suiteName === suiteName);
+      test = suite.tests.find(
+        (t) => t.name === name && t.suiteName === suiteName,
+      );
     }
 
     if (test) {
@@ -884,11 +1024,13 @@ export class StreamingReporter {
       test.message = message;
       test.trace = trace;
       test.suiteName = suiteName; // Ensure suiteName is set
+      test.suiteStack = suiteStack;
     } else {
       // Test start event hasn't arrived yet - create the test with completed state
       suite.tests.push({
         name,
         suiteName,
+        suiteStack,
         status: "failed",
         duration,
         message,
@@ -908,7 +1050,8 @@ export class StreamingReporter {
     name: string,
     reason?: string,
     suiteName?: string,
-    fileId?: string
+    suiteStack?: string[],
+    fileId?: string,
   ): void {
     const file = fileId
       ? this.getOrCreateFile(fileId)
@@ -923,22 +1066,28 @@ export class StreamingReporter {
 
     // Find and update the test
     // Look for a test in "running" state first (most common case - completion follows start)
-    let test = suite.tests.find((t) => t.name === name && t.status === "running");
+    let test = suite.tests.find(
+      (t) => t.name === name && t.status === "running",
+    );
 
     if (!test) {
       // Fallback: try exact match with suiteName (handles case where test completed before start event)
-      test = suite.tests.find((t) => t.name === name && t.suiteName === suiteName);
+      test = suite.tests.find(
+        (t) => t.name === name && t.suiteName === suiteName,
+      );
     }
 
     if (test) {
       test.status = "skipped";
       test.message = reason;
       test.suiteName = suiteName; // Ensure suiteName is set
+      test.suiteStack = suiteStack;
     } else {
       // Test start event hasn't arrived yet - create the test with completed state
       suite.tests.push({
         name,
         suiteName,
+        suiteStack,
         status: "skipped",
         message: reason,
       });
@@ -952,7 +1101,7 @@ export class StreamingReporter {
   /**
    * Called when a test is pending
    */
-  onTestPending(name: string, suiteName?: string, fileId?: string): void {
+  onTestPending(name: string, suiteName?: string, suiteStack?: string[], fileId?: string): void {
     const file = fileId
       ? this.getOrCreateFile(fileId)
       : this.getOrCreateFile("__global__");
@@ -963,14 +1112,16 @@ export class StreamingReporter {
 
     // Find and update the test
     const test = suite.tests.find(
-      (t) => t.name === name && t.suiteName === suiteName
+      (t) => t.name === name && t.suiteName === suiteName,
     );
     if (test) {
       test.status = "pending";
+      test.suiteStack = suiteStack;
     } else {
       suite.tests.push({
         name,
         suiteName,
+        suiteStack,
         status: "pending",
       });
     }
@@ -993,24 +1144,24 @@ export class StreamingReporter {
     }
     if (this.state.skippedTests > 0) {
       this.writer.writeLine(
-        pc.yellow(`  ○ ${this.state.skippedTests} skipped`)
+        pc.yellow(`  ○ ${this.state.skippedTests} skipped`),
       );
     }
     if (this.state.pendingTests > 0) {
       this.writer.writeLine(
-        pc.yellow(`  ◔ ${this.state.pendingTests} pending`)
+        pc.yellow(`  ◔ ${this.state.pendingTests} pending`),
       );
     }
 
     this.writer.writeLine("");
     this.writer.writeLine(
-      pc.dim(`  ${this.state.totalTests} tests in ${formatDuration(duration)}`)
+      pc.dim(`  ${this.state.totalTests} tests in ${formatDuration(duration)}`),
     );
     this.writer.writeLine("");
 
     // Print icon legend
     this.writer.writeLine(
-      pc.dim("  Legend: ✓ passed  ✗ failed  ○ skipped  ◔ pending")
+      pc.dim("  Legend: ✓ passed  ✗ failed  ○ skipped  ◔ pending"),
     );
     this.writer.writeLine("");
   }
