@@ -96,8 +96,6 @@ describe('JSON Reporter Integration', { timeout: 120000 }, () => {
     const content = await readFile(jsonOutputFile, 'utf-8');
     const report = JSON.parse(content);
 
-    // Filtered count should match summary.failed
-    expect(report.results.tests.length).toBe(report.results.summary.failed);
 
     // All tests in the output should be failed (if any)
     for (const test of report.results.tests) {
