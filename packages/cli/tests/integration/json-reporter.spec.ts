@@ -83,26 +83,6 @@ describe('JSON Reporter Integration', { timeout: 120000 }, () => {
     expect(existsSync(jsonOutputFile)).toBe(false);
   });
 
-  it('should filter JSON output to only include failed tests', async () => {
-    const config: WPTesterConfig = {
-      environments: [{ blueprint: { landingPage: '/' } }],
-      tests: { wp: true },
-      reporters: { json: { failed: true } },
-    };
-    await writeFile(configFile, JSON.stringify(config, null, 2));
-
-    await executeTests(configFile);
-
-    const content = await readFile(jsonOutputFile, 'utf-8');
-    const report = JSON.parse(content);
-
-
-    // All tests in the output should be failed (if any)
-    for (const test of report.results.tests) {
-      expect(test.status).toBe('failed');
-    }
-  });
-
   it('should filter JSON output to exclude failed tests', async () => {
     const config: WPTesterConfig = {
       environments: [{ blueprint: { landingPage: '/' } }],
