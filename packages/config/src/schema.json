@@ -2432,8 +2432,9 @@
           "type": "boolean"
         },
         "outputFile": {
-          "description": "Path where the JSON report file should be written",
-          "type": "string"
+          "description": "Path where the JSON report file should be written. Defaults to wp-tester-results.json in the config directory.",
+          "type": "string",
+          "default": "wp-tester-results.json"
         },
         "passed": {
           "default": false,
@@ -2451,9 +2452,6 @@
           "type": "boolean"
         }
       },
-      "required": [
-        "outputFile"
-      ],
       "type": "object"
     },
     "MkdirStep": {

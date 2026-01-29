@@ -1,4 +1,4 @@
-import { access, constants, stat } from 'fs/promises';
+import { access, constants, stat, writeFile } from 'fs/promises';
 import path from 'path';
 import * as clack from '../../cli/theme';
 import { runSmokeTests } from "@wp-tester/smoke-tests";
@@ -133,9 +133,14 @@ export const executeTests = async (
     const smokeTestReport = await runSmokeTests(
       resolvedConfig,
       smokeTestFilter,
-      extraArgs
+      extraArgs,
     );
-    if (smokeTestReport.results.summary.tests > 0) {
+    // Check if tests actually ran by verifying time elapsed (stop > start)
+    // EMPTY_REPORT has start === stop, real test runs have stop > start
+    const testsRan =
+      smokeTestReport.results.summary.stop >
+      smokeTestReport.results.summary.start;
+    if (testsRan) {
       reports.push(smokeTestReport);
     }
   }
@@ -143,9 +148,10 @@ export const executeTests = async (
   // Run PHPUnit tests
   if (shouldRunPhpUnit) {
     const phpunitReport = await runPhpunitTests(resolvedConfig, extraArgs);
-    // Always include report if PHPUnit was configured to run
-    // This ensures bootstrap failures are visible
-    if (phpunitReport.results.summary.tests > 0) {
+    // Check if tests actually ran by verifying time elapsed
+    const testsRan =
+      phpunitReport.results.summary.stop > phpunitReport.results.summary.start;
+    if (testsRan) {
       reports.push(phpunitReport);
     }
   }
@@ -159,22 +165,21 @@ export const executeTests = async (
   // Merge results from all test suites
   const mergedReport = mergeReports(reports);
 
+  // Write JSON report if configured
+  const jsonReporter = resolvedConfig.reporters?.json;
+  if (jsonReporter) {
+    await writeFile(
+      jsonReporter.outputFile,
+      JSON.stringify(mergedReport, null, 2),
+    );
+  }
+
   // Display unified summary
   const { summary } = mergedReport.results;
   const success = summary.failed === 0;
 
-  // Print final combined summary with default reporter options
-  const defaultReporterOptions = resolvedConfig.reporters?.default;
 
-  // Convert reporter options to summary options (handle boolean shorthand)
-  // When false or true (boolean shorthand), pass undefined to use printSummary defaults
-  // When an object, pass it directly since SummaryOptions now matches BaseReporterOptions
-  const summaryOptions =
-    typeof defaultReporterOptions === "object"
-      ? defaultReporterOptions
-      : undefined;
-
-  printSummary(summary, summaryOptions);
+  printSummary(summary);
 
   return { success, hasTests: true };
 };

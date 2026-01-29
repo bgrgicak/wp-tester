@@ -23,6 +23,7 @@ export type {
   ResolvedTests,
   ResolvedBlueprint,
   ResolvedReporters,
+  ResolvedJsonReporterOptions,
   ResolvedPath,
 } from './resolved-types';
 

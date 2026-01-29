@@ -1,5 +1,13 @@
 import type { BlueprintV1Declaration } from "@wp-playground/blueprints";
-import type { Mount, Tests, Environment, WPTesterConfig, TestMode, ProjectType, BaseReporterOptions, JsonReporterOptions } from "./wp-tester-config";
+import type { Mount, Tests, Environment, WPTesterConfig, TestMode, ProjectType, BaseReporterOptions } from "./wp-tester-config";
+
+/**
+ * Resolved JSON reporter options with required outputFile.
+ */
+export interface ResolvedJsonReporterOptions extends BaseReporterOptions {
+  /** Absolute path where the JSON report file will be written */
+  outputFile: string;
+}
 
 /**
  * Resolved reporters configuration.
@@ -8,8 +16,8 @@ import type { Mount, Tests, Environment, WPTesterConfig, TestMode, ProjectType, 
 export interface ResolvedReporters {
   /** Default reporter options (supports boolean shorthand: true = enable with defaults) */
   default?: boolean | BaseReporterOptions;
-  /** JSON reporter options */
-  json?: JsonReporterOptions;
+  /** JSON reporter options with resolved outputFile path */
+  json?: ResolvedJsonReporterOptions;
 }
 
 /**
