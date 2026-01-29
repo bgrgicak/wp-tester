@@ -35,6 +35,24 @@ function isGitRepo(projectPath: string): boolean {
 }
 
 /**
+ * Get the root directory of the git repository
+ * @param projectPath - Starting directory to search from
+ * @returns Absolute path to git root, or null if not in a git repo
+ */
+function getGitRoot(projectPath: string): string | null {
+  try {
+    const result = execSync("git rev-parse --show-toplevel", {
+      cwd: projectPath,
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    return result.trim();
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Detect the default branch name from git
  */
 function detectDefaultBranch(projectPath: string): string {
@@ -108,7 +126,7 @@ function extractConfigFromWorkflow(content: string): Partial<WorkflowConfig> {
 
   // Extract wp-tester args
   const argsMatch = content.match(
-    /npx\s+wp-tester(?:@\S+)?\s+test\s*(.*?)(?:\s*\$\{\{|$)/m
+    /npx\s+(?:@wp-tester\/cli|wp-tester)(?:@\S+)?\s+test\s*(.*?)(?:\s*\$\{\{|$)/m,
   );
   if (argsMatch && argsMatch[1]) {
     config.wpTesterArgs = argsMatch[1].trim();
@@ -123,12 +141,11 @@ function extractConfigFromWorkflow(content: string): Partial<WorkflowConfig> {
 function generateWorkflowContent(config: WorkflowConfig): string {
   const { branches, nodeVersion, enableCaching, wpTesterArgs } = config;
 
-  // Clean up args - remove empty lines and trim
-  const cleanArgs = wpTesterArgs
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-    .join(" ");
+  // Clean up args - split by whitespace for multi-line formatting
+  const argsArray = wpTesterArgs
+    .split(/\s+/)
+    .map((arg) => arg.trim())
+    .filter((arg) => arg.length > 0);
 
   const branchList = branches.join(", ");
 
@@ -174,7 +191,7 @@ on:
 
 jobs:
   test:
-    name: Run WordPress Tests
+    name: WP Tester
     runs-on: ubuntu-latest
 
     steps:
@@ -187,7 +204,9 @@ jobs:
           node-version: '${nodeVersion}'
 ${cacheStep}
       - name: Run WP Tester
-        run: npx wp-tester@latest test${cleanArgs ? ` ${cleanArgs}` : ""} \${{ github.event.inputs.wp-tester-args }}
+        run: >
+          npx @wp-tester/cli@latest test${argsArray.length > 0 ? `\n          ${argsArray.join("\n          ")}` : ""}
+          \${{ github.event.inputs.wp-tester-args }}
 `;
 }
 
@@ -265,13 +284,13 @@ Press enter to run tests using default options.
  */
 export async function ciOption(
   config: WPTesterConfig,
-  context?: { configPath?: string; skipPrompt?: boolean }
+  context?: { configPath?: string; skipPrompt?: boolean },
 ): Promise<WPTesterConfig> {
   const configPath = context?.configPath;
   const skipPrompt = context?.skipPrompt ?? false;
   const projectPath = getProjectDir(config, configPath);
 
-  // Check if this is a git repository
+  // Check if this is a git repository and get the git root
   if (!isGitRepo(projectPath)) {
     clack.log.warn(
       "This directory is not a git repository. GitHub Actions require git.",
@@ -285,6 +304,10 @@ export async function ciOption(
       return config;
     }
   }
+
+  // Get the git root directory - this is where the workflow should be stored
+  const gitRoot = getGitRoot(projectPath);
+  const workflowBasePath = gitRoot || projectPath;
 
   // Check if user wants to set up CI
   if (!skipPrompt) {
@@ -314,17 +337,17 @@ export async function ciOption(
 
   // Default configuration
   let workflowConfig: WorkflowConfig = {
-    branches: [detectDefaultBranch(projectPath)],
+    branches: [detectDefaultBranch(workflowBasePath)],
     nodeVersion: "20",
     enableCaching: true,
     wpTesterArgs: "",
   };
 
   // Check if workflow already exists
-  const exists = await workflowExists(projectPath);
+  const exists = await workflowExists(workflowBasePath);
 
   if (exists) {
-    const existingContent = await readExistingWorkflow(projectPath);
+    const existingContent = await readExistingWorkflow(workflowBasePath);
     if (existingContent) {
       const extracted = extractConfigFromWorkflow(existingContent);
       workflowConfig = {
@@ -365,7 +388,7 @@ export async function ciOption(
 
     if (overwrite === "overwrite") {
       workflowConfig = {
-        branches: [detectDefaultBranch(projectPath)],
+        branches: [detectDefaultBranch(workflowBasePath)],
         nodeVersion: "20",
         enableCaching: true,
         wpTesterArgs: "",
@@ -463,7 +486,7 @@ export async function ciOption(
   }
 
   // Create directory and file with spinner
-  const workflowFullPath = join(projectPath, WORKFLOW_PATH);
+  const workflowFullPath = join(workflowBasePath, WORKFLOW_PATH);
   const workflowDir = dirname(workflowFullPath);
 
   const spinner = clack.spinner();

@@ -28,7 +28,7 @@ on:
 
 jobs:
   test:
-    name: Run WordPress Tests
+    name: WP Tester
     runs-on: ubuntu-latest
 
     steps:
@@ -49,4 +49,8 @@ jobs:
             ${{ runner.os }}-node-
 
       - name: Run WP Tester
-        run: npx @wp-tester/cli@latest test --config=~/packages/test-fixtures/fixtures/wp-tester-theme/wp-tester.json --test=phpunit ${{ github.event.inputs.wp-tester-args }}
+        run: >
+          npx @wp-tester/cli@latest test
+          --config=~/packages/test-fixtures/fixtures/wp-tester-theme/wp-tester.json
+          --test=phpunit
+          ${{ github.event.inputs.wp-tester-args }}
