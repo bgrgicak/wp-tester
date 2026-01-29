@@ -202,6 +202,15 @@ export class TeamCityParser {
   }
 
   /**
+   * Get the full suite stack for a specific flow.
+   * Returns a copy to prevent mutations from affecting stored test data.
+   */
+  private getSuiteStack(flowId: string): string[] {
+    const stack = this.suiteStacks.get(flowId);
+    return stack ? [...stack] : [];
+  }
+
+  /**
    * Push a suite onto the stack for a specific flow.
    */
   private pushSuite(flowId: string, suiteName: string): void {
@@ -257,6 +266,7 @@ export class TeamCityParser {
           type: "test:start",
           name,
           suiteName: this.getCurrentSuite(flowId) || undefined,
+          suiteStack: this.getSuiteStack(flowId),
         });
         break;
 
@@ -281,6 +291,7 @@ export class TeamCityParser {
           type: "test:pass",
           name,
           suiteName: this.getCurrentSuite(flowId) || undefined,
+          suiteStack: this.getSuiteStack(flowId),
           duration,
         });
         break;
@@ -325,6 +336,7 @@ export class TeamCityParser {
           type: "test:fail",
           name,
           suiteName: this.getCurrentSuite(flowId) || undefined,
+          suiteStack: this.getSuiteStack(flowId),
           duration,
           message: attributes.message,
           trace,
@@ -339,6 +351,7 @@ export class TeamCityParser {
           type: "test:skip",
           name,
           suiteName: this.getCurrentSuite(flowId) || undefined,
+          suiteStack: this.getSuiteStack(flowId),
           message: attributes.message,
         });
         break;

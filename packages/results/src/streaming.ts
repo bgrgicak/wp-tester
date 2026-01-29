@@ -21,6 +21,7 @@ export interface TestEvent {
   type: "test:start" | "test:pass" | "test:fail" | "test:skip" | "test:pending";
   name: string;
   suiteName?: string;
+  suiteStack?: string[]; // Full suite hierarchy (e.g., ['ClassName', 'testMethod'] for data providers)
   duration?: number;
   message?: string;
   trace?: string;
@@ -120,6 +121,7 @@ export interface StreamingReporterOptions {
 interface TestState {
   name: string;
   suiteName?: string;
+  suiteStack?: string[]; // Full suite hierarchy for generating filters
   status: "running" | "passed" | "failed" | "skipped" | "pending";
   duration?: number;
   message?: string;
@@ -229,6 +231,7 @@ export class StreamingReporter {
   protected getFilterCommand(
     _testName: string,
     _suiteName?: string,
+    _suiteStack?: string[],
   ): string | null {
     return null;
   }
@@ -264,13 +267,14 @@ export class StreamingReporter {
         this.onSuiteEnd(event.name, event.fileId);
         break;
       case "test:start":
-        this.onTestStart(event.name, event.suiteName, event.fileId);
+        this.onTestStart(event.name, event.suiteName, event.suiteStack, event.fileId);
         break;
       case "test:pass":
         this.onTestPass(
           event.name,
           event.duration || 0,
           event.suiteName,
+          event.suiteStack,
           event.fileId,
         );
         break;
@@ -281,6 +285,7 @@ export class StreamingReporter {
           event.message,
           event.trace,
           event.suiteName,
+          event.suiteStack,
           event.fileId,
         );
         break;
@@ -289,11 +294,12 @@ export class StreamingReporter {
           event.name,
           event.message,
           event.suiteName,
+          event.suiteStack,
           event.fileId,
         );
         break;
       case "test:pending":
-        this.onTestPending(event.name, event.suiteName, event.fileId);
+        this.onTestPending(event.name, event.suiteName, event.suiteStack, event.fileId);
         break;
     }
   }
@@ -595,7 +601,7 @@ export class StreamingReporter {
 
           // Add filter to re-run this specific test
           if (test.name) {
-            const filterCmd = this.getFilterCommand(test.name, test.suiteName);
+            const filterCmd = this.getFilterCommand(test.name, test.suiteName, test.suiteStack);
             if (filterCmd) {
               lines.push(
                 `${traceIndent}${pc.dim("Re-run only this test by appending:")}`,
@@ -836,7 +842,7 @@ export class StreamingReporter {
   /**
    * Called when a test starts
    */
-  onTestStart(name: string, suiteName?: string, fileId?: string): void {
+  onTestStart(name: string, suiteName?: string, suiteStack?: string[], fileId?: string): void {
     const file = fileId
       ? this.getOrCreateFile(fileId)
       : this.getOrCreateFile("__global__");
@@ -857,6 +863,7 @@ export class StreamingReporter {
       suite.tests.push({
         name,
         suiteName,
+        suiteStack,
         status: "running",
       });
     }
@@ -872,6 +879,7 @@ export class StreamingReporter {
     name: string,
     duration: number,
     suiteName?: string,
+    suiteStack?: string[],
     fileId?: string,
   ): void {
     const file = fileId
@@ -902,11 +910,13 @@ export class StreamingReporter {
       test.status = "passed";
       test.duration = duration;
       test.suiteName = suiteName; // Ensure suiteName is set
+      test.suiteStack = suiteStack;
     } else {
       // Test start event hasn't arrived yet - create the test with completed state
       suite.tests.push({
         name,
         suiteName,
+        suiteStack,
         status: "passed",
         duration,
       });
@@ -926,6 +936,7 @@ export class StreamingReporter {
     message?: string,
     trace?: string,
     suiteName?: string,
+    suiteStack?: string[],
     fileId?: string,
   ): void {
     const file = fileId
@@ -958,11 +969,13 @@ export class StreamingReporter {
       test.message = message;
       test.trace = trace;
       test.suiteName = suiteName; // Ensure suiteName is set
+      test.suiteStack = suiteStack;
     } else {
       // Test start event hasn't arrived yet - create the test with completed state
       suite.tests.push({
         name,
         suiteName,
+        suiteStack,
         status: "failed",
         duration,
         message,
@@ -982,6 +995,7 @@ export class StreamingReporter {
     name: string,
     reason?: string,
     suiteName?: string,
+    suiteStack?: string[],
     fileId?: string,
   ): void {
     const file = fileId
@@ -1012,11 +1026,13 @@ export class StreamingReporter {
       test.status = "skipped";
       test.message = reason;
       test.suiteName = suiteName; // Ensure suiteName is set
+      test.suiteStack = suiteStack;
     } else {
       // Test start event hasn't arrived yet - create the test with completed state
       suite.tests.push({
         name,
         suiteName,
+        suiteStack,
         status: "skipped",
         message: reason,
       });
@@ -1030,7 +1046,7 @@ export class StreamingReporter {
   /**
    * Called when a test is pending
    */
-  onTestPending(name: string, suiteName?: string, fileId?: string): void {
+  onTestPending(name: string, suiteName?: string, suiteStack?: string[], fileId?: string): void {
     const file = fileId
       ? this.getOrCreateFile(fileId)
       : this.getOrCreateFile("__global__");
@@ -1045,10 +1061,12 @@ export class StreamingReporter {
     );
     if (test) {
       test.status = "pending";
+      test.suiteStack = suiteStack;
     } else {
       suite.tests.push({
         name,
         suiteName,
+        suiteStack,
         status: "pending",
       });
     }
