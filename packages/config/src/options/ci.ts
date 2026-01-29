@@ -2,15 +2,64 @@ import type { WPTesterConfig } from "../types";
 import * as clack from "@clack/prompts";
 import { mkdir, writeFile, access, readFile } from "fs/promises";
 import { join, dirname, relative } from "path";
+import { execSync } from "child_process";
 import pc from "picocolors";
 import { getProjectDir } from "../path-utils";
 
 const WORKFLOW_PATH = ".github/workflows/wp-tester.yml";
 
 /**
+ * Detect the default branch name from git
+ */
+function detectDefaultBranch(projectPath: string): string {
+  try {
+    // Try to get the default branch from remote HEAD
+    const result = execSync("git symbolic-ref refs/remotes/origin/HEAD", {
+      cwd: projectPath,
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "pipe"],
+    }).trim();
+    // Result is like "refs/remotes/origin/main"
+    const branch = result.split("/").pop();
+    if (branch) {
+      return branch;
+    }
+  } catch {
+    // Remote HEAD not set, try other methods
+  }
+
+  try {
+    // Check which common branch names exist locally
+    const branches = execSync("git branch --list main master trunk", {
+      cwd: projectPath,
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "pipe"],
+    }).trim();
+
+    // Parse branch list and return first match
+    const branchList = branches
+      .split("\n")
+      .map((b) => b.replace("*", "").trim())
+      .filter((b) => b.length > 0);
+
+    if (branchList.includes("main")) return "main";
+    if (branchList.includes("master")) return "master";
+    if (branchList.includes("trunk")) return "trunk";
+  } catch {
+    // Git command failed
+  }
+
+  // Default to "main"
+  return "main";
+}
+
+/**
  * Generate the GitHub Action workflow content
  */
-function generateWorkflowContent(wpTesterArgs: string): string {
+function generateWorkflowContent(
+  wpTesterArgs: string,
+  defaultBranch: string
+): string {
   // Clean up args - remove empty lines and trim
   const cleanArgs = wpTesterArgs
     .split("\n")
@@ -32,9 +81,9 @@ name: WP Tester
 
 on:
   push:
-    branches: [main, master, trunk]
+    branches: [${defaultBranch}]
   pull_request:
-    branches: [main, master, trunk]
+    branches: [${defaultBranch}]
   workflow_dispatch:
     inputs:
       wp-tester-args:
@@ -104,8 +153,12 @@ function extractArgsFromWorkflow(content: string): string {
 /**
  * Display a beautiful box with the workflow path
  */
-function displaySuccessMessage(projectPath: string, workflowPath: string): void {
+function displaySuccessMessage(
+  workflowPath: string,
+  defaultBranch: string
+): void {
   const relativePath = relative(process.cwd(), workflowPath) || workflowPath;
+  const branchInfo = `Triggers on push/PR to '${defaultBranch}' branch.`;
 
   console.log("");
   console.log(
@@ -132,7 +185,7 @@ function displaySuccessMessage(projectPath: string, workflowPath: string): void 
   );
   console.log(
     pc.green("  │") +
-      pc.dim("  The workflow will run automatically on push and PR.        ") +
+      pc.dim(`  ${branchInfo.padEnd(57)}`) +
       pc.green("│")
   );
   console.log(
@@ -275,8 +328,34 @@ export async function ciOption(
 
   const finalArgs = typeof argsInput === "string" ? argsInput.trim() : "";
 
+  // Detect and confirm the default branch
+  const detectedBranch = detectDefaultBranch(projectPath);
+
+  const branchInput = await clack.text({
+    message: "Target branch for CI triggers:",
+    initialValue: detectedBranch,
+    placeholder: "main",
+    validate: (value) => {
+      if (!value || value.trim().length === 0) {
+        return "Branch name cannot be empty";
+      }
+      if (/\s/.test(value)) {
+        return "Branch name cannot contain spaces";
+      }
+      return undefined;
+    },
+  });
+
+  if (clack.isCancel(branchInput)) {
+    clack.cancel("Setup cancelled.");
+    process.exit(0);
+  }
+
+  const defaultBranch =
+    typeof branchInput === "string" ? branchInput.trim() : detectedBranch;
+
   // Generate workflow content
-  const workflowContent = generateWorkflowContent(finalArgs);
+  const workflowContent = generateWorkflowContent(finalArgs, defaultBranch);
 
   // Create directory if it doesn't exist
   const workflowFullPath = join(projectPath, WORKFLOW_PATH);
@@ -287,7 +366,7 @@ export async function ciOption(
     await writeFile(workflowFullPath, workflowContent, "utf8");
 
     // Display success message
-    displaySuccessMessage(projectPath, workflowFullPath);
+    displaySuccessMessage(workflowFullPath, defaultBranch);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     clack.log.error(`Failed to create workflow file: ${message}`);
