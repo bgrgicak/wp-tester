@@ -190,6 +190,11 @@ export class StreamingReporter {
   private spinnerFrame = 0;
   private spinnerInterval: NodeJS.Timeout | null = null;
 
+  // Throttling state
+  private renderThrottleTimeout: NodeJS.Timeout | null = null;
+  private pendingRender = false;
+  private readonly renderInterval = 50; // Render at most every 50ms (~20fps)
+
   constructor(options: StreamingReporterOptions = {}) {
     this.writer = options.writer ?? stdoutWriter;
     this.showRunBoundaries = options.showRunBoundaries ?? true;
@@ -327,10 +332,52 @@ export class StreamingReporter {
   }
 
   /**
-   * Render the current state to output
+   * Clear throttle timeout and execute any pending render
+   */
+  private clearThrottle(): void {
+    if (this.renderThrottleTimeout) {
+      clearTimeout(this.renderThrottleTimeout);
+      this.renderThrottleTimeout = null;
+    }
+    // Execute any pending render
+    if (this.pendingRender) {
+      this.renderImmediate();
+    }
+  }
+
+  /**
+   * Render the current state to output (throttled)
    */
   private render(): void {
     if (!this.enabled) return;
+
+    // Mark that a render is pending
+    this.pendingRender = true;
+
+    // If we're already waiting for a throttled render, just update the flag
+    if (this.renderThrottleTimeout) {
+      return;
+    }
+
+    // Execute render immediately and schedule the next allowed render time
+    this.renderThrottleTimeout = setTimeout(() => {
+      this.renderThrottleTimeout = null;
+
+      // If another render was requested while throttled, execute it now
+      if (this.pendingRender) {
+        this.renderImmediate();
+      }
+    }, this.renderInterval);
+
+    // Execute the first render immediately
+    this.renderImmediate();
+  }
+
+  /**
+   * Execute render immediately without throttling
+   */
+  private renderImmediate(): void {
+    this.pendingRender = false;
 
     // Build output lines
     const lines: string[] = [];
@@ -726,6 +773,13 @@ export class StreamingReporter {
     if (this.useLogUpdate) {
       logUpdate.clear();
     }
+
+    // Clear any previous throttle state
+    if (this.renderThrottleTimeout) {
+      clearTimeout(this.renderThrottleTimeout);
+      this.renderThrottleTimeout = null;
+    }
+    this.pendingRender = false;
   }
 
   /**
@@ -733,6 +787,7 @@ export class StreamingReporter {
    */
   onRunEnd(): void {
     this.stopSpinner();
+    this.clearThrottle(); // Clear any pending throttled renders
     this.state.isRunning = false;
 
     // Clean up any tests still in "running" state across all files
