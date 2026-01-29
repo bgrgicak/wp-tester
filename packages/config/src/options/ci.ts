@@ -79,30 +79,6 @@ function detectDefaultBranch(projectPath: string): string {
   return "main";
 }
 
-/**
- * Detect GitHub repository info for badge generation
- */
-function detectGitHubRepo(projectPath: string): string | null {
-  try {
-    const remoteUrl = execSync("git remote get-url origin", {
-      cwd: projectPath,
-      encoding: "utf8",
-      stdio: ["pipe", "pipe", "pipe"],
-    }).trim();
-
-    // Parse GitHub URL (supports both HTTPS and SSH formats)
-    const httpsMatch = remoteUrl.match(
-      /github\.com\/([^/]+\/[^/.]+)(?:\.git)?$/
-    );
-    const sshMatch = remoteUrl.match(/github\.com:([^/]+\/[^/.]+)(?:\.git)?$/);
-
-    if (httpsMatch) return httpsMatch[1];
-    if (sshMatch) return sshMatch[1];
-  } catch {
-    // Git command failed
-  }
-  return null;
-}
 
 /**
  * Extract configuration from existing workflow
@@ -215,12 +191,6 @@ ${cacheStep}
 `;
 }
 
-/**
- * Generate README badge markdown
- */
-function generateBadgeMarkdown(repoPath: string): string {
-  return `[![WP Tester](https://github.com/${repoPath}/actions/workflows/wp-tester.yml/badge.svg)](https://github.com/${repoPath}/actions/workflows/wp-tester.yml)`;
-}
 
 /**
  * Check if workflow file already exists
@@ -249,12 +219,11 @@ async function readExistingWorkflow(
 }
 
 /**
- * Display success message with workflow details and optional badge
+ * Display success message with workflow details
  */
 function displaySuccessMessage(
   workflowPath: string,
-  config: WorkflowConfig,
-  badgeMarkdown?: string
+  config: WorkflowConfig
 ): void {
   const relativePath = relative(process.cwd(), workflowPath) || workflowPath;
   const branchInfo =
@@ -264,18 +233,11 @@ function displaySuccessMessage(
 
   const cacheInfo = config.enableCaching ? " with caching" : "";
 
-  let message = `${pc.cyan(relativePath)}
+  const message = `${pc.cyan(relativePath)}
 
 ${branchInfo}
 Node.js ${config.nodeVersion}${cacheInfo}
 You can also trigger it manually from GitHub Actions.`;
-
-  if (badgeMarkdown) {
-    message += `
-
-${pc.bold("README Badge:")}
-${pc.dim(badgeMarkdown)}`;
-  }
 
   clack.note(message, pc.green("✓ GitHub Action created successfully!"));
 }
@@ -518,23 +480,8 @@ export async function ciOption(
     process.exit(1);
   }
 
-  // Offer to show badge
-  const repoPath = detectGitHubRepo(projectPath);
-  let badgeMarkdown: string | undefined;
-
-  if (repoPath) {
-    const addBadge = await clack.confirm({
-      message: "Would you like a README badge for the workflow status?",
-      initialValue: true,
-    });
-
-    if (!clack.isCancel(addBadge) && addBadge) {
-      badgeMarkdown = generateBadgeMarkdown(repoPath);
-    }
-  }
-
   // Display success message
-  displaySuccessMessage(workflowFullPath, workflowConfig, badgeMarkdown);
+  displaySuccessMessage(workflowFullPath, workflowConfig);
 
   return config;
 }
