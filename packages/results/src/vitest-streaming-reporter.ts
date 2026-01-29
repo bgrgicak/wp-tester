@@ -9,7 +9,7 @@ import type { Reporter } from "vitest/reporters";
 import type { Vitest, TestModule, TestCase, TestSuite } from "vitest/node";
 import type { SerializedError } from "@vitest/utils";
 import { StreamingReporter } from "./streaming.js";
-import { VitestStreamingBase } from "./vitest-streaming.js";
+import { UnifiedStreamingReporter } from "./unified-streaming-reporter.js";
 import { highlightStringDiff } from "./diff-utils.js";
 
 /**
@@ -180,7 +180,7 @@ export class VitestStreamingReporter implements Reporter {
   private toolName: string;
 
   constructor(toolName: string = "vitest", streamingReporter?: StreamingReporter) {
-    this.streaming = streamingReporter || new VitestStreamingBase();
+    this.streaming = streamingReporter || new UnifiedStreamingReporter();
     this.toolName = toolName;
   }
 

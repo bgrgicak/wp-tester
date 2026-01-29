@@ -7,7 +7,7 @@ import { resolvePhpunitArgs } from "@wp-tester/config";
 import { defineWpConfigConsts } from "@wp-playground/blueprints";
 import { setPhpIniEntries } from "@php-wasm/universal";
 import type { Report } from "@wp-tester/results";
-import { EMPTY_REPORT, mergeReports, PHPUnitStreamingReporter, TeamCityParser, type StreamingReporter } from "@wp-tester/results";
+import { EMPTY_REPORT, mergeReports, UnifiedStreamingReporter, TeamCityParser, type StreamingReporter } from "@wp-tester/results";
 import { startPlayground } from "@wp-tester/runtime";
 import { mountWordPressTestLibrary } from "./wordpress-test-lib";
 import { access } from "fs/promises";
@@ -156,7 +156,7 @@ async function runPhpunitTestsForEnvironment(
         : undefined;
 
     // Use shared reporter if provided, otherwise create a new one
-    const reporter: StreamingReporter = sharedReporter ?? new PHPUnitStreamingReporter({
+    const reporter: StreamingReporter = sharedReporter ?? new UnifiedStreamingReporter({
       enabled: useStreaming,
       showSummary: false,
       filter,

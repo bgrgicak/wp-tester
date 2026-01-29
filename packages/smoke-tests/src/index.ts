@@ -11,7 +11,7 @@ import type { WPTesterConfig, Tests, TestType, ResolvedWPTesterConfig, ResolvedT
 import {
   EMPTY_REPORT,
   VitestStreamingReporter,
-  VitestStreamingBase,
+  UnifiedStreamingReporter,
   type StreamingReporter,
 } from "@wp-tester/results";
 import type { Report } from "@wp-tester/results";
@@ -105,7 +105,7 @@ export async function runSmokeTests(
     : undefined;
 
   // Use shared reporter if provided, otherwise create a new one
-  const reporter: StreamingReporter = sharedReporter ?? new VitestStreamingBase({
+  const reporter: StreamingReporter = sharedReporter ?? new UnifiedStreamingReporter({
     enabled: useStreaming,
     showSummary: false,
     filter
