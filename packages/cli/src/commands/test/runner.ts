@@ -4,10 +4,43 @@ import * as clack from '../../cli/theme';
 import { runSmokeTests } from "@wp-tester/smoke-tests";
 import { runPhpunitTests } from "@wp-tester/phpunit";
 import { mergeReports, printSummary, type Report } from "@wp-tester/results";
-import type { TestType, ResolvedWPTesterConfig } from "@wp-tester/config";
+import type { TestType, ResolvedWPTesterConfig, ResolvedJsonReporterOptions } from "@wp-tester/config";
 import { resolveConfig } from "@wp-tester/config";
 import { validateConfig } from "../config/validate";
 import { getConfigPath } from "@wp-tester/config";
+
+/**
+ * Filter a report's tests based on status filter options.
+ * If no filter options are provided (all undefined), all tests are included.
+ */
+function filterReport(report: Report, options: ResolvedJsonReporterOptions): Report {
+  const { passed, failed, skipped, pending, other } = options;
+
+  // If no filters are specified, return full report
+  const hasFilters = passed !== undefined || failed !== undefined ||
+    skipped !== undefined || pending !== undefined || other !== undefined;
+  if (!hasFilters) {
+    return report;
+  }
+
+  const filteredTests = report.results.tests.filter((test) => {
+    switch (test.status) {
+      case 'passed': return passed === true;
+      case 'failed': return failed === true;
+      case 'skipped': return skipped === true;
+      case 'pending': return pending === true;
+      default: return other === true;
+    }
+  });
+
+  return {
+    ...report,
+    results: {
+      ...report.results,
+      tests: filteredTests,
+    },
+  };
+}
 
 /**
  * Options for the test runner
@@ -162,7 +195,8 @@ export const executeTests = async (
   // Write JSON report if configured
   const jsonReporter = resolvedConfig.reporters?.json;
   if (jsonReporter) {
-    await writeFile(jsonReporter.outputFile, JSON.stringify(mergedReport, null, 2));
+    const filteredReport = filterReport(mergedReport, jsonReporter);
+    await writeFile(jsonReporter.outputFile, JSON.stringify(filteredReport, null, 2));
   }
 
   // Display unified summary

@@ -82,4 +82,61 @@ describe('JSON Reporter Integration', { timeout: 120000 }, () => {
     // Verify JSON file was NOT created
     expect(existsSync(jsonOutputFile)).toBe(false);
   });
+
+  it('should filter JSON output to only include failed tests', async () => {
+    const config: WPTesterConfig = {
+      environments: [{ blueprint: { landingPage: '/' } }],
+      tests: { wp: true },
+      reporters: { json: { failed: true } },
+    };
+    await writeFile(configFile, JSON.stringify(config, null, 2));
+
+    await executeTests(configFile);
+
+    const content = await readFile(jsonOutputFile, 'utf-8');
+    const report = JSON.parse(content);
+
+    // All tests in the output should be failed
+    expect(report.results.tests.length).toBeGreaterThan(0);
+    for (const test of report.results.tests) {
+      expect(test.status).toBe('failed');
+    }
+  });
+
+  it('should filter JSON output to exclude failed tests', async () => {
+    const config: WPTesterConfig = {
+      environments: [{ blueprint: { landingPage: '/' } }],
+      tests: { wp: true },
+      reporters: { json: { failed: false, passed: true, skipped: true } },
+    };
+    await writeFile(configFile, JSON.stringify(config, null, 2));
+
+    await executeTests(configFile);
+
+    const content = await readFile(jsonOutputFile, 'utf-8');
+    const report = JSON.parse(content);
+
+    // No failed tests should be in the output
+    const failedTests = report.results.tests.filter(
+      (test: { status: string }) => test.status === 'failed'
+    );
+    expect(failedTests.length).toBe(0);
+  });
+
+  it('should include all tests when no filters are specified', async () => {
+    const config: WPTesterConfig = {
+      environments: [{ blueprint: { landingPage: '/' } }],
+      tests: { wp: true },
+      reporters: { json: {} },
+    };
+    await writeFile(configFile, JSON.stringify(config, null, 2));
+
+    await executeTests(configFile);
+
+    const content = await readFile(jsonOutputFile, 'utf-8');
+    const report = JSON.parse(content);
+
+    // Total tests in output should match summary count
+    expect(report.results.tests.length).toBe(report.results.summary.tests);
+  });
 });
