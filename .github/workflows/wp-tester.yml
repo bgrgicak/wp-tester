@@ -48,6 +48,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist
+        working-directory: ./packages/test-fixtures/fixtures/wp-tester-theme
+
       - name: Run WP Tester
         run: >
           npx @wp-tester/cli@latest test
