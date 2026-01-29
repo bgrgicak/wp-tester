@@ -88,18 +88,26 @@ function formatDuration(ms: number): string {
 }
 
 /**
- * Filter options for controlling which test statuses are displayed
+ * Filter options for controlling which test statuses are shown.
+ *
+ * Filters affect:
+ * - Console display: Only matching tests are shown
+ * - Report tests array: Only matching tests are included in getReport().results.tests
+ * - Summary counts: Always show accurate totals for ALL tests (not filtered)
+ *
+ * This allows --failed-only to produce a JSON report with only failed tests in the
+ * array while still showing accurate total counts in the summary.
  */
 export interface ReporterFilterOptions {
-  /** Show passed tests (default: false) */
+  /** Show/include passed tests (default: false) */
   passed?: boolean;
-  /** Show failed tests (default: false) */
+  /** Show/include failed tests (default: false) */
   failed?: boolean;
-  /** Show skipped tests (default: false) */
+  /** Show/include skipped tests (default: false) */
   skipped?: boolean;
-  /** Show pending tests (default: false) */
+  /** Show/include pending tests (default: false) */
   pending?: boolean;
-  /** Show other test statuses (default: false) */
+  /** Show/include other test statuses (default: false) */
   other?: boolean;
 }
 
@@ -111,7 +119,7 @@ export interface StreamingReporterOptions {
   showRunBoundaries?: boolean;
   showSummary?: boolean;
   enabled?: boolean;
-  /** Filter options for which test statuses to display */
+  /** Filter options for which test statuses to display and include in reports */
   filter?: ReporterFilterOptions;
 }
 
@@ -1168,20 +1176,24 @@ export class StreamingReporter {
 
   /**
    * Get the current report in CTRF format
-   * Tests are filtered based on the reporter's filter options
+   *
+   * The tests array is filtered based on the reporter's filter options,
+   * but the summary counts reflect ALL tests for accurate totals.
+   * This allows the JSON report to contain only relevant tests while
+   * showing complete statistics.
    */
   getReport(): Report {
     const tests: Test[] = [];
 
-    // Collect all tests from all files, applying filter
+    // Collect tests from all files, applying filter to tests array
     for (const file of this.state.files.values()) {
       for (const suite of file.suites) {
         for (const test of suite.tests) {
           const status: TestStatus =
             test.status === "running" ? "other" : (test.status as TestStatus);
 
-          // Apply filter - skip tests that don't match filter criteria
-          if (!this.shouldIncludeInReport(status)) {
+          // Apply filter - only include tests that match filter criteria
+          if (!this.shouldShowStatus(test.status)) {
             continue;
           }
 
@@ -1205,14 +1217,15 @@ export class StreamingReporter {
       }
     }
 
-    // Calculate summary counts based on filtered tests
+    // Use actual state counts for accurate totals (includes all tests, even filtered ones)
+    // The tests array is filtered, but the summary reflects the true test counts
     const summary = {
-      tests: tests.length,
-      passed: tests.filter((t) => t.status === "passed").length,
-      failed: tests.filter((t) => t.status === "failed").length,
-      skipped: tests.filter((t) => t.status === "skipped").length,
-      pending: tests.filter((t) => t.status === "pending").length,
-      other: tests.filter((t) => t.status === "other").length,
+      tests: this.state.totalTests,
+      passed: this.state.passedTests,
+      failed: this.state.failedTests,
+      skipped: this.state.skippedTests,
+      pending: this.state.pendingTests,
+      other: 0, // We don't track "other" status in our state
       start: this.state.startTime,
       stop: Date.now(),
     };
@@ -1230,21 +1243,6 @@ export class StreamingReporter {
     };
   }
 
-  /**
-   * Check if a test status should be included in the report based on filter options
-   */
-  private shouldIncludeInReport(status: TestStatus): boolean {
-    const filterMap: Record<TestStatus, keyof ReporterFilterOptions> = {
-      passed: "passed",
-      failed: "failed",
-      skipped: "skipped",
-      pending: "pending",
-      other: "other",
-    };
-
-    const filterKey = filterMap[status];
-    return this.filter[filterKey] ?? false;
-  }
 
   /**
    * Get current counts for external tracking
