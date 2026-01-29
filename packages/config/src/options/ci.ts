@@ -259,7 +259,7 @@ function displayWorkflowPreview(content: string): void {
 }
 
 /**
- * Display a beautiful box with the workflow path and optional badge
+ * Display success message with workflow details and optional badge
  */
 function displaySuccessMessage(
   workflowPath: string,
@@ -269,106 +269,25 @@ function displaySuccessMessage(
   const relativePath = relative(process.cwd(), workflowPath) || workflowPath;
   const branchInfo =
     config.branches.length === 1
-      ? `Triggers on push/PR to '${config.branches[0]}' branch.`
+      ? `Triggers on push/PR to '${config.branches[0]}' branch`
       : `Triggers on: ${config.branches.join(", ")}`;
 
-  console.log("");
-  console.log(
-    pc.green(
-      "  ╭─────────────────────────────────────────────────────────────────╮"
-    )
-  );
-  console.log(
-    pc.green(
-      "  │                                                                 │"
-    )
-  );
-  console.log(
-    pc.green("  │") +
-      pc.bold("  ✓ GitHub Action created successfully!                          ") +
-      pc.green("│")
-  );
-  console.log(
-    pc.green(
-      "  │                                                                 │"
-    )
-  );
-  console.log(
-    pc.green("  │") +
-      pc.cyan(`    ${relativePath.padEnd(59)}`) +
-      pc.green("│")
-  );
-  console.log(
-    pc.green(
-      "  │                                                                 │"
-    )
-  );
-  console.log(
-    pc.green("  │") +
-      pc.dim(`  ${branchInfo.padEnd(61)}`) +
-      pc.green("│")
-  );
-  console.log(
-    pc.green("  │") +
-      pc.dim(
-        `  Node.js ${config.nodeVersion} ${config.enableCaching ? "with caching" : ""}`.padEnd(
-          61
-        )
-      ) +
-      pc.green("│")
-  );
-  console.log(
-    pc.green("  │") +
-      pc.dim("  You can also trigger it manually from GitHub Actions.          ") +
-      pc.green("│")
-  );
+  const cacheInfo = config.enableCaching ? " with caching" : "";
+
+  let message = `${pc.cyan(relativePath)}
+
+${branchInfo}
+Node.js ${config.nodeVersion}${cacheInfo}
+You can also trigger it manually from GitHub Actions.`;
 
   if (badgeMarkdown) {
-    console.log(
-      pc.green(
-        "  │                                                                 │"
-      )
-    );
-    console.log(
-      pc.green(
-        "  ├─────────────────────────────────────────────────────────────────┤"
-      )
-    );
-    console.log(
-      pc.green(
-        "  │                                                                 │"
-      )
-    );
-    console.log(
-      pc.green("  │") +
-        pc.bold("  README Badge:                                                  ") +
-        pc.green("│")
-    );
-    console.log(
-      pc.green("  │") +
-        pc.cyan(`  ${badgeMarkdown.substring(0, 61).padEnd(61)}`) +
-        pc.green("│")
-    );
-    if (badgeMarkdown.length > 61) {
-      console.log(
-        pc.green("  │") +
-          pc.cyan(`  ${badgeMarkdown.substring(61).padEnd(61)}`) +
-          pc.green("│")
-      );
-    }
+    message += `
+
+${pc.bold("README Badge:")}
+${pc.dim(badgeMarkdown)}`;
   }
 
-  console.log(
-    pc.green(
-      "  │                                                                 │"
-    )
-  );
-  console.log(
-    pc.green(
-      "  ╰─────────────────────────────────────────────────────────────────╯"
-    )
-  );
-  console.log("");
+  clack.note(message, pc.green("✓ GitHub Action created successfully!"));
 }
 
 /**
