@@ -52,6 +52,7 @@ export {
   parseTeamCityOutput,
 } from './teamcity-parser.js';
 export { printSummary, type SummaryOptions } from './summary.js';
+export { UnifiedStreamingReporter } from './unified-streaming-reporter.js';
 
 export const EMPTY_REPORT: Report = {
   results: {

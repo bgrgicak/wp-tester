@@ -7,7 +7,7 @@ import { resolvePhpunitArgs } from "@wp-tester/config";
 import { defineWpConfigConsts } from "@wp-playground/blueprints";
 import { setPhpIniEntries } from "@php-wasm/universal";
 import type { Report } from "@wp-tester/results";
-import { EMPTY_REPORT, mergeReports, PHPUnitStreamingReporter, TeamCityParser } from "@wp-tester/results";
+import { EMPTY_REPORT, mergeReports, PHPUnitStreamingReporter, TeamCityParser, type StreamingReporter } from "@wp-tester/results";
 import { startPlayground } from "@wp-tester/runtime";
 import { mountWordPressTestLibrary } from "./wordpress-test-lib";
 import { access } from "fs/promises";
@@ -21,11 +21,13 @@ export function shouldRunPhpunitTests(config: WPTesterConfig | ResolvedWPTesterC
  *
  * @param config - Resolved test configuration
  * @param environment - Environment configuration
+ * @param sharedReporter - Optional shared streaming reporter for unified output
  * @returns CTRF report with test results
  */
 async function runPhpunitTestsForEnvironment(
   config: ResolvedWPTesterConfig,
   environment: ResolvedEnvironment,
+  sharedReporter?: StreamingReporter,
 ): Promise<Report> {
   const testMode = config.tests.phpunit!.testMode;
   let environmentWithMount: ResolvedEnvironment = {
@@ -143,7 +145,7 @@ async function runPhpunitTestsForEnvironment(
       cliArgs.push(...phpunitArgs);
     }
 
-    // Create streaming reporter
+    // Create streaming reporter or use shared reporter
     // Disable summary since the CLI will print a combined summary
     const useStreaming = config.reporters?.default !== undefined;
 
@@ -153,7 +155,8 @@ async function runPhpunitTestsForEnvironment(
         ? config.reporters.default
         : undefined;
 
-    const reporter = new PHPUnitStreamingReporter({
+    // Use shared reporter if provided, otherwise create a new one
+    const reporter: StreamingReporter = sharedReporter ?? new PHPUnitStreamingReporter({
       enabled: useStreaming,
       showSummary: false,
       filter,
@@ -358,6 +361,8 @@ async function runPhpunitTestsForEnvironment(
 export interface RunPhpunitTestsOptions {
   /** Additional PHPUnit arguments to append */
   phpunitArgs?: string[];
+  /** Shared streaming reporter for unified output across test suites */
+  sharedReporter?: StreamingReporter;
 }
 
 /**
@@ -375,7 +380,7 @@ export async function runPhpunitTests(
   const options: RunPhpunitTestsOptions = Array.isArray(phpunitArgsOrOptions)
     ? { phpunitArgs: phpunitArgsOrOptions }
     : phpunitArgsOrOptions || {};
-  const { phpunitArgs } = options;
+  const { phpunitArgs, sharedReporter } = options;
 
   // Merge additional PHPUnit args if provided (resolve them first)
   let resolvedConfig = { ...config };
@@ -423,7 +428,8 @@ export async function runPhpunitTests(
   for (const environment of enabledEnvironments) {
     const report = await runPhpunitTestsForEnvironment(
       resolvedConfig,
-      environment
+      environment,
+      sharedReporter
     );
     // Include report only if it has tests
     if (report.results.summary.tests > 0) {

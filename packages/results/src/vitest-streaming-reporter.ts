@@ -8,6 +8,7 @@
 import type { Reporter } from "vitest/reporters";
 import type { Vitest, TestModule, TestCase, TestSuite } from "vitest/node";
 import type { SerializedError } from "@vitest/utils";
+import { StreamingReporter } from "./streaming.js";
 import { VitestStreamingBase } from "./vitest-streaming.js";
 import { highlightStringDiff } from "./diff-utils.js";
 
@@ -174,11 +175,11 @@ function getFileIdFromTestSuite(testSuite: TestSuite): string {
  * Custom Vitest reporter that streams test results in real-time
  */
 export class VitestStreamingReporter implements Reporter {
-  private streaming: VitestStreamingBase;
+  private streaming: StreamingReporter;
   private vitest: Vitest | null = null;
   private toolName: string;
 
-  constructor(toolName: string = "vitest", streamingReporter?: VitestStreamingBase) {
+  constructor(toolName: string = "vitest", streamingReporter?: StreamingReporter) {
     this.streaming = streamingReporter || new VitestStreamingBase();
     this.toolName = toolName;
   }
@@ -186,7 +187,7 @@ export class VitestStreamingReporter implements Reporter {
   /**
    * Get the underlying StreamingReporter for access to results
    */
-  getStreamingReporter(): VitestStreamingBase {
+  getStreamingReporter(): StreamingReporter {
     return this.streaming;
   }
 

@@ -3,7 +3,7 @@ import path from 'path';
 import * as clack from '../../cli/theme';
 import { runSmokeTests } from "@wp-tester/smoke-tests";
 import { runPhpunitTests } from "@wp-tester/phpunit";
-import { mergeReports, printSummary, type Report } from "@wp-tester/results";
+import { mergeReports, printSummary, UnifiedStreamingReporter, type Report } from "@wp-tester/results";
 import type { TestType, ResolvedWPTesterConfig } from "@wp-tester/config";
 import { resolveConfig } from "@wp-tester/config";
 import { validateConfig } from "../config/validate";
@@ -121,19 +121,41 @@ export const executeTests = async (
     resolvedConfig = applyFailedOnlyOverride(resolvedConfig);
   }
 
+  // Determine which tests to run based on testType parameter
+  const shouldRunPhpUnit = !testType || testType === "phpunit";
+  const smokeTestFilter = getSmokeTestFilter(testType);
+
+  // Determine if we need unified streaming (running multiple test suites)
+  const runningMultipleSuites = smokeTestFilter !== false && shouldRunPhpUnit;
+
+  // Get streaming configuration
+  const useStreaming = resolvedConfig.reporters?.default !== undefined;
+  const filter = typeof resolvedConfig.reporters?.default === 'object'
+    ? resolvedConfig.reporters.default
+    : undefined;
+
+  // Create unified streaming reporter for combined output across test suites
+  // This reporter manages state for all test suites and renders them as one unified run
+  const unifiedReporter = runningMultipleSuites && useStreaming
+    ? new UnifiedStreamingReporter({
+        enabled: true,
+        showSummary: false,
+        filter,
+      })
+    : undefined;
+
   // Run all test suites and collect results
   const reports: Report[] = [];
 
-  // Determine which tests to run based on testType parameter
-  const shouldRunPhpUnit = !testType || testType === "phpunit";
-
   // Run smoke tests (wp, plugin, theme) - smoke tests package handles whether to run
-  const smokeTestFilter = getSmokeTestFilter(testType);
   if (smokeTestFilter !== false) {
     const smokeTestReport = await runSmokeTests(
       resolvedConfig,
-      smokeTestFilter,
-      extraArgs
+      {
+        test: smokeTestFilter,
+        vitestArgs: extraArgs,
+        sharedReporter: unifiedReporter,
+      }
     );
     if (smokeTestReport.results.summary.tests > 0) {
       reports.push(smokeTestReport);
@@ -142,7 +164,10 @@ export const executeTests = async (
 
   // Run PHPUnit tests
   if (shouldRunPhpUnit) {
-    const phpunitReport = await runPhpunitTests(resolvedConfig, extraArgs);
+    const phpunitReport = await runPhpunitTests(resolvedConfig, {
+      phpunitArgs: extraArgs,
+      sharedReporter: unifiedReporter,
+    });
     // Always include report if PHPUnit was configured to run
     // This ensures bootstrap failures are visible
     if (phpunitReport.results.summary.tests > 0) {
@@ -151,13 +176,24 @@ export const executeTests = async (
   }
 
   // No tests were run
-  if (reports.length === 0) {
+  if (reports.length === 0 && !unifiedReporter) {
     clack.log.error("No tests were run. Check your configuration.");
     return { success: false, hasTests: false };
   }
 
-  // Merge results from all test suites
-  const mergedReport = mergeReports(reports);
+  // Get the final report - either from unified reporter or by merging individual reports
+  let mergedReport: Report;
+  if (unifiedReporter) {
+    mergedReport = unifiedReporter.getReport();
+    // Check if any tests ran
+    if (mergedReport.results.summary.tests === 0) {
+      clack.log.error("No tests were run. Check your configuration.");
+      return { success: false, hasTests: false };
+    }
+  } else {
+    // Merge results from all test suites (fallback for single suite or no unified reporter)
+    mergedReport = mergeReports(reports);
+  }
 
   // Display unified summary
   const { summary } = mergedReport.results;
