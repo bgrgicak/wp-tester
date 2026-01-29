@@ -3,7 +3,7 @@ import path from 'path';
 import * as clack from '../../cli/theme';
 import { runSmokeTests } from "@wp-tester/smoke-tests";
 import { runPhpunitTests } from "@wp-tester/phpunit";
-import { mergeReports, printSummary, type Report } from "@wp-tester/results";
+import { mergeReports, printSummary, filterReport, type Report } from "@wp-tester/results";
 import type { TestType, ResolvedWPTesterConfig } from "@wp-tester/config";
 import { resolveConfig } from "@wp-tester/config";
 import { validateConfig } from "../config/validate";
@@ -168,9 +168,11 @@ export const executeTests = async (
   // Write JSON report if configured
   const jsonReporter = resolvedConfig.reporters?.json;
   if (jsonReporter) {
+    // Apply JSON reporter filter options to the report
+    const filteredReport = filterReport(mergedReport, jsonReporter);
     await writeFile(
       jsonReporter.outputFile,
-      JSON.stringify(mergedReport, null, 2),
+      JSON.stringify(filteredReport, null, 2),
     );
   }
 
