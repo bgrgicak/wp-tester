@@ -93,7 +93,7 @@ function parseTeamCityLine(line: string): TeamCityMessage | null {
  */
 export class TeamCityParser {
   private buffer = "";
-  private currentSuite: string | null = null;
+  private suiteStacks: Map<string, string[]> = new Map(); // Track suite stack per flowId
   private testStartTimes: Map<string, number> = new Map();
   private completedTests: Set<string> = new Set(); // Track tests that already reported result
   private reporter: StreamingReporter | null = null;
@@ -186,16 +186,57 @@ export class TeamCityParser {
   }
 
   /**
+   * Get the flow identifier from attributes.
+   * Returns flowId if present, otherwise "default" for sequential execution.
+   */
+  private getFlowId(attributes: Record<string, string>): string {
+    return attributes.flowId || "default";
+  }
+
+  /**
+   * Get the current suite for a specific flow.
+   */
+  private getCurrentSuite(flowId: string): string | null {
+    const stack = this.suiteStacks.get(flowId);
+    return stack && stack.length > 0 ? stack[stack.length - 1] : null;
+  }
+
+  /**
+   * Push a suite onto the stack for a specific flow.
+   */
+  private pushSuite(flowId: string, suiteName: string): void {
+    if (!this.suiteStacks.has(flowId)) {
+      this.suiteStacks.set(flowId, []);
+    }
+    this.suiteStacks.get(flowId)!.push(suiteName);
+  }
+
+  /**
+   * Pop a suite from the stack for a specific flow.
+   */
+  private popSuite(flowId: string, suiteName: string): void {
+    const stack = this.suiteStacks.get(flowId);
+    if (stack && stack.length > 0) {
+      // Pop the last suite if it matches the name
+      const lastSuite = stack[stack.length - 1];
+      if (lastSuite === suiteName) {
+        stack.pop();
+      }
+    }
+  }
+
+  /**
    * Handle a parsed TeamCity message
    */
   private handleMessage(message: TeamCityMessage): void {
     const { type, attributes } = message;
     const name = attributes.name || "Unknown";
     const identifier = this.getTestIdentifier(attributes);
+    const flowId = this.getFlowId(attributes);
 
     switch (type) {
       case "testSuiteStarted":
-        this.currentSuite = name;
+        this.pushSuite(flowId, name);
         this.emit({
           type: "suite:start",
           name,
@@ -207,9 +248,7 @@ export class TeamCityParser {
           type: "suite:end",
           name,
         });
-        if (this.currentSuite === name) {
-          this.currentSuite = null;
-        }
+        this.popSuite(flowId, name);
         break;
 
       case "testStarted":
@@ -217,7 +256,7 @@ export class TeamCityParser {
         this.emit({
           type: "test:start",
           name,
-          suiteName: this.currentSuite || undefined,
+          suiteName: this.getCurrentSuite(flowId) || undefined,
         });
         break;
 
@@ -241,7 +280,7 @@ export class TeamCityParser {
         this.emit({
           type: "test:pass",
           name,
-          suiteName: this.currentSuite || undefined,
+          suiteName: this.getCurrentSuite(flowId) || undefined,
           duration,
         });
         break;
@@ -285,7 +324,7 @@ export class TeamCityParser {
         this.emit({
           type: "test:fail",
           name,
-          suiteName: this.currentSuite || undefined,
+          suiteName: this.getCurrentSuite(flowId) || undefined,
           duration,
           message: attributes.message,
           trace,
@@ -299,7 +338,7 @@ export class TeamCityParser {
         this.emit({
           type: "test:skip",
           name,
-          suiteName: this.currentSuite || undefined,
+          suiteName: this.getCurrentSuite(flowId) || undefined,
           message: attributes.message,
         });
         break;
@@ -312,7 +351,7 @@ export class TeamCityParser {
    */
   reset(): void {
     this.buffer = "";
-    this.currentSuite = null;
+    this.suiteStacks.clear();
     this.testStartTimes.clear();
     this.completedTests.clear();
   }

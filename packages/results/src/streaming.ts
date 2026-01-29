@@ -134,6 +134,7 @@ interface SuiteState {
   depth: number;
   tests: TestState[];
   isLoading: boolean; // True when suite has started but no tests have been reported yet
+  parentStack: string[]; // Stack of parent suite names when this suite was created
 }
 
 /**
@@ -643,14 +644,42 @@ export class StreamingReporter {
    * Find or create a suite in a file
    */
   private getOrCreateSuite(file: FileState, suiteName: string): SuiteState {
-    // Find existing suite
-    let suite = file.suites.find((s) => s.name === suiteName);
+    // Find existing suite with matching name, depth, AND parent context
+    // This prevents suites with the same name from being confused when they're
+    // in different branches of the suite tree (e.g., Test_Accept::test_method
+    // vs Test_Reject::test_method both creating a "test_method" sub-suite)
+    const currentDepth = file.currentSuiteStack.length;
+
+    // Create a snapshot of the current parent stack (excluding the current suite name)
+    const parentStack = [...file.currentSuiteStack];
+
+    // Find a suite with matching name, depth, and parent stack
+    let suite = file.suites.find((s) => {
+      if (s.name !== suiteName || s.depth !== currentDepth) {
+        return false;
+      }
+
+      // Check if parent stacks match
+      if (s.parentStack.length !== parentStack.length) {
+        return false;
+      }
+
+      for (let i = 0; i < parentStack.length; i++) {
+        if (s.parentStack[i] !== parentStack[i]) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
     if (!suite) {
       suite = {
         name: suiteName,
-        depth: file.currentSuiteStack.length,
+        depth: currentDepth,
         tests: [],
         isLoading: true, // Start in loading state
+        parentStack: parentStack,
       };
       file.suites.push(suite);
     }
