@@ -10,8 +10,12 @@ export async function updateConfigOption(optionName: OptionName): Promise<void> 
     const context = option.getContext?.(configFilePath);
     const updatedConfig = await option.handler(config, context);
 
-    await writeConfigFile(updatedConfig, configFilePath);
-    clack.outro(`✓ Configuration updated successfully!`);
+    // Only write and show success message if config was actually changed
+    const configChanged = JSON.stringify(config) !== JSON.stringify(updatedConfig);
+    if (configChanged) {
+      await writeConfigFile(updatedConfig, configFilePath);
+      clack.outro(`✓ Configuration updated successfully!`);
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     clack.outro(`Error: Could not update config. ${message}`);

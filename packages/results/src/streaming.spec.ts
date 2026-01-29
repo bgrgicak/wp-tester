@@ -8,12 +8,19 @@ import { StreamingReporter, type StreamWriter } from "./streaming.js";
 class MockWriter implements StreamWriter {
   lines: string[] = [];
   currentOutput: string[] = [];
+  savedPosition: number = 0;
 
   write(text: string): void {
-    // Handle ANSI clear codes
+    // Handle ANSI escape codes
     if (text === "\x1b[1A\x1b[2K") {
-      // Clear last line
+      // Old approach: move up one line and clear
       this.currentOutput.pop();
+    } else if (text === "\x1b[s") {
+      // Save cursor position
+      this.savedPosition = this.currentOutput.length;
+    } else if (text === "\x1b[u\x1b[J") {
+      // Restore cursor and clear to end of screen
+      this.currentOutput = this.currentOutput.slice(0, this.savedPosition);
     } else {
       this.lines.push(text);
       this.currentOutput.push(text);
@@ -36,6 +43,7 @@ class MockWriter implements StreamWriter {
   clear(): void {
     this.lines = [];
     this.currentOutput = [];
+    this.savedPosition = 0;
   }
 }
 
@@ -58,6 +66,7 @@ describe("StreamingReporter", () => {
     reporter.onEvent({ type: "test:start", name: "test 1", suiteName: "My Suite" });
     reporter.onEvent({ type: "test:pass", name: "test 1", duration: 100, suiteName: "My Suite" });
     reporter.onEvent({ type: "suite:end", name: "My Suite" });
+    reporter.onEvent({ type: "run:end" });
 
     const output = writer.getOutput();
     expect(output).toContain("My Suite");
@@ -97,6 +106,7 @@ describe("StreamingReporter", () => {
     // End files
     reporter.onEvent({ type: "file:end", fileId: "file1" });
     reporter.onEvent({ type: "file:end", fileId: "file2" });
+    reporter.onEvent({ type: "run:end" });
 
     const output = writer.getCurrentOutput();
 
@@ -131,6 +141,7 @@ describe("StreamingReporter", () => {
       suiteName: "Suite"
     });
     reporter.onEvent({ type: "suite:end", name: "Suite" });
+    reporter.onEvent({ type: "run:end" });
 
     const output = writer.getOutput();
     expect(output).toContain("failing test");
@@ -151,6 +162,7 @@ describe("StreamingReporter", () => {
       suiteName: "Suite"
     });
     reporter.onEvent({ type: "suite:end", name: "Suite" });
+    reporter.onEvent({ type: "run:end" });
 
     const output = writer.getOutput();
     expect(output).toContain("skipped test");
@@ -205,6 +217,7 @@ describe("StreamingReporter", () => {
     reporter.onEvent({ type: "suite:end", name: "Suite B", fileId: "file2" });
     reporter.onEvent({ type: "file:end", fileId: "file1" });
     reporter.onEvent({ type: "file:end", fileId: "file2" });
+    reporter.onEvent({ type: "run:end" });
 
     const counts = reporter.getCounts();
     expect(counts.total).toBe(3);
@@ -225,6 +238,7 @@ describe("StreamingReporter", () => {
     reporter.onEvent({ type: "test:pass", name: "nested test", duration: 50, suiteName: "Inner Suite" });
     reporter.onEvent({ type: "suite:end", name: "Inner Suite" });
     reporter.onEvent({ type: "suite:end", name: "Outer Suite" });
+    reporter.onEvent({ type: "run:end" });
 
     const output = writer.getOutput();
     expect(output).toContain("Outer Suite");
@@ -239,6 +253,7 @@ describe("StreamingReporter", () => {
 
     // End suite without test completion - should clean up running test
     reporter.onEvent({ type: "suite:end", name: "Suite" });
+    reporter.onEvent({ type: "run:end" });
 
     // Test should be marked as pending (not running)
     const output = writer.getCurrentOutput();
@@ -312,6 +327,7 @@ describe("StreamingReporter", () => {
     reporter.onEvent({ type: "test:start", name: "fast test", suiteName: "Suite", fileId: "file1" });
 
     reporter.onEvent({ type: "suite:end", name: "Suite", fileId: "file1" });
+    reporter.onEvent({ type: "run:end" });
 
     const counts = reporter.getCounts();
     // Should only count the test once, not create duplicate entries
@@ -347,6 +363,7 @@ describe("StreamingReporter", () => {
 
     reporter.onEvent({ type: "file:end", fileId: "file1" });
     reporter.onEvent({ type: "file:end", fileId: "file2" });
+    reporter.onEvent({ type: "run:end" });
 
     const counts = reporter.getCounts();
     // Should count both tests separately, not create duplicates
@@ -567,5 +584,75 @@ describe("StreamingReporter", () => {
     // And the output should show the test
     expect(output).toContain("PHPUnit Bootstrap");
     expect(output).toContain("1 failed");
+  });
+
+  it("should filter tests in getReport() based on filter options", () => {
+    const filteredWriter = new MockWriter();
+    const filteredReporter = new StreamingReporter({
+      writer: filteredWriter,
+      showRunBoundaries: false,
+      showSummary: false,
+      filter: {
+        passed: false,
+        failed: true,
+        skipped: false,
+        pending: false,
+        other: false,
+      },
+    });
+
+    filteredReporter.onEvent({ type: "run:start", toolName: "test-runner" });
+    filteredReporter.onEvent({ type: "suite:start", name: "Suite" });
+    filteredReporter.onEvent({ type: "test:pass", name: "passing test", duration: 100, suiteName: "Suite" });
+    filteredReporter.onEvent({ type: "test:fail", name: "failing test", duration: 50, message: "Error", suiteName: "Suite" });
+    filteredReporter.onEvent({ type: "test:skip", name: "skipped test", duration: 0, suiteName: "Suite" });
+    filteredReporter.onEvent({ type: "suite:end", name: "Suite" });
+    filteredReporter.onEvent({ type: "run:end" });
+
+    const report = filteredReporter.getReport();
+
+    // Report should only contain failed tests (based on filter)
+    expect(report.results.tests).toHaveLength(1);
+    expect(report.results.tests[0].name).toBe("Suite::failing test");
+    expect(report.results.tests[0].status).toBe("failed");
+
+    // Summary should reflect only the filtered tests
+    expect(report.results.summary.tests).toBe(1);
+    expect(report.results.summary.passed).toBe(0);
+    expect(report.results.summary.failed).toBe(1);
+    expect(report.results.summary.skipped).toBe(0);
+  });
+
+  it("should include all tests in report when filter shows all statuses", () => {
+    const fullWriter = new MockWriter();
+    const fullReporter = new StreamingReporter({
+      writer: fullWriter,
+      showRunBoundaries: false,
+      showSummary: false,
+      filter: {
+        passed: true,
+        failed: true,
+        skipped: true,
+        pending: true,
+        other: true,
+      },
+    });
+
+    fullReporter.onEvent({ type: "run:start", toolName: "test-runner" });
+    fullReporter.onEvent({ type: "suite:start", name: "Suite" });
+    fullReporter.onEvent({ type: "test:pass", name: "passing test", duration: 100, suiteName: "Suite" });
+    fullReporter.onEvent({ type: "test:fail", name: "failing test", duration: 50, suiteName: "Suite" });
+    fullReporter.onEvent({ type: "test:skip", name: "skipped test", duration: 0, suiteName: "Suite" });
+    fullReporter.onEvent({ type: "suite:end", name: "Suite" });
+    fullReporter.onEvent({ type: "run:end" });
+
+    const report = fullReporter.getReport();
+
+    // Report should contain all tests
+    expect(report.results.tests).toHaveLength(3);
+    expect(report.results.summary.tests).toBe(3);
+    expect(report.results.summary.passed).toBe(1);
+    expect(report.results.summary.failed).toBe(1);
+    expect(report.results.summary.skipped).toBe(1);
   });
 });
