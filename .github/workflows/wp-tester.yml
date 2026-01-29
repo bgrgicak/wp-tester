@@ -51,6 +51,6 @@ jobs:
       - name: Run WP Tester
         run: >
           npx @wp-tester/cli@latest test
-          --config=~/packages/test-fixtures/fixtures/wp-tester-theme/wp-tester.json
+          --config=./packages/test-fixtures/fixtures/wp-tester-theme/wp-tester.json
           --test=phpunit
           ${{ github.event.inputs.wp-tester-args }}
