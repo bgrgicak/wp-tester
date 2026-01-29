@@ -3,7 +3,7 @@ import path from 'path';
 import * as clack from '../../cli/theme';
 import { runSmokeTests } from "@wp-tester/smoke-tests";
 import { runPhpunitTests } from "@wp-tester/phpunit";
-import { mergeReports, printSummary, UnifiedStreamingReporter, type Report } from "@wp-tester/results";
+import { printSummary, UnifiedStreamingReporter, type Report } from "@wp-tester/results";
 import type { TestType, ResolvedWPTesterConfig } from "@wp-tester/config";
 import { resolveConfig } from "@wp-tester/config";
 import { validateConfig } from "../config/validate";
@@ -144,54 +144,37 @@ export const executeTests = async (
       })
     : undefined;
 
-  // Run all test suites and collect results
-  const reports: Report[] = [];
-
-  // Run smoke tests (wp, plugin, theme) - smoke tests package handles whether to run
+  // Run smoke tests (wp, plugin, theme)
+  let smokeTestReport: Report | undefined;
   if (smokeTestFilter !== false) {
-    const smokeTestReport = await runSmokeTests(
+    smokeTestReport = await runSmokeTests(
       resolvedConfig,
       smokeTestFilter,
       extraArgs,
       unifiedReporter
     );
-    if (smokeTestReport.results.summary.tests > 0) {
-      reports.push(smokeTestReport);
-    }
   }
 
   // Run PHPUnit tests
+  let phpunitReport: Report | undefined;
   if (shouldRunPhpUnit) {
-    const phpunitReport = await runPhpunitTests(
+    phpunitReport = await runPhpunitTests(
       resolvedConfig,
       extraArgs,
       unifiedReporter
     );
-    // Always include report if PHPUnit was configured to run
-    // This ensures bootstrap failures are visible
-    if (phpunitReport.results.summary.tests > 0) {
-      reports.push(phpunitReport);
-    }
   }
 
-  // No tests were run
-  if (reports.length === 0 && !unifiedReporter) {
+  // Get the final report
+  // When using unified reporter, get from it directly (all events were sent there)
+  // Otherwise, use the individual report (only one test suite ran)
+  const mergedReport = unifiedReporter?.getReport()
+    ?? smokeTestReport
+    ?? phpunitReport;
+
+  if (!mergedReport || mergedReport.results.summary.tests === 0) {
     clack.log.error("No tests were run. Check your configuration.");
     return { success: false, hasTests: false };
-  }
-
-  // Get the final report - either from unified reporter or by merging individual reports
-  let mergedReport: Report;
-  if (unifiedReporter) {
-    mergedReport = unifiedReporter.getReport();
-    // Check if any tests ran
-    if (mergedReport.results.summary.tests === 0) {
-      clack.log.error("No tests were run. Check your configuration.");
-      return { success: false, hasTests: false };
-    }
-  } else {
-    // Merge results from all test suites (fallback for single suite or no unified reporter)
-    mergedReport = mergeReports(reports);
   }
 
   // Display unified summary
