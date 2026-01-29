@@ -9,6 +9,32 @@ import { getProjectDir } from "../path-utils";
 const WORKFLOW_PATH = ".github/workflows/wp-tester.yml";
 
 /**
+ * Workflow configuration options
+ */
+interface WorkflowConfig {
+  branches: string[];
+  nodeVersion: string;
+  enableCaching: boolean;
+  wpTesterArgs: string;
+}
+
+/**
+ * Check if the project is a git repository
+ */
+function isGitRepo(projectPath: string): boolean {
+  try {
+    execSync("git rev-parse --git-dir", {
+      cwd: projectPath,
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Detect the default branch name from git
  */
 function detectDefaultBranch(projectPath: string): string {
@@ -54,12 +80,73 @@ function detectDefaultBranch(projectPath: string): string {
 }
 
 /**
+ * Detect GitHub repository info for badge generation
+ */
+function detectGitHubRepo(projectPath: string): string | null {
+  try {
+    const remoteUrl = execSync("git remote get-url origin", {
+      cwd: projectPath,
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "pipe"],
+    }).trim();
+
+    // Parse GitHub URL (supports both HTTPS and SSH formats)
+    const httpsMatch = remoteUrl.match(
+      /github\.com\/([^/]+\/[^/.]+)(?:\.git)?$/
+    );
+    const sshMatch = remoteUrl.match(/github\.com:([^/]+\/[^/.]+)(?:\.git)?$/);
+
+    if (httpsMatch) return httpsMatch[1];
+    if (sshMatch) return sshMatch[1];
+  } catch {
+    // Git command failed
+  }
+  return null;
+}
+
+/**
+ * Extract configuration from existing workflow
+ */
+function extractConfigFromWorkflow(content: string): Partial<WorkflowConfig> {
+  const config: Partial<WorkflowConfig> = {};
+
+  // Extract branches
+  const branchMatch = content.match(
+    /branches:\s*\[([^\]]+)\]/
+  );
+  if (branchMatch) {
+    config.branches = branchMatch[1]
+      .split(",")
+      .map((b) => b.trim().replace(/['"]/g, ""))
+      .filter((b) => b.length > 0);
+  }
+
+  // Extract Node.js version
+  const nodeMatch = content.match(/node-version:\s*['"]?(\d+)['"]?/);
+  if (nodeMatch) {
+    config.nodeVersion = nodeMatch[1];
+  }
+
+  // Check if caching is enabled
+  config.enableCaching = content.includes("actions/cache@");
+
+  // Extract wp-tester args
+  const argsMatch = content.match(
+    /npx\s+wp-tester(?:@\S+)?\s+test\s*(.*?)(?:\s*\$\{\{|$)/m
+  );
+  if (argsMatch && argsMatch[1]) {
+    config.wpTesterArgs = argsMatch[1].trim();
+  }
+
+  return config;
+}
+
+/**
  * Generate the GitHub Action workflow content
  */
-function generateWorkflowContent(
-  wpTesterArgs: string,
-  defaultBranch: string
-): string {
+function generateWorkflowContent(config: WorkflowConfig): string {
+  const { branches, nodeVersion, enableCaching, wpTesterArgs } = config;
+
   // Clean up args - remove empty lines and trim
   const cleanArgs = wpTesterArgs
     .split("\n")
@@ -67,23 +154,41 @@ function generateWorkflowContent(
     .filter((line) => line.length > 0)
     .join(" ");
 
+  const branchList = branches.join(", ");
+
+  const cacheStep = enableCaching
+    ? `
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: \${{ runner.os }}-node-\${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            \${{ runner.os }}-node-
+`
+    : "";
+
   return `# WP Tester - WordPress Testing Workflow
 # This workflow runs wp-tester to test your WordPress plugin/theme
 #
 # For more information, see: https://github.com/bgrgicak/wp-tester
 #
-# To customize this workflow:
-# - Modify the 'wp-tester args' input for different test configurations
-# - Add additional arguments like --test=phpunit or --failed-only
+# Configuration:
+# - Branches: ${branchList}
+# - Node.js: ${nodeVersion}
+# - Caching: ${enableCaching ? "enabled" : "disabled"}
+#
+# To customize:
+# - Add arguments like --test=phpunit or --failed-only
 # - See 'npx wp-tester --help' for all available options
 
 name: WP Tester
 
 on:
   push:
-    branches: [${defaultBranch}]
+    branches: [${branchList}]
   pull_request:
-    branches: [${defaultBranch}]
+    branches: [${branchList}]
   workflow_dispatch:
     inputs:
       wp-tester-args:
@@ -103,11 +208,18 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-
+          node-version: '${nodeVersion}'
+${cacheStep}
       - name: Run WP Tester
-        run: npx wp-tester@latest test${cleanArgs ? ` ${cleanArgs}` : ''} \${{ github.event.inputs.wp-tester-args }}
+        run: npx wp-tester@latest test${cleanArgs ? ` ${cleanArgs}` : ""} \${{ github.event.inputs.wp-tester-args }}
 `;
+}
+
+/**
+ * Generate README badge markdown
+ */
+function generateBadgeMarkdown(repoPath: string): string {
+  return `[![WP Tester](https://github.com/${repoPath}/actions/workflows/wp-tester.yml/badge.svg)](https://github.com/${repoPath}/actions/workflows/wp-tester.yml)`;
 }
 
 /**
@@ -137,67 +249,124 @@ async function readExistingWorkflow(
 }
 
 /**
- * Extract wp-tester args from existing workflow
+ * Display workflow preview
  */
-function extractArgsFromWorkflow(content: string): string {
-  // Try to find the wp-tester command line
-  const match = content.match(
-    /npx\s+wp-tester(?:@\S+)?\s+test\s*(.*?)(?:\s*\$\{\{|$)/m
-  );
-  if (match && match[1]) {
-    return match[1].trim();
-  }
-  return "";
+function displayWorkflowPreview(content: string): void {
+  const lines = content.split("\n").slice(0, 25);
+  const preview = lines.join("\n") + (content.split("\n").length > 25 ? "\n..." : "");
+
+  clack.note(pc.dim(preview), "Workflow Preview");
 }
 
 /**
- * Display a beautiful box with the workflow path
+ * Display a beautiful box with the workflow path and optional badge
  */
 function displaySuccessMessage(
   workflowPath: string,
-  defaultBranch: string
+  config: WorkflowConfig,
+  badgeMarkdown?: string
 ): void {
   const relativePath = relative(process.cwd(), workflowPath) || workflowPath;
-  const branchInfo = `Triggers on push/PR to '${defaultBranch}' branch.`;
+  const branchInfo =
+    config.branches.length === 1
+      ? `Triggers on push/PR to '${config.branches[0]}' branch.`
+      : `Triggers on: ${config.branches.join(", ")}`;
 
   console.log("");
   console.log(
-    pc.green("  ╭─────────────────────────────────────────────────────────────╮")
+    pc.green(
+      "  ╭─────────────────────────────────────────────────────────────────╮"
+    )
   );
   console.log(
-    pc.green("  │                                                             │")
-  );
-  console.log(
-    pc.green("  │") +
-      pc.bold("  ✓ GitHub Action created successfully!                      ") +
-      pc.green("│")
-  );
-  console.log(
-    pc.green("  │                                                             │")
+    pc.green(
+      "  │                                                                 │"
+    )
   );
   console.log(
     pc.green("  │") +
-      pc.cyan(`    ${relativePath.padEnd(55)}`) +
+      pc.bold("  ✓ GitHub Action created successfully!                          ") +
       pc.green("│")
   );
   console.log(
-    pc.green("  │                                                             │")
+    pc.green(
+      "  │                                                                 │"
+    )
   );
   console.log(
     pc.green("  │") +
-      pc.dim(`  ${branchInfo.padEnd(57)}`) +
+      pc.cyan(`    ${relativePath.padEnd(59)}`) +
+      pc.green("│")
+  );
+  console.log(
+    pc.green(
+      "  │                                                                 │"
+    )
+  );
+  console.log(
+    pc.green("  │") +
+      pc.dim(`  ${branchInfo.padEnd(61)}`) +
       pc.green("│")
   );
   console.log(
     pc.green("  │") +
-      pc.dim("  You can also trigger it manually from GitHub Actions.      ") +
+      pc.dim(
+        `  Node.js ${config.nodeVersion} ${config.enableCaching ? "with caching" : ""}`.padEnd(
+          61
+        )
+      ) +
       pc.green("│")
   );
   console.log(
-    pc.green("  │                                                             │")
+    pc.green("  │") +
+      pc.dim("  You can also trigger it manually from GitHub Actions.          ") +
+      pc.green("│")
+  );
+
+  if (badgeMarkdown) {
+    console.log(
+      pc.green(
+        "  │                                                                 │"
+      )
+    );
+    console.log(
+      pc.green(
+        "  ├─────────────────────────────────────────────────────────────────┤"
+      )
+    );
+    console.log(
+      pc.green(
+        "  │                                                                 │"
+      )
+    );
+    console.log(
+      pc.green("  │") +
+        pc.bold("  README Badge:                                                  ") +
+        pc.green("│")
+    );
+    console.log(
+      pc.green("  │") +
+        pc.cyan(`  ${badgeMarkdown.substring(0, 61).padEnd(61)}`) +
+        pc.green("│")
+    );
+    if (badgeMarkdown.length > 61) {
+      console.log(
+        pc.green("  │") +
+          pc.cyan(`  ${badgeMarkdown.substring(61).padEnd(61)}`) +
+          pc.green("│")
+      );
+    }
+  }
+
+  console.log(
+    pc.green(
+      "  │                                                                 │"
+    )
   );
   console.log(
-    pc.green("  ╰─────────────────────────────────────────────────────────────╯")
+    pc.green(
+      "  ╰─────────────────────────────────────────────────────────────────╯"
+    )
   );
   console.log("");
 }
@@ -212,18 +381,12 @@ ${pc.bold("wp-tester CLI Arguments")}
 ${pc.cyan("Common options:")}
   --test=<type>      Run specific tests: wp, plugin, theme, phpunit
   --failed-only      Only display failed tests in output
-  --watch            Watch for file changes (not for CI)
   --passWithNoTests  Allow passing when no tests found
 
 ${pc.cyan("Examples:")}
-  ${pc.dim("# Run only PHPUnit tests")}
-  --test=phpunit
-
-  ${pc.dim("# Run plugin smoke tests only")}
-  --test=plugin
-
-  ${pc.dim("# Show only failures (cleaner CI output)")}
-  --failed-only
+  ${pc.dim("--test=phpunit")}         Run only PHPUnit tests
+  ${pc.dim("--test=plugin")}          Run plugin smoke tests only
+  ${pc.dim("--failed-only")}          Show only failures (cleaner CI output)
 
 ${pc.cyan("Tip:")} Leave empty to run all configured tests.
 `;
@@ -243,10 +406,26 @@ export async function ciOption(
   const skipPrompt = context?.skipPrompt ?? false;
   const projectPath = getProjectDir(config, configPath);
 
+  // Check if this is a git repository
+  if (!isGitRepo(projectPath)) {
+    clack.log.warn(
+      "This directory is not a git repository. GitHub Actions require git."
+    );
+    const continueAnyway = await clack.confirm({
+      message: "Continue anyway?",
+      initialValue: false,
+    });
+
+    if (clack.isCancel(continueAnyway) || !continueAnyway) {
+      return config;
+    }
+  }
+
   // Check if user wants to set up CI
   if (!skipPrompt) {
     const setupCI = await clack.select({
-      message: "Would you like to create a GitHub Action for automated testing?",
+      message:
+        "Would you like to create a GitHub Action for automated testing?",
       options: [
         {
           value: true,
@@ -268,14 +447,27 @@ export async function ciOption(
     }
   }
 
+  // Default configuration
+  let workflowConfig: WorkflowConfig = {
+    branches: [detectDefaultBranch(projectPath)],
+    nodeVersion: "20",
+    enableCaching: true,
+    wpTesterArgs: "",
+  };
+
   // Check if workflow already exists
   const exists = await workflowExists(projectPath);
-  let currentArgs = "";
 
   if (exists) {
     const existingContent = await readExistingWorkflow(projectPath);
     if (existingContent) {
-      currentArgs = extractArgsFromWorkflow(existingContent);
+      const extracted = extractConfigFromWorkflow(existingContent);
+      workflowConfig = {
+        ...workflowConfig,
+        ...extracted,
+        branches: extracted.branches || workflowConfig.branches,
+        wpTesterArgs: extracted.wpTesterArgs || "",
+      };
     }
 
     const overwrite = await clack.select({
@@ -284,7 +476,7 @@ export async function ciOption(
         {
           value: "edit",
           label: "Edit configuration",
-          hint: "Modify the wp-tester arguments",
+          hint: "Modify settings (preserves detected values)",
         },
         {
           value: "overwrite",
@@ -307,40 +499,23 @@ export async function ciOption(
     }
 
     if (overwrite === "overwrite") {
-      currentArgs = "";
+      workflowConfig = {
+        branches: [detectDefaultBranch(projectPath)],
+        nodeVersion: "20",
+        enableCaching: true,
+        wpTesterArgs: "",
+      };
     }
   }
 
-  // Show help for configuration
-  displayConfigHelp();
-
-  // Prompt for wp-tester arguments
-  const argsInput = await clack.text({
-    message: "Configure wp-tester arguments (press Enter to use defaults):",
-    placeholder: "e.g., --test=phpunit --failed-only",
-    initialValue: currentArgs,
-  });
-
-  if (clack.isCancel(argsInput)) {
-    clack.cancel("Setup cancelled.");
-    process.exit(0);
-  }
-
-  const finalArgs = typeof argsInput === "string" ? argsInput.trim() : "";
-
-  // Detect and confirm the default branch
-  const detectedBranch = detectDefaultBranch(projectPath);
-
+  // Configure branches
   const branchInput = await clack.text({
-    message: "Target branch for CI triggers:",
-    initialValue: detectedBranch,
-    placeholder: "main",
+    message: "Target branches for CI triggers (comma-separated):",
+    initialValue: workflowConfig.branches.join(", "),
+    placeholder: "main, develop",
     validate: (value) => {
       if (!value || value.trim().length === 0) {
-        return "Branch name cannot be empty";
-      }
-      if (/\s/.test(value)) {
-        return "Branch name cannot contain spaces";
+        return "At least one branch is required";
       }
       return undefined;
     },
@@ -351,27 +526,112 @@ export async function ciOption(
     process.exit(0);
   }
 
-  const defaultBranch =
-    typeof branchInput === "string" ? branchInput.trim() : detectedBranch;
+  workflowConfig.branches = branchInput
+    .split(",")
+    .map((b) => b.trim())
+    .filter((b) => b.length > 0);
+
+  // Configure Node.js version
+  const nodeVersion = await clack.select({
+    message: "Node.js version:",
+    options: [
+      { value: "22", label: "22 (Latest LTS)", hint: "Recommended" },
+      { value: "20", label: "20 (LTS)" },
+      { value: "18", label: "18 (Maintenance LTS)" },
+    ],
+    initialValue: workflowConfig.nodeVersion,
+  });
+
+  if (clack.isCancel(nodeVersion)) {
+    clack.cancel("Setup cancelled.");
+    process.exit(0);
+  }
+
+  workflowConfig.nodeVersion = nodeVersion;
+
+  // Configure caching
+  const enableCaching = await clack.confirm({
+    message: "Enable npm caching for faster builds?",
+    initialValue: workflowConfig.enableCaching,
+  });
+
+  if (clack.isCancel(enableCaching)) {
+    clack.cancel("Setup cancelled.");
+    process.exit(0);
+  }
+
+  workflowConfig.enableCaching = enableCaching;
+
+  // Show help for wp-tester arguments
+  displayConfigHelp();
+
+  // Configure wp-tester arguments
+  const argsInput = await clack.text({
+    message: "wp-tester arguments (press Enter for defaults):",
+    placeholder: "e.g., --test=phpunit --failed-only",
+    initialValue: workflowConfig.wpTesterArgs,
+  });
+
+  if (clack.isCancel(argsInput)) {
+    clack.cancel("Setup cancelled.");
+    process.exit(0);
+  }
+
+  workflowConfig.wpTesterArgs =
+    typeof argsInput === "string" ? argsInput.trim() : "";
 
   // Generate workflow content
-  const workflowContent = generateWorkflowContent(finalArgs, defaultBranch);
+  const workflowContent = generateWorkflowContent(workflowConfig);
 
-  // Create directory if it doesn't exist
+  // Show preview
+  displayWorkflowPreview(workflowContent);
+
+  // Confirm creation
+  const confirmCreate = await clack.confirm({
+    message: "Create this workflow?",
+    initialValue: true,
+  });
+
+  if (clack.isCancel(confirmCreate) || !confirmCreate) {
+    clack.log.info("Workflow creation cancelled.");
+    return config;
+  }
+
+  // Create directory and file with spinner
   const workflowFullPath = join(projectPath, WORKFLOW_PATH);
   const workflowDir = dirname(workflowFullPath);
+
+  const spinner = clack.spinner();
+  spinner.start("Creating workflow file...");
 
   try {
     await mkdir(workflowDir, { recursive: true });
     await writeFile(workflowFullPath, workflowContent, "utf8");
-
-    // Display success message
-    displaySuccessMessage(workflowFullPath, defaultBranch);
+    spinner.stop("Workflow file created!");
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    clack.log.error(`Failed to create workflow file: ${message}`);
+    spinner.stop("Failed to create workflow file");
+    clack.log.error(`Error: ${message}`);
     process.exit(1);
   }
+
+  // Offer to show badge
+  const repoPath = detectGitHubRepo(projectPath);
+  let badgeMarkdown: string | undefined;
+
+  if (repoPath) {
+    const addBadge = await clack.confirm({
+      message: "Would you like a README badge for the workflow status?",
+      initialValue: true,
+    });
+
+    if (!clack.isCancel(addBadge) && addBadge) {
+      badgeMarkdown = generateBadgeMarkdown(repoPath);
+    }
+  }
+
+  // Display success message
+  displaySuccessMessage(workflowFullPath, workflowConfig, badgeMarkdown);
 
   return config;
 }
