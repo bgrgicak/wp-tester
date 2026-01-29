@@ -151,11 +151,9 @@ export const executeTests = async (
   if (smokeTestFilter !== false) {
     const smokeTestReport = await runSmokeTests(
       resolvedConfig,
-      {
-        test: smokeTestFilter,
-        vitestArgs: extraArgs,
-        sharedReporter: unifiedReporter,
-      }
+      smokeTestFilter,
+      extraArgs,
+      unifiedReporter
     );
     if (smokeTestReport.results.summary.tests > 0) {
       reports.push(smokeTestReport);
@@ -164,10 +162,11 @@ export const executeTests = async (
 
   // Run PHPUnit tests
   if (shouldRunPhpUnit) {
-    const phpunitReport = await runPhpunitTests(resolvedConfig, {
-      phpunitArgs: extraArgs,
-      sharedReporter: unifiedReporter,
-    });
+    const phpunitReport = await runPhpunitTests(
+      resolvedConfig,
+      extraArgs,
+      unifiedReporter
+    );
     // Always include report if PHPUnit was configured to run
     // This ensures bootstrap failures are visible
     if (phpunitReport.results.summary.tests > 0) {

@@ -65,53 +65,25 @@ export function selectTestFiles(
 }
 
 /**
- * Options for running smoke tests
- */
-export interface RunSmokeTestsOptions {
-  /** Optional filter to run only specific test type (wp, plugin, or theme) */
-  test?: TestType | false;
-  /** Additional arguments to pass to Vitest CLI */
-  vitestArgs?: string[];
-  /** Shared streaming reporter for unified output across test suites */
-  sharedReporter?: StreamingReporter;
-}
-
-/**
  * Run WordPress smoke tests
  *
  * @param config - Resolved test configuration
- * @param testOrOptions - Optional filter to run only specific test type, or options object
- * @param vitestArgs - Additional arguments to pass to Vitest CLI (deprecated, use options object)
+ * @param test - Optional filter to run only specific test type (wp, plugin, or theme)
+ * @param vitestArgs - Additional arguments to pass to Vitest CLI
+ * @param sharedReporter - Optional shared streaming reporter for unified output
  * @returns CTRF report with test results
  */
 export async function runSmokeTests(
   config: ResolvedWPTesterConfig,
-  testOrOptions?: TestType | false | RunSmokeTestsOptions,
-  vitestArgs?: string[]
+  test?: TestType | false,
+  vitestArgs?: string[],
+  sharedReporter?: StreamingReporter
 ): Promise<Report> {
-  // Support both old signature (test, vitestArgs) and new signature (options object)
-  let test: TestType | false | undefined;
-  let extraArgs: string[] | undefined;
-  let sharedReporter: StreamingReporter | undefined;
-
-  // Check if testOrOptions is an options object (has specific properties, not a string/boolean)
-  if (testOrOptions !== undefined &&
-      testOrOptions !== null &&
-      typeof testOrOptions === 'object' &&
-      !Array.isArray(testOrOptions)) {
-    // New signature: options object
-    test = testOrOptions.test;
-    extraArgs = testOrOptions.vitestArgs;
-    sharedReporter = testOrOptions.sharedReporter;
-  } else if (typeof testOrOptions === 'string' || testOrOptions === false || testOrOptions === undefined) {
-    // Old signature: test type and vitestArgs
-    test = testOrOptions;
-    extraArgs = vitestArgs;
-  }
   // Check if any tests are configured
   if (!shouldRunSmokeTests(config)) {
     return Promise.resolve(EMPTY_REPORT);
   }
+
   // Get package root directory
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = dirname(__filename);
@@ -133,17 +105,11 @@ export async function runSmokeTests(
     : undefined;
 
   // Use shared reporter if provided, otherwise create a new one
-  // When using shared reporter, the summary is handled by the unified reporter
-  let reporter: StreamingReporter;
-  if (sharedReporter) {
-    reporter = sharedReporter;
-  } else {
-    reporter = new VitestStreamingBase({
-      enabled: useStreaming,
-      showSummary: false,
-      filter
-    });
-  }
+  const reporter: StreamingReporter = sharedReporter ?? new VitestStreamingBase({
+    enabled: useStreaming,
+    showSummary: false,
+    filter
+  });
 
   // Create Vitest streaming reporter wrapper
   const vitestReporter = new VitestStreamingReporter(
@@ -156,8 +122,8 @@ export async function runSmokeTests(
 
   // Parse all Vitest CLI arguments using Vitest's built-in parser
   // parseCLI expects "vitest" as the first argument (like process.argv)
-  const parsedArgs = extraArgs && extraArgs.length > 0
-    ? parseCLI(["vitest", ...extraArgs], { allowUnknownOptions: true })
+  const parsedArgs = vitestArgs && vitestArgs.length > 0
+    ? parseCLI(["vitest", ...vitestArgs], { allowUnknownOptions: true })
     : { options: {}, filter: [] };
 
   // Start Vitest programmatically with our streaming reporter
@@ -183,7 +149,5 @@ export async function runSmokeTests(
   await vitest.close();
 
   // Get report from streaming reporter
-  const result = reporter.getReport();
-
-  return result;
+  return reporter.getReport();
 }

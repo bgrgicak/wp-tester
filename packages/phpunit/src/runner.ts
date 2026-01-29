@@ -356,31 +356,18 @@ async function runPhpunitTestsForEnvironment(
 }
 
 /**
- * Options for running PHPUnit tests
- */
-export interface RunPhpunitTestsOptions {
-  /** Additional PHPUnit arguments to append */
-  phpunitArgs?: string[];
-  /** Shared streaming reporter for unified output across test suites */
-  sharedReporter?: StreamingReporter;
-}
-
-/**
  * Run PHPUnit tests in WordPress Playground environment
  *
  * @param config - Resolved test configuration
- * @param phpunitArgsOrOptions - Additional PHPUnit arguments or options object
+ * @param phpunitArgs - Additional PHPUnit arguments to append
+ * @param sharedReporter - Optional shared streaming reporter for unified output
  * @returns CTRF report with test results
  */
 export async function runPhpunitTests(
   config: ResolvedWPTesterConfig,
-  phpunitArgsOrOptions?: string[] | RunPhpunitTestsOptions
+  phpunitArgs?: string[],
+  sharedReporter?: StreamingReporter
 ): Promise<Report> {
-  // Support both old signature (string[]) and new signature (options object)
-  const options: RunPhpunitTestsOptions = Array.isArray(phpunitArgsOrOptions)
-    ? { phpunitArgs: phpunitArgsOrOptions }
-    : phpunitArgsOrOptions || {};
-  const { phpunitArgs, sharedReporter } = options;
 
   // Merge additional PHPUnit args if provided (resolve them first)
   let resolvedConfig = { ...config };
