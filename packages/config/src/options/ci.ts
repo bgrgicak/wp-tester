@@ -302,11 +302,6 @@ ${pc.cyan("Common options:")}
   --failed-only      Only display failed tests in output
   --passWithNoTests  Allow passing when no tests found
 
-${pc.cyan("Examples:")}
-  ${pc.dim("--test=phpunit")}         Run only PHPUnit tests
-  ${pc.dim("--test=plugin")}          Run plugin smoke tests only
-  ${pc.dim("--failed-only")}          Show only failures (cleaner CI output)
-
 ${pc.cyan("Tip:")} Leave empty to run all configured tests.
 `;
 
