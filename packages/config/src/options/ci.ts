@@ -299,7 +299,6 @@ ${pc.bold("wp-tester CLI Arguments")}
 
 ${pc.cyan("Common options:")}
   --test=<type>      Run specific tests: wp, plugin, theme, phpunit
-  --failed-only      Only display failed tests in output
   --passWithNoTests  Allow passing when no tests found
 
 Press enter to run tests using default options.
