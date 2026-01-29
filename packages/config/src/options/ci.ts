@@ -302,7 +302,7 @@ ${pc.cyan("Common options:")}
   --failed-only      Only display failed tests in output
   --passWithNoTests  Allow passing when no tests found
 
-${pc.cyan("Tip:")} Leave empty to run all configured tests.
+Press enter to run tests using default options.
 `;
 
   clack.note(helpText, "Configuration Help");
