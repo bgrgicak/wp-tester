@@ -1,8 +1,9 @@
 import type { WPTesterConfig } from "./wp-tester-config";
-import type { ResolvedWPTesterConfig, ResolvedEnvironment, ResolvedTests, ResolvedBlueprint, ResolvedReporters, ResolvedPath } from "./resolved-types";
+import type { ResolvedWPTesterConfig, ResolvedEnvironment, ResolvedTests, ResolvedBlueprint, ResolvedReporters, ResolvedPath, ResolvedJsonReporterOptions } from "./resolved-types";
 import type { BlueprintV1Declaration } from "@wp-playground/blueprints";
 import { readFile } from "fs/promises";
 import { existsSync } from "fs";
+import { dirname, join } from "path";
 import { getProjectRootMount } from "./auto-mount";
 import { detectProjectType } from "./options/project-type-detect";
 import { getProjectDir, resolveAbsolute, normalizeConfigPath } from "./path-utils";
@@ -64,8 +65,8 @@ export async function resolveConfig(
   };
 
   const reporters: ResolvedReporters = {
-    ...(resolvedConfig.reporters ?? {}),
     default: undefined, // Will be set below
+    json: undefined, // Will be set below if configured
   };
 
   // Normalize default reporter:
@@ -84,6 +85,22 @@ export async function resolveConfig(
   } else {
     // Object with specific options -> use as-is
     reporters.default = inputDefault;
+  }
+
+  // Resolve JSON reporter if configured
+  const inputJson = resolvedConfig.reporters?.json;
+  if (inputJson) {
+    // Get config directory for default output path
+    const configDir = configPath ? dirname(configPath) : projectDir;
+    const defaultOutputFile = join(configDir, "wp-tester-results.json");
+
+    const resolvedJson: ResolvedJsonReporterOptions = {
+      ...inputJson,
+      outputFile: inputJson.outputFile
+        ? resolveAbsolute(inputJson.outputFile, configDir)
+        : defaultOutputFile,
+    };
+    reporters.json = resolvedJson;
   }
 
   // Expand environments with version arrays into multiple environments

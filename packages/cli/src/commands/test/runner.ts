@@ -1,4 +1,4 @@
-import { access, constants, stat } from 'fs/promises';
+import { access, constants, stat, writeFile } from 'fs/promises';
 import path from 'path';
 import * as clack from '../../cli/theme';
 import { runSmokeTests } from "@wp-tester/smoke-tests";
@@ -158,6 +158,12 @@ export const executeTests = async (
 
   // Merge results from all test suites
   const mergedReport = mergeReports(reports);
+
+  // Write JSON report if configured
+  const jsonReporter = resolvedConfig.reporters?.json;
+  if (jsonReporter) {
+    await writeFile(jsonReporter.outputFile, JSON.stringify(mergedReport, null, 2));
+  }
 
   // Display unified summary
   const { summary } = mergedReport.results;

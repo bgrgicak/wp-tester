@@ -188,11 +188,13 @@ export type DefaultReporterOptions = BaseReporterOptions;
  */
 export interface JsonReporterOptions extends BaseReporterOptions {
   /**
-   * Path where the JSON report file should be written
+   * Path where the JSON report file should be written.
+   * Relative paths are resolved from the config file location.
+   * @default "wp-tester-results.json"
    * @example "test-results.json"
    * @example "./output/results.json"
    */
-  outputFile: string;
+  outputFile?: string;
 }
 
 /**
