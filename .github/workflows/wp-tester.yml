@@ -1,0 +1,56 @@
+# WP Tester - WordPress Testing Workflow
+# This workflow runs wp-tester to test your WordPress plugin/theme
+#
+# For more information, see: https://github.com/bgrgicak/wp-tester
+#
+# Configuration:
+# - Branches: trunk
+# - Node.js: 22
+# - Caching: enabled
+#
+# To customize:
+# - Add arguments like --test=phpunit or --failed-only
+# - See 'npx wp-tester --help' for all available options
+
+name: WP Tester
+
+on:
+  push:
+    branches: [trunk]
+  pull_request:
+    branches: [trunk]
+  workflow_dispatch:
+    inputs:
+      wp-tester-args:
+        description: 'Additional arguments for wp-tester'
+        required: false
+        default: ''
+
+jobs:
+  test:
+    name: WP Tester
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Run WP Tester
+        run: >
+          npx @wp-tester/cli@latest test
+          --config=~/packages/test-fixtures/fixtures/wp-tester-theme/wp-tester.json
+          --test=phpunit
+          ${{ github.event.inputs.wp-tester-args }}

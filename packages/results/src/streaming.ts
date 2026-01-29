@@ -1168,20 +1168,28 @@ export class StreamingReporter {
 
   /**
    * Get the current report in CTRF format
+   * Tests are filtered based on the reporter's filter options
    */
   getReport(): Report {
     const tests: Test[] = [];
 
-    // Collect all tests from all files
+    // Collect all tests from all files, applying filter
     for (const file of this.state.files.values()) {
       for (const suite of file.suites) {
         for (const test of suite.tests) {
+          const status: TestStatus =
+            test.status === "running" ? "other" : (test.status as TestStatus);
+
+          // Apply filter - skip tests that don't match filter criteria
+          if (!this.shouldIncludeInReport(status)) {
+            continue;
+          }
+
           const ctrf: Test = {
             name: test.suiteName
               ? `${test.suiteName}::${test.name}`
               : test.name,
-            status:
-              test.status === "running" ? "other" : (test.status as TestStatus),
+            status,
             duration: test.duration || 0,
           };
 
@@ -1197,6 +1205,18 @@ export class StreamingReporter {
       }
     }
 
+    // Calculate summary counts based on filtered tests
+    const summary = {
+      tests: tests.length,
+      passed: tests.filter((t) => t.status === "passed").length,
+      failed: tests.filter((t) => t.status === "failed").length,
+      skipped: tests.filter((t) => t.status === "skipped").length,
+      pending: tests.filter((t) => t.status === "pending").length,
+      other: tests.filter((t) => t.status === "other").length,
+      start: this.state.startTime,
+      stop: Date.now(),
+    };
+
     return {
       reportFormat: "CTRF",
       specVersion: "1.0.0",
@@ -1204,19 +1224,26 @@ export class StreamingReporter {
         tool: {
           name: this.state.toolName,
         },
-        summary: {
-          tests: this.state.totalTests,
-          passed: this.state.passedTests,
-          failed: this.state.failedTests,
-          skipped: this.state.skippedTests,
-          pending: this.state.pendingTests,
-          other: 0,
-          start: this.state.startTime,
-          stop: Date.now(),
-        },
+        summary,
         tests,
       },
     };
+  }
+
+  /**
+   * Check if a test status should be included in the report based on filter options
+   */
+  private shouldIncludeInReport(status: TestStatus): boolean {
+    const filterMap: Record<TestStatus, keyof ReporterFilterOptions> = {
+      passed: "passed",
+      failed: "failed",
+      skipped: "skipped",
+      pending: "pending",
+      other: "other",
+    };
+
+    const filterKey = filterMap[status];
+    return this.filter[filterKey] ?? false;
   }
 
   /**

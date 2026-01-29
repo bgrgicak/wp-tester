@@ -585,4 +585,74 @@ describe("StreamingReporter", () => {
     expect(output).toContain("PHPUnit Bootstrap");
     expect(output).toContain("1 failed");
   });
+
+  it("should filter tests in getReport() based on filter options", () => {
+    const filteredWriter = new MockWriter();
+    const filteredReporter = new StreamingReporter({
+      writer: filteredWriter,
+      showRunBoundaries: false,
+      showSummary: false,
+      filter: {
+        passed: false,
+        failed: true,
+        skipped: false,
+        pending: false,
+        other: false,
+      },
+    });
+
+    filteredReporter.onEvent({ type: "run:start", toolName: "test-runner" });
+    filteredReporter.onEvent({ type: "suite:start", name: "Suite" });
+    filteredReporter.onEvent({ type: "test:pass", name: "passing test", duration: 100, suiteName: "Suite" });
+    filteredReporter.onEvent({ type: "test:fail", name: "failing test", duration: 50, message: "Error", suiteName: "Suite" });
+    filteredReporter.onEvent({ type: "test:skip", name: "skipped test", duration: 0, suiteName: "Suite" });
+    filteredReporter.onEvent({ type: "suite:end", name: "Suite" });
+    filteredReporter.onEvent({ type: "run:end" });
+
+    const report = filteredReporter.getReport();
+
+    // Report should only contain failed tests (based on filter)
+    expect(report.results.tests).toHaveLength(1);
+    expect(report.results.tests[0].name).toBe("Suite::failing test");
+    expect(report.results.tests[0].status).toBe("failed");
+
+    // Summary should reflect only the filtered tests
+    expect(report.results.summary.tests).toBe(1);
+    expect(report.results.summary.passed).toBe(0);
+    expect(report.results.summary.failed).toBe(1);
+    expect(report.results.summary.skipped).toBe(0);
+  });
+
+  it("should include all tests in report when filter shows all statuses", () => {
+    const fullWriter = new MockWriter();
+    const fullReporter = new StreamingReporter({
+      writer: fullWriter,
+      showRunBoundaries: false,
+      showSummary: false,
+      filter: {
+        passed: true,
+        failed: true,
+        skipped: true,
+        pending: true,
+        other: true,
+      },
+    });
+
+    fullReporter.onEvent({ type: "run:start", toolName: "test-runner" });
+    fullReporter.onEvent({ type: "suite:start", name: "Suite" });
+    fullReporter.onEvent({ type: "test:pass", name: "passing test", duration: 100, suiteName: "Suite" });
+    fullReporter.onEvent({ type: "test:fail", name: "failing test", duration: 50, suiteName: "Suite" });
+    fullReporter.onEvent({ type: "test:skip", name: "skipped test", duration: 0, suiteName: "Suite" });
+    fullReporter.onEvent({ type: "suite:end", name: "Suite" });
+    fullReporter.onEvent({ type: "run:end" });
+
+    const report = fullReporter.getReport();
+
+    // Report should contain all tests
+    expect(report.results.tests).toHaveLength(3);
+    expect(report.results.summary.tests).toBe(3);
+    expect(report.results.summary.passed).toBe(1);
+    expect(report.results.summary.failed).toBe(1);
+    expect(report.results.summary.skipped).toBe(1);
+  });
 });
