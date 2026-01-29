@@ -249,16 +249,6 @@ async function readExistingWorkflow(
 }
 
 /**
- * Display workflow preview
- */
-function displayWorkflowPreview(content: string): void {
-  const lines = content.split("\n").slice(0, 25);
-  const preview = lines.join("\n") + (content.split("\n").length > 25 ? "\n..." : "");
-
-  clack.note(pc.dim(preview), "Workflow Preview");
-}
-
-/**
  * Display success message with workflow details and optional badge
  */
 function displaySuccessMessage(
@@ -322,7 +312,7 @@ export async function ciOption(
   // Check if this is a git repository
   if (!isGitRepo(projectPath)) {
     clack.log.warn(
-      "This directory is not a git repository. GitHub Actions require git."
+      "This directory is not a git repository. GitHub Actions require git.",
     );
     const continueAnyway = await clack.confirm({
       message: "Continue anyway?",
@@ -497,7 +487,7 @@ export async function ciOption(
   const workflowContent = generateWorkflowContent(workflowConfig);
 
   // Show preview
-  displayWorkflowPreview(workflowContent);
+  clack.note(pc.dim(workflowContent), "Workflow Preview");
 
   // Confirm creation
   const confirmCreate = await clack.confirm({
