@@ -184,9 +184,13 @@ export interface BaseReporterOptions {
 export type DefaultReporterOptions = BaseReporterOptions;
 
 /**
- * JSON reporter configuration options
+ * JSON reporter configuration options.
+ *
+ * Note: Unlike the default reporter, the JSON reporter always includes all tests
+ * in the output regardless of any filter settings. Filter options only affect
+ * console display.
  */
-export interface JsonReporterOptions extends BaseReporterOptions {
+export interface JsonReporterOptions {
   /**
    * Path where the JSON report file should be written.
    * Relative paths are resolved from the config file location.
@@ -213,9 +217,10 @@ export interface Reporters {
   default?: boolean | DefaultReporterOptions;
 
   /**
-   * JSON file reporter options
+   * JSON file reporter options.
+   * Use `true` to enable with defaults, or an object for custom options.
    */
-  json?: JsonReporterOptions;
+  json?: boolean | JsonReporterOptions;
 }
 
 /**

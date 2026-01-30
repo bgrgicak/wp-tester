@@ -586,7 +586,7 @@ describe("StreamingReporter", () => {
     expect(output).toContain("1 failed");
   });
 
-  it("should filter tests array but show accurate totals in summary", () => {
+  it("should always include all tests in report regardless of filter settings", () => {
     const filteredWriter = new MockWriter();
     const filteredReporter = new StreamingReporter({
       writer: filteredWriter,
@@ -611,12 +611,11 @@ describe("StreamingReporter", () => {
 
     const report = filteredReporter.getReport();
 
-    // Tests array should only contain failed tests (filtered based on filter settings)
-    expect(report.results.tests).toHaveLength(1);
-    expect(report.results.tests[0].name).toBe("Suite::failing test");
-    expect(report.results.tests[0].status).toBe("failed");
+    // Report should contain ALL tests regardless of filter settings
+    // (filter only affects console display, not report output)
+    expect(report.results.tests).toHaveLength(3);
 
-    // Summary should reflect ALL tests for accurate totals
+    // Summary should reflect ALL tests
     expect(report.results.summary.tests).toBe(3);
     expect(report.results.summary.passed).toBe(1);
     expect(report.results.summary.failed).toBe(1);
