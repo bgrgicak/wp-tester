@@ -23,7 +23,7 @@ export const configHandler = async (argv: ConfigArgs): Promise<void> => {
     const summary = generateConfigSummary(validatedConfig);
     printConfigSummary(summary);
   } else if (action && optionNames.includes(action as OptionName)) {
-    await updateConfigOption(action as OptionName);
+    await updateConfigOption(action as OptionName, config);
   } else {
     clack.outro(`Error: Unknown action "${action}".`);
     process.exit(1);
