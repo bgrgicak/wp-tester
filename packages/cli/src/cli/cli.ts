@@ -71,8 +71,9 @@ void yargs(hideBin(process.argv))
           type: "boolean",
           default: false,
         })
-        .option("failed-only", {
-          describe: "Only display failed tests in output",
+        .option("verbose", {
+          alias: "v",
+          describe: "Display all test results, not just failed tests",
           type: "boolean",
           default: false,
         });

@@ -9,13 +9,12 @@ interface TestArgs {
   test?: TestType;
   watch?: boolean;
   passWithNoTests?: boolean;
-  'failed-only'?: boolean;
+  verbose?: boolean;
   '--'?: string[];
 }
 
 export const testHandler = async (argv: TestArgs): Promise<void> => {
-  const { config = './wp-tester.json', test, watch, passWithNoTests } = argv;
-  const failedOnly = argv['failed-only'];
+  const { config = './wp-tester.json', test, watch, passWithNoTests, verbose } = argv;
   const extraArgs = argv["--"] || [];
 
   if (extraArgs.length > 0 && test === undefined) {
@@ -34,7 +33,7 @@ export const testHandler = async (argv: TestArgs): Promise<void> => {
           testType: test,
           extraArgs,
           passWithNoTests,
-          failedOnly,
+          verbose,
         });
       },
     });
@@ -44,7 +43,7 @@ export const testHandler = async (argv: TestArgs): Promise<void> => {
       testType: test,
       extraArgs,
       passWithNoTests,
-      failedOnly,
+      verbose,
     });
   }
 };

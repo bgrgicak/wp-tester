@@ -19,35 +19,75 @@ export interface RunTestsOptions {
   extraArgs?: string[];
   /** Allow the test suite to pass when no tests are executed (CLI override) */
   passWithNoTests?: boolean;
-  /** Only display failed tests in output (CLI override) */
-  failedOnly?: boolean;
+  /** Display all test results, not just failed tests (CLI override) */
+  verbose?: boolean;
 }
 
 /**
- * Apply --failed-only CLI override to config reporters.
- * Sets all filter options to false except failed: true.
+ * Check if user has explicitly configured filter options in their config.
+ * Returns true if any of the filter options (passed, failed, skipped, pending, other)
+ * are explicitly set.
  */
-function applyFailedOnlyOverride(
-  config: ResolvedWPTesterConfig
+function hasUserFilterConfig(config: ResolvedWPTesterConfig): boolean {
+  const defaultReporter = config.reporters?.default;
+  if (!defaultReporter || typeof defaultReporter !== "object") {
+    return false;
+  }
+
+  // Check if any filter option is explicitly set
+  return (
+    defaultReporter.passed !== undefined ||
+    defaultReporter.failed !== undefined ||
+    defaultReporter.skipped !== undefined ||
+    defaultReporter.pending !== undefined ||
+    defaultReporter.other !== undefined
+  );
+}
+
+/**
+ * Apply filter options to config reporters based on CLI flags and user config.
+ * Priority: user config > verbose flag > default (failed only)
+ */
+function applyFilterOverride(
+  config: ResolvedWPTesterConfig,
+  verbose?: boolean
 ): ResolvedWPTesterConfig {
-  const failedOnlyFilter = {
-    passed: false,
-    failed: true,
-    skipped: false,
-    pending: false,
-    other: false,
-  };
+  // If default reporter is not enabled, don't apply any filter
+  // This happens when user only configures JSON reporter without default reporter
+  if (config.reporters?.default === undefined) {
+    return config;
+  }
+
+  // If user has explicit filter config, don't override
+  if (hasUserFilterConfig(config)) {
+    return config;
+  }
+
+  // Determine filter based on verbose flag
+  const filter = verbose
+    ? {
+        passed: true,
+        failed: true,
+        skipped: true,
+        pending: true,
+        other: true,
+      }
+    : {
+        passed: false,
+        failed: true,
+        skipped: false,
+        pending: false,
+        other: false,
+      };
 
   return {
     ...config,
     reporters: {
       ...config.reporters,
       default:
-        config.reporters?.default !== undefined
-          ? typeof config.reporters.default === "object"
-            ? { ...config.reporters.default, ...failedOnlyFilter }
-            : failedOnlyFilter
-          : failedOnlyFilter,
+        typeof config.reporters.default === "object"
+          ? { ...config.reporters.default, ...filter }
+          : filter,
     },
   };
 }
@@ -106,7 +146,7 @@ export const executeTests = async (
   configPath: string,
   options?: RunTestsOptions
 ): Promise<TestResult> => {
-  const { testType, extraArgs, failedOnly } = options || {};
+  const { testType, extraArgs, verbose } = options || {};
   const finalConfigPath = await resolveConfigPath(configPath);
 
   // Validate configuration before running tests
@@ -117,9 +157,8 @@ export const executeTests = async (
 
   // Resolve config and apply CLI overrides
   let resolvedConfig = await resolveConfig(finalConfigPath);
-  if (failedOnly) {
-    resolvedConfig = applyFailedOnlyOverride(resolvedConfig);
-  }
+  // Apply filter override (respects user config, uses verbose flag, or defaults to failed-only)
+  resolvedConfig = applyFilterOverride(resolvedConfig, verbose);
 
   // Run all test suites and collect results
   const reports: Report[] = [];

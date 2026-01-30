@@ -187,8 +187,8 @@ wp-tester test --config /path/to/project
 # Watch mode - re-run tests on file changes
 wp-tester test --watch
 
-# Only show failed tests in output
-wp-tester test --failed-only
+# Show all test results (default shows only failed tests)
+wp-tester test --verbose
 
 # Allow tests to pass when no tests are found
 wp-tester test --passWithNoTests
@@ -204,7 +204,7 @@ wp-tester test --test phpunit -- --filter MyTestClass --verbose
 | `--config` | `-c` | Path to wp-tester.json config file |
 | `--test` | `-t` | Type of test to run (wp, plugin, theme, phpunit) |
 | `--watch` | `-w` | Watch for file changes and re-run tests |
-| `--failed-only` | | Only display failed tests in output |
+| `--verbose` | `-v` | Display all test results (default shows only failed tests) |
 | `--passWithNoTests` | | Allow test suite to pass when no tests are executed (see [passWithNoTests](configuration.md#testspasswithnotests)) |
 | `--` | | Pass extra arguments to test runner (requires `--test`) |
 
