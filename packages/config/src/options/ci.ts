@@ -282,7 +282,6 @@ on:
 
 jobs:
   test:
-    name: ${workflowName}
     runs-on: ubuntu-latest
 
     steps:

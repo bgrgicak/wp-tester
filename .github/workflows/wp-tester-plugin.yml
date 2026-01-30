@@ -28,7 +28,6 @@ on:
 
 jobs:
   test:
-    name: WP Tester Plugin Test
     runs-on: ubuntu-latest
 
     steps:
