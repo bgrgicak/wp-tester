@@ -121,17 +121,6 @@ npm run docs:dev
 
 ## Publishing
 
-```bash
-# 1. Test everything works
-npm test
-
-# 2. Dry run to check what will be published
-npm run publish:dry-run
-
-# 3. Publish to npm
-npm run publish
-```
-
 ### Update Version
 
 ```bash
@@ -143,6 +132,19 @@ npm version minor --workspaces
 
 # Major release (0.0.1 -> 1.0.0)
 npm version major --workspaces
+```
+
+### Publish to npm
+
+```bash
+# 1. Test everything works
+npm test
+
+# 2. Dry run to check what will be published
+npm run publish:dry-run
+
+# 3. Publish to npm
+npm run publish
 ```
 
 ## Vagrant Sandbox

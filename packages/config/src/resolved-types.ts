@@ -3,8 +3,11 @@ import type { Mount, Tests, Environment, WPTesterConfig, TestMode, ProjectType, 
 
 /**
  * Resolved JSON reporter options with required outputFile.
+ *
+ * Note: The JSON reporter always includes all tests in the output
+ * regardless of any filter settings.
  */
-export interface ResolvedJsonReporterOptions extends BaseReporterOptions {
+export interface ResolvedJsonReporterOptions {
   /** Absolute path where the JSON report file will be written */
   outputFile: string;
 }

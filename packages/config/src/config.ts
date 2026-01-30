@@ -82,17 +82,21 @@ export async function resolveConfig(
   }
 
   // Resolve JSON reporter if configured
+  // Note: JSON reporter only has outputFile option - filter options are not supported
+  // (filter only affects console display, not JSON output)
   const inputJson = resolvedConfig.reporters?.json;
-  if (inputJson) {
+  if (inputJson === true || (typeof inputJson === 'object' && inputJson !== null)) {
     // Get config directory for default output path
     const configDir = configPath ? dirname(configPath) : projectDir;
     const defaultOutputFile = join(configDir, "wp-tester-results.json");
 
+    // Handle boolean shorthand: true or {} both use default outputFile
+    const outputFile = inputJson === true || !inputJson.outputFile
+      ? defaultOutputFile
+      : resolveAbsolute(inputJson.outputFile, configDir);
+
     const resolvedJson: ResolvedJsonReporterOptions = {
-      ...inputJson,
-      outputFile: inputJson.outputFile
-        ? resolveAbsolute(inputJson.outputFile, configDir)
-        : defaultOutputFile,
+      outputFile,
     };
     reporters.json = resolvedJson;
   }

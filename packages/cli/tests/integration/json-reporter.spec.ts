@@ -22,11 +22,37 @@ describe('JSON Reporter Integration', { timeout: 120000 }, () => {
     await rm(testDir, { recursive: true, force: true });
   });
 
-  it('should write JSON report file with default outputFile path', async () => {
+  it('should write JSON report file with default outputFile path using empty object', async () => {
     const config: WPTesterConfig = {
       environments: [{ blueprint: { landingPage: '/' } }],
       tests: { wp: true },
       reporters: { json: {} },
+    };
+    await writeFile(configFile, JSON.stringify(config, null, 2));
+
+    await executeTests(configFile);
+
+    // Verify JSON file was created
+    expect(existsSync(jsonOutputFile)).toBe(true);
+
+    // Verify JSON file contains valid CTRF format
+    const content = await readFile(jsonOutputFile, 'utf-8');
+    const report = JSON.parse(content);
+
+    expect(report).toHaveProperty('reportFormat', 'CTRF');
+    expect(report).toHaveProperty('results');
+    expect(report.results).toHaveProperty('summary');
+    expect(report.results).toHaveProperty('tests');
+    expect(report.results.summary).toHaveProperty('tests');
+    expect(report.results.summary).toHaveProperty('passed');
+    expect(report.results.summary).toHaveProperty('failed');
+  });
+
+  it('should write JSON report file with default outputFile path using true shorthand', async () => {
+    const config: WPTesterConfig = {
+      environments: [{ blueprint: { landingPage: '/' } }],
+      tests: { wp: true },
+      reporters: { json: true },
     };
     await writeFile(configFile, JSON.stringify(config, null, 2));
 
@@ -83,30 +109,7 @@ describe('JSON Reporter Integration', { timeout: 120000 }, () => {
     expect(existsSync(jsonOutputFile)).toBe(false);
   });
 
-  it('should filter JSON output to exclude failed tests', async () => {
-    const config: WPTesterConfig = {
-      environments: [{ blueprint: { landingPage: '/' } }],
-      tests: { wp: true },
-      reporters: { json: { failed: false, passed: true, skipped: true } },
-    };
-    await writeFile(configFile, JSON.stringify(config, null, 2));
-
-    await executeTests(configFile);
-
-    const content = await readFile(jsonOutputFile, 'utf-8');
-    const report = JSON.parse(content);
-
-    // Filtered count should match passed + skipped
-    const expectedCount = report.results.summary.passed + report.results.summary.skipped;
-    expect(report.results.tests.length).toBe(expectedCount);
-
-    // No failed tests should be in the output
-    for (const test of report.results.tests) {
-      expect(test.status).not.toBe('failed');
-    }
-  });
-
-  it('should include all tests when no filters are specified', async () => {
+  it('should always include all tests in JSON output regardless of filter settings', async () => {
     const config: WPTesterConfig = {
       environments: [{ blueprint: { landingPage: '/' } }],
       tests: { wp: true },
