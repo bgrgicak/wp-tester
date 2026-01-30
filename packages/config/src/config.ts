@@ -70,9 +70,7 @@ export async function resolveConfig(
   if (inputDefault === true || inputDefault === undefined || (typeof inputDefault === 'object' && Object.keys(inputDefault).length === 0)) {
     // true, undefined, or empty object -> enable reporter without filter options
     // CLI will apply appropriate filter (verbose or failed-only default)
-    if (inputDefault !== undefined || !resolvedConfig.reporters?.json) {
-      reporters.default = {};
-    }
+    reporters.default = {};
   } else if (inputDefault === false) {
     // false -> disable default reporter
     reporters.default = undefined;
