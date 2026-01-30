@@ -54,36 +54,30 @@ export async function resolveConfig(
     projectType = 'other';
   }
 
-  // Ensure reporters is set with defaults
-  // If no reporters configured, default to showing all test statuses
-  const defaultReporterOptions = {
-    passed: true,
-    failed: true,
-    skipped: true,
-    pending: true,
-    other: true,
-  };
-
+  // Ensure reporters is set
+  // If no reporters configured, enable default reporter without filter options
+  // (filter options will be applied by CLI based on --verbose flag)
   const reporters: ResolvedReporters = {
     default: undefined, // Will be set below
     json: undefined, // Will be set below if configured
   };
 
   // Normalize default reporter:
-  // - `true` or empty object `{}` -> apply default options (show all)
+  // - `true` or empty object `{}` -> enable default reporter (no filter options, CLI controls)
   // - `false` -> disable default reporter (remove it)
-  // - object with options -> use as-is
+  // - object with options -> use as-is (user's explicit config)
   const inputDefault = resolvedConfig.reporters?.default;
   if (inputDefault === true || inputDefault === undefined || (typeof inputDefault === 'object' && Object.keys(inputDefault).length === 0)) {
-    // true, undefined, or empty object -> use defaults (show all)
+    // true, undefined, or empty object -> enable reporter without filter options
+    // CLI will apply appropriate filter (verbose or failed-only default)
     if (inputDefault !== undefined || !resolvedConfig.reporters?.json) {
-      reporters.default = defaultReporterOptions;
+      reporters.default = {};
     }
   } else if (inputDefault === false) {
     // false -> disable default reporter
     reporters.default = undefined;
   } else {
-    // Object with specific options -> use as-is
+    // Object with specific filter options -> use as-is (user's explicit config)
     reporters.default = inputDefault;
   }
 
