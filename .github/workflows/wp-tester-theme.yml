@@ -1,4 +1,4 @@
-name: WP Tester Theme Test
+name: WP Tester Theme tests
 
 # WP Tester - WordPress Testing Workflow
 # This workflow runs wp-tester to test your WordPress plugin/theme
