@@ -1,3 +1,5 @@
+name: WP Tester Theme Test
+
 # WP Tester - WordPress Testing Workflow
 # This workflow runs wp-tester to test your WordPress plugin/theme
 #
@@ -26,7 +28,6 @@ on:
 
 jobs:
   test:
-    name: WP Tester Theme Test
     runs-on: ubuntu-latest
 
     steps:
