@@ -217,9 +217,10 @@ export interface Reporters {
   default?: boolean | DefaultReporterOptions;
 
   /**
-   * JSON file reporter options
+   * JSON file reporter options.
+   * Use `true` to enable with defaults, or an object for custom options.
    */
-  json?: JsonReporterOptions;
+  json?: boolean | JsonReporterOptions;
 }
 
 /**

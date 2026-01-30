@@ -43,7 +43,7 @@
     },
     "ArrayBuffer": {
       "properties": {
-        "__@toStringTag@506": {
+        "__@toStringTag@570": {
           "type": "string"
         },
         "byteLength": {
@@ -51,7 +51,7 @@
         }
       },
       "required": [
-        "__@toStringTag@506",
+        "__@toStringTag@570",
         "byteLength"
       ],
       "type": "object"
@@ -397,7 +397,7 @@
                                   "BYTES_PER_ELEMENT": {
                                     "type": "number"
                                   },
-                                  "__@toStringTag@506": {
+                                  "__@toStringTag@570": {
                                     "const": "Uint8Array",
                                     "type": "string"
                                   },
@@ -416,7 +416,7 @@
                                 },
                                 "required": [
                                   "BYTES_PER_ELEMENT",
-                                  "__@toStringTag@506",
+                                  "__@toStringTag@570",
                                   "buffer",
                                   "byteLength",
                                   "byteOffset",
@@ -1393,7 +1393,7 @@
                     "BYTES_PER_ELEMENT": {
                       "type": "number"
                     },
-                    "__@toStringTag@506": {
+                    "__@toStringTag@570": {
                       "const": "Uint8Array",
                       "type": "string"
                     },
@@ -1412,7 +1412,7 @@
                   },
                   "required": [
                     "BYTES_PER_ELEMENT",
-                    "__@toStringTag@506",
+                    "__@toStringTag@570",
                     "buffer",
                     "byteLength",
                     "byteOffset",
@@ -1654,7 +1654,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@506": {
+                        "__@toStringTag@570": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -1673,7 +1673,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@506",
+                        "__@toStringTag@570",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -1862,7 +1862,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@506": {
+                        "__@toStringTag@570": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -1881,7 +1881,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@506",
+                        "__@toStringTag@570",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -2075,7 +2075,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@506": {
+                        "__@toStringTag@570": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -2094,7 +2094,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@506",
+                        "__@toStringTag@570",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -2283,7 +2283,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@506": {
+                        "__@toStringTag@570": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -2302,7 +2302,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@506",
+                        "__@toStringTag@570",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -2419,12 +2419,12 @@
       "type": "object"
     },
     "JsonReporterOptions": {
-      "description": "JSON reporter configuration options. The JSON reporter always includes all tests in the output regardless of any filter settings.",
+      "description": "JSON reporter configuration options.\n\nNote: Unlike the default reporter, the JSON reporter always includes all tests\nin the output regardless of any filter settings. Filter options only affect\nconsole display.",
       "properties": {
         "outputFile": {
-          "description": "Path where the JSON report file should be written. Defaults to wp-tester-results.json in the config directory.",
-          "type": "string",
-          "default": "wp-tester-results.json"
+          "default": "wp-tester-results.json",
+          "description": "Path where the JSON report file should be written.\nRelative paths are resolved from the config file location.",
+          "type": "string"
         }
       },
       "type": "object"
@@ -2511,7 +2511,7 @@
                 "BYTES_PER_ELEMENT": {
                   "type": "number"
                 },
-                "__@toStringTag@506": {
+                "__@toStringTag@570": {
                   "const": "Uint8Array",
                   "type": "string"
                 },
@@ -2530,7 +2530,7 @@
               },
               "required": [
                 "BYTES_PER_ELEMENT",
-                "__@toStringTag@506",
+                "__@toStringTag@570",
                 "buffer",
                 "byteLength",
                 "byteOffset",
@@ -2596,7 +2596,7 @@
                 "BYTES_PER_ELEMENT": {
                   "type": "number"
                 },
-                "__@toStringTag@506": {
+                "__@toStringTag@570": {
                   "const": "Uint8Array",
                   "type": "string"
                 },
@@ -2615,7 +2615,7 @@
               },
               "required": [
                 "BYTES_PER_ELEMENT",
-                "__@toStringTag@506",
+                "__@toStringTag@570",
                 "buffer",
                 "byteLength",
                 "byteOffset",
@@ -2731,8 +2731,15 @@
           "description": "Default console reporter options.\nUse `true` to enable with defaults, or an object for custom options."
         },
         "json": {
-          "$ref": "#/definitions/JsonReporterOptions",
-          "description": "JSON file reporter options"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/JsonReporterOptions"
+            },
+            {
+              "type": "boolean"
+            }
+          ],
+          "description": "JSON file reporter options.\nUse `true` to enable with defaults, or an object for custom options."
         }
       },
       "type": "object"
@@ -2916,10 +2923,10 @@
     },
     "SharedArrayBuffer": {
       "properties": {
-        "__@species@590": {
+        "__@species@614": {
           "$ref": "#/definitions/SharedArrayBuffer"
         },
-        "__@toStringTag@506": {
+        "__@toStringTag@570": {
           "const": "SharedArrayBuffer",
           "type": "string"
         },
@@ -2928,8 +2935,8 @@
         }
       },
       "required": [
-        "__@species@590",
-        "__@toStringTag@506",
+        "__@species@614",
+        "__@toStringTag@570",
         "byteLength"
       ],
       "type": "object"
@@ -3012,7 +3019,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@506": {
+                        "__@toStringTag@570": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -3031,7 +3038,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@506",
+                        "__@toStringTag@570",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -3255,7 +3262,7 @@
                 "BYTES_PER_ELEMENT": {
                   "type": "number"
                 },
-                "__@toStringTag@506": {
+                "__@toStringTag@570": {
                   "const": "Uint8Array",
                   "type": "string"
                 },
@@ -3274,7 +3281,7 @@
               },
               "required": [
                 "BYTES_PER_ELEMENT",
-                "__@toStringTag@506",
+                "__@toStringTag@570",
                 "buffer",
                 "byteLength",
                 "byteOffset",
@@ -3315,7 +3322,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@506": {
+                        "__@toStringTag@570": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -3334,7 +3341,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@506",
+                        "__@toStringTag@570",
                         "buffer",
                         "byteLength",
                         "byteOffset",

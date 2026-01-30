@@ -22,11 +22,37 @@ describe('JSON Reporter Integration', { timeout: 120000 }, () => {
     await rm(testDir, { recursive: true, force: true });
   });
 
-  it('should write JSON report file with default outputFile path', async () => {
+  it('should write JSON report file with default outputFile path using empty object', async () => {
     const config: WPTesterConfig = {
       environments: [{ blueprint: { landingPage: '/' } }],
       tests: { wp: true },
       reporters: { json: {} },
+    };
+    await writeFile(configFile, JSON.stringify(config, null, 2));
+
+    await executeTests(configFile);
+
+    // Verify JSON file was created
+    expect(existsSync(jsonOutputFile)).toBe(true);
+
+    // Verify JSON file contains valid CTRF format
+    const content = await readFile(jsonOutputFile, 'utf-8');
+    const report = JSON.parse(content);
+
+    expect(report).toHaveProperty('reportFormat', 'CTRF');
+    expect(report).toHaveProperty('results');
+    expect(report.results).toHaveProperty('summary');
+    expect(report.results).toHaveProperty('tests');
+    expect(report.results.summary).toHaveProperty('tests');
+    expect(report.results.summary).toHaveProperty('passed');
+    expect(report.results.summary).toHaveProperty('failed');
+  });
+
+  it('should write JSON report file with default outputFile path using true shorthand', async () => {
+    const config: WPTesterConfig = {
+      environments: [{ blueprint: { landingPage: '/' } }],
+      tests: { wp: true },
+      reporters: { json: true },
     };
     await writeFile(configFile, JSON.stringify(config, null, 2));
 

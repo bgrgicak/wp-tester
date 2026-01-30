@@ -34,7 +34,7 @@ describe('JSON Reporter Config Resolution', () => {
     expect(resolved.reporters.json).toBeUndefined();
   });
 
-  it('should resolve json reporter with default outputFile', async () => {
+  it('should resolve json reporter with default outputFile when using empty object', async () => {
     const config: WPTesterConfig = {
       ...baseConfig,
       reporters: { json: {} },
@@ -47,6 +47,33 @@ describe('JSON Reporter Config Resolution', () => {
     expect(resolved.reporters.json?.outputFile).toBe(
       join(configDir, 'wp-tester-results.json')
     );
+  });
+
+  it('should resolve json reporter with default outputFile when using true shorthand', async () => {
+    const config: WPTesterConfig = {
+      ...baseConfig,
+      reporters: { json: true },
+    };
+    await writeFile(configFile, JSON.stringify(config, null, 2));
+
+    const resolved = await resolveConfig(configFile);
+
+    expect(resolved.reporters.json).toBeDefined();
+    expect(resolved.reporters.json?.outputFile).toBe(
+      join(configDir, 'wp-tester-results.json')
+    );
+  });
+
+  it('should not enable json reporter when using false', async () => {
+    const config: WPTesterConfig = {
+      ...baseConfig,
+      reporters: { json: false },
+    };
+    await writeFile(configFile, JSON.stringify(config, null, 2));
+
+    const resolved = await resolveConfig(configFile);
+
+    expect(resolved.reporters.json).toBeUndefined();
   });
 
   it('should resolve json reporter with custom relative outputFile', async () => {
