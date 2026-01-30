@@ -2419,37 +2419,12 @@
       "type": "object"
     },
     "JsonReporterOptions": {
-      "description": "JSON reporter configuration options",
+      "description": "JSON reporter configuration options. The JSON reporter always includes all tests in the output regardless of any filter settings.",
       "properties": {
-        "failed": {
-          "default": false,
-          "description": "Show failed tests in output",
-          "type": "boolean"
-        },
-        "other": {
-          "default": false,
-          "description": "Show other test statuses in output",
-          "type": "boolean"
-        },
         "outputFile": {
           "description": "Path where the JSON report file should be written. Defaults to wp-tester-results.json in the config directory.",
           "type": "string",
           "default": "wp-tester-results.json"
-        },
-        "passed": {
-          "default": false,
-          "description": "Show passed tests in output",
-          "type": "boolean"
-        },
-        "pending": {
-          "default": false,
-          "description": "Show pending tests in output",
-          "type": "boolean"
-        },
-        "skipped": {
-          "default": false,
-          "description": "Show skipped tests in output",
-          "type": "boolean"
         }
       },
       "type": "object"
