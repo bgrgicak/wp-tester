@@ -741,7 +741,7 @@ However, integration tests load WordPress via `wp-load.php` before your bootstra
 **Required:** No
 **Default:** `{}` (default console reporter enabled)
 
-**Description:** Configures how test results are displayed and saved. Each reporter can have filter options to control which test statuses are shown.
+**Description:** Configures how test results are displayed and saved. By default, only failed tests are shown. The default reporter can have filter options to control which test statuses are shown.
 
 **Common Filter Options:**
 
@@ -752,7 +752,7 @@ All reporters support these filter options:
 - `pending` (boolean): Show pending tests
 - `other` (boolean): Show other test statuses
 
-When no filter options are specified, all statuses are shown by default.
+When no filter options are specified, only failed tests are shown by default. Use the `--verbose` (or `-v`) CLI flag to show all test statuses.
 
 **Reporter Types:**
 
@@ -845,7 +845,7 @@ This format is particularly useful for:
 
 **Default Behavior:**
 
-When `reporters` is omitted (or `default` is `true` or omitted), console output with all statuses is shown.
+When `reporters` is omitted (or `default` is `true` or omitted), console output shows only failed tests by default. Use the `--verbose` CLI flag to show all statuses.
 
 **Multiple Reporters:**
 
