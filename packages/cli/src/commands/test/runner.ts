@@ -196,6 +196,11 @@ export const runTests = async (
     const resolvedPath = getConfigPath(finalConfigPath);
     clack.log.error(`Config file not found: ${resolvedPath}`);
 
+    // In non-interactive environments (like CI), exit immediately with error
+    if (!process.stdin.isTTY || !process.stdout.isTTY) {
+      process.exit(1);
+    }
+
     const newPath = await clack.text({
       message: "Enter the correct path to your config file:",
       placeholder: "./wp-tester.json",

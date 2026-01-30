@@ -33,7 +33,7 @@ const optionMapInternal = {
   },
   'ci': {
     handler: ciOption,
-    getContext: (configPath: string) => ({ configPath }),
+    getContext: (configPath: string) => ({ configPath, skipPrompt: true }),
   }
 } satisfies Record<string, ConfigOptionDefinition>;
 

@@ -119,7 +119,7 @@ export function normalizeConfigPath(configPath: string): string {
  * @returns Directory path where the config file is located
  */
 export function getConfigDir(configPath: string): string {
-  return dirname(getConfigPath(configPath));
+  return dirname(normalizeConfigPath(configPath));
 }
 
 /**

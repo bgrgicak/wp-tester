@@ -17,6 +17,8 @@ describe('getWordPressVersion', () => {
         },
       },
       mounts: [],
+      env: {},
+      skip: false,
     };
     playground = await startPlayground(environment);
   }, 180000); // 3 min for WordPress Playground setup
@@ -29,7 +31,7 @@ describe('getWordPressVersion', () => {
 
   it('should detect WordPress version from running instance', async () => {
     const version = await getWordPressVersion(playground.playground);
-    expect(version).toMatch(/^\d+\.\d+(\.\d+)?$/); // Matches X.Y or X.Y.Z
+    expect(version).toMatch(/^\d+\.\d+(\.\d+)?(-[A-Za-z0-9]+)?$/); // Matches X.Y, X.Y.Z, or X.Y.Z-RC1
     expect(version.length).toBeGreaterThan(0);
   });
 });

@@ -1,9 +1,9 @@
 import { readConfigFile, writeConfigFile, optionMap, type OptionName, configPath } from '@wp-tester/config';
 import * as clack from '../../cli/theme';
 
-export async function updateConfigOption(optionName: OptionName): Promise<void> {
+export async function updateConfigOption(optionName: OptionName, configFilePathArg?: string): Promise<void> {
   try {
-    const configFilePath = configPath();
+    const configFilePath = configFilePathArg || configPath();
     const config = await readConfigFile(configFilePath);
 
     const option = optionMap[optionName];
