@@ -1,3 +1,11 @@
+/**
+ * CI Configuration Module
+ *
+ * Handles GitHub Actions workflow generation for wp-tester.
+ * Automatically detects git repository settings, composer dependencies,
+ * and provides an interactive setup for creating/updating CI workflows.
+ */
+
 import type { WPTesterConfig } from "../types";
 import * as clack from "@clack/prompts";
 import { mkdir, writeFile, access, readFile } from "fs/promises";
@@ -23,6 +31,8 @@ interface WorkflowConfig {
 
 /**
  * Check if the project is a git repository
+ * @param projectPath - Directory to check
+ * @returns true if directory is a git repository
  */
 function isGitRepo(projectPath: string): boolean {
   try {
@@ -107,6 +117,9 @@ async function detectComposerWorkingDir(
 
 /**
  * Detect the default branch name from git
+ * Tries remote HEAD, then checks for common branch names (main, master, trunk)
+ * @param projectPath - Git repository path
+ * @returns Detected branch name, defaults to "main"
  */
 function detectDefaultBranch(projectPath: string): string {
   try {
@@ -152,7 +165,10 @@ function detectDefaultBranch(projectPath: string): string {
 
 
 /**
- * Extract configuration from existing workflow
+ * Extract configuration from existing workflow file
+ * Parses YAML content to preserve user settings when updating
+ * @param content - Raw workflow file content
+ * @returns Parsed workflow configuration
  */
 function extractConfigFromWorkflow(content: string): Partial<WorkflowConfig> {
   const config: Partial<WorkflowConfig> = {};
@@ -206,6 +222,9 @@ function extractConfigFromWorkflow(content: string): Partial<WorkflowConfig> {
 
 /**
  * Generate the GitHub Action workflow content
+ * Creates a complete workflow YAML with all configured options
+ * @param config - Workflow configuration
+ * @returns Complete workflow file content
  */
 function generateWorkflowContent(config: WorkflowConfig): string {
   const {
@@ -303,6 +322,8 @@ ${cacheStep}${composerStep}
 
 /**
  * Display success message with workflow details
+ * @param workflowPath - Path to created workflow file
+ * @param config - Workflow configuration used
  */
 function displaySuccessMessage(
   workflowPath: string,
