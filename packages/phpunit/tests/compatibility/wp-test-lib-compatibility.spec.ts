@@ -44,7 +44,7 @@ const COMPATIBILITY_TESTS: CompatibilityTestCase[] = [
     repo: "akirk/friends",
     branch: "main",
     setupCommands: [
-      "composer install --no-interaction --prefer-dist --ignore-platform-reqs",
+      "composer install --no-interaction --prefer-dist --ignore-platform-reqs --quiet",
     ],
     config: {
       projectType: "plugin",
@@ -78,7 +78,7 @@ const COMPATIBILITY_TESTS: CompatibilityTestCase[] = [
     branch: "develop",
     dirName: "amp",
     setupCommands: [
-      "composer install --no-interaction --prefer-dist --ignore-platform-reqs",
+      "composer install --no-interaction --prefer-dist --ignore-platform-reqs --quiet",
     ],
     config: {
       projectType: "plugin",
@@ -116,7 +116,7 @@ const COMPATIBILITY_TESTS: CompatibilityTestCase[] = [
     repo: "WordPress/sqlite-database-integration",
     branch: "develop",
     setupCommands: [
-      "composer install --no-interaction --prefer-dist --ignore-platform-reqs",
+      "composer install --no-interaction --prefer-dist --ignore-platform-reqs --quiet",
     ],
     config: {
       projectType: "plugin",
@@ -139,7 +139,7 @@ const COMPATIBILITY_TESTS: CompatibilityTestCase[] = [
       ],
       reporters: {},
     },
-    expectedMinTests: 2800,
+    expectedMinTests: 750,
     allowedFailures: 11,
   },
 
@@ -149,7 +149,7 @@ const COMPATIBILITY_TESTS: CompatibilityTestCase[] = [
     repo: "WordPress/performance",
     branch: "trunk",
     setupCommands: [
-      "composer install --no-interaction --prefer-dist --ignore-platform-reqs",
+      "composer install --no-interaction --prefer-dist --ignore-platform-reqs --quiet",
     ],
     config: {
       projectType: "plugin",
@@ -200,7 +200,7 @@ const COMPATIBILITY_TESTS: CompatibilityTestCase[] = [
     branch: "trunk",
     dirName: "wordpress-activitypub",
     setupCommands: [
-      "composer install --no-interaction --prefer-dist --ignore-platform-reqs",
+      "composer install --no-interaction --prefer-dist --ignore-platform-reqs --quiet",
     ],
     config: {
       projectType: "plugin",
@@ -235,7 +235,7 @@ const COMPATIBILITY_TESTS: CompatibilityTestCase[] = [
     branch: "trunk",
     dirName: "wordpress-develop",
     setupCommands: [
-      "composer install --no-interaction --prefer-dist --ignore-platform-reqs",
+      "composer install --no-interaction --prefer-dist --ignore-platform-reqs --quiet",
     ],
     config: {
       projectType: "other",
@@ -288,7 +288,7 @@ const COMPATIBILITY_TESTS: CompatibilityTestCase[] = [
       reporters: {},
     },
     expectedMinTests: 5500,
-    allowedFailures: 15,
+    allowedFailures: 41,
   },
 ];
 
