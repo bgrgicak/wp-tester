@@ -6,6 +6,7 @@
 
 import type { Summary } from "ctrf";
 import pc from "picocolors";
+import { formatHint, formatSummaryLine } from "./log-formatting.js";
 
 /**
  * Options for filtering summary output based on test statuses
@@ -16,16 +17,6 @@ export interface SummaryOptions {
   skipped?: boolean;
   pending?: boolean;
   other?: boolean;
-}
-
-/**
- * Format duration in human-readable format
- */
-function formatDuration(ms: number): string {
-  if (ms < 1000) {
-    return `${Math.round(ms)}ms`;
-  }
-  return `${(ms / 1000).toFixed(2)}s`;
 }
 
 /**
@@ -69,9 +60,7 @@ export function printSummary(summary: Summary): void {
   }
 
   console.log("");
-  console.log(
-    pc.dim(`  ${summary.tests} tests in ${formatDuration(duration)}`),
-  );
+  console.log(formatSummaryLine(summary.tests, duration));
   console.log("");
 
   // Build legend based on enabled statuses
@@ -83,7 +72,7 @@ export function printSummary(summary: Summary): void {
   if (showOther) legendParts.push("◆ other");
 
   if (legendParts.length > 0) {
-    console.log(pc.dim(`  Legend: ${legendParts.join("  ")}`));
+    console.log(formatHint(`Legend: ${legendParts.join("  ")}`));
     console.log("");
   }
 }

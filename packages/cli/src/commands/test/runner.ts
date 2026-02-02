@@ -3,7 +3,12 @@ import path from 'path';
 import * as clack from '../../cli/theme';
 import { runSmokeTests } from "@wp-tester/smoke-tests";
 import { runPhpunitTests } from "@wp-tester/phpunit";
-import { mergeReports, printSummary, type Report } from "@wp-tester/results";
+import {
+  mergeReports,
+  printSummary,
+  formatHint,
+  type Report,
+} from "@wp-tester/results";
 import type { TestType, ResolvedWPTesterConfig } from "@wp-tester/config";
 import { resolveConfig } from "@wp-tester/config";
 import { validateConfig } from "../config/validate";
@@ -144,7 +149,7 @@ export interface TestResult {
  */
 export const executeTests = async (
   configPath: string,
-  options?: RunTestsOptions
+  options?: RunTestsOptions,
 ): Promise<TestResult> => {
   const { testType, extraArgs, verbose } = options || {};
   const finalConfigPath = await resolveConfigPath(configPath);
@@ -217,8 +222,12 @@ export const executeTests = async (
   const { summary } = mergedReport.results;
   const success = summary.failed === 0;
 
-
   printSummary(summary);
+
+  // Show hint about verbose mode if not already enabled
+  if (!verbose) {
+    console.log(formatHint("Hint: Use --verbose to see the output of all tests"));
+  }
 
   return { success, hasTests: true };
 };
