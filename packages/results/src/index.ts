@@ -52,6 +52,13 @@ export {
   parseTeamCityOutput,
 } from './teamcity-parser.js';
 export { printSummary, type SummaryOptions } from './summary.js';
+export {
+  formatDuration,
+  formatHint,
+  formatStatusLine,
+  formatSummaryLine,
+  statusSymbols,
+} from './log-formatting.js';
 
 export const EMPTY_REPORT: Report = {
   results: {

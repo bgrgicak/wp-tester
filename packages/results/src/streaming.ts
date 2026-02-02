@@ -12,6 +12,7 @@ import type { Test, TestStatus, Report } from "ctrf";
 import pc from "picocolors";
 import { applyDiffHighlighting } from "./diff-utils.js";
 import { SPINNER_FRAMES } from "./spinner.js";
+import { formatDuration } from "./log-formatting.js";
 import logUpdate from "log-update";
 
 /**
@@ -76,16 +77,6 @@ export const stdoutWriter: StreamWriter = {
     process.stdout.write(text + "\n");
   },
 };
-
-/**
- * Format duration in human-readable format
- */
-function formatDuration(ms: number): string {
-  if (ms < 1000) {
-    return `${Math.round(ms)}ms`;
-  }
-  return `${(ms / 1000).toFixed(2)}s`;
-}
 
 /**
  * Filter options for controlling which test statuses are shown in console output.
