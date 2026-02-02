@@ -1,9 +1,9 @@
-import { access, constants, stat } from 'fs/promises';
+import { access, constants, stat, writeFile } from 'fs/promises';
 import path from 'path';
 import * as clack from '../../cli/theme';
 import { runSmokeTests } from "@wp-tester/smoke-tests";
 import { runPhpunitTests } from "@wp-tester/phpunit";
-import { printSummary, UnifiedStreamingReporter } from "@wp-tester/results";
+import { printSummary, UnifiedStreamingReporter, formatHint } from "@wp-tester/results";
 import type { TestType, ResolvedWPTesterConfig } from "@wp-tester/config";
 import { resolveConfig } from "@wp-tester/config";
 import { validateConfig } from "../config/validate";
@@ -19,35 +19,75 @@ export interface RunTestsOptions {
   extraArgs?: string[];
   /** Allow the test suite to pass when no tests are executed (CLI override) */
   passWithNoTests?: boolean;
-  /** Only display failed tests in output (CLI override) */
-  failedOnly?: boolean;
+  /** Display all test results, not just failed tests (CLI override) */
+  verbose?: boolean;
 }
 
 /**
- * Apply --failed-only CLI override to config reporters.
- * Sets all filter options to false except failed: true.
+ * Check if user has explicitly configured filter options in their config.
+ * Returns true if any of the filter options (passed, failed, skipped, pending, other)
+ * are explicitly set.
  */
-function applyFailedOnlyOverride(
-  config: ResolvedWPTesterConfig
+function hasUserFilterConfig(config: ResolvedWPTesterConfig): boolean {
+  const defaultReporter = config.reporters?.default;
+  if (!defaultReporter || typeof defaultReporter !== "object") {
+    return false;
+  }
+
+  // Check if any filter option is explicitly set
+  return (
+    defaultReporter.passed !== undefined ||
+    defaultReporter.failed !== undefined ||
+    defaultReporter.skipped !== undefined ||
+    defaultReporter.pending !== undefined ||
+    defaultReporter.other !== undefined
+  );
+}
+
+/**
+ * Apply filter options to config reporters based on CLI flags and user config.
+ * Priority: user config > verbose flag > default (failed only)
+ */
+function applyFilterOverride(
+  config: ResolvedWPTesterConfig,
+  verbose?: boolean
 ): ResolvedWPTesterConfig {
-  const failedOnlyFilter = {
-    passed: false,
-    failed: true,
-    skipped: false,
-    pending: false,
-    other: false,
-  };
+  // If default reporter is not enabled, don't apply any filter
+  // This happens when user only configures JSON reporter without default reporter
+  if (config.reporters?.default === undefined) {
+    return config;
+  }
+
+  // If user has explicit filter config, don't override
+  if (hasUserFilterConfig(config)) {
+    return config;
+  }
+
+  // Determine filter based on verbose flag
+  const filter = verbose
+    ? {
+        passed: true,
+        failed: true,
+        skipped: true,
+        pending: true,
+        other: true,
+      }
+    : {
+        passed: false,
+        failed: true,
+        skipped: false,
+        pending: false,
+        other: false,
+      };
 
   return {
     ...config,
     reporters: {
       ...config.reporters,
       default:
-        config.reporters?.default !== undefined
-          ? typeof config.reporters.default === "object"
-            ? { ...config.reporters.default, ...failedOnlyFilter }
-            : failedOnlyFilter
-          : failedOnlyFilter,
+        typeof config.reporters.default === "object"
+          ? { ...config.reporters.default, ...filter }
+          : filter,
     },
   };
 }
@@ -104,9 +144,9 @@ export interface TestResult {
  */
 export const executeTests = async (
   configPath: string,
-  options?: RunTestsOptions
+  options?: RunTestsOptions,
 ): Promise<TestResult> => {
-  const { testType, extraArgs, failedOnly } = options || {};
+  const { testType, extraArgs, verbose } = options || {};
   const finalConfigPath = await resolveConfigPath(configPath);
 
   // Validate configuration before running tests
@@ -117,9 +157,8 @@ export const executeTests = async (
 
   // Resolve config and apply CLI overrides
   let resolvedConfig = await resolveConfig(finalConfigPath);
-  if (failedOnly) {
-    resolvedConfig = applyFailedOnlyOverride(resolvedConfig);
-  }
+  // Apply filter override (respects user config, uses verbose flag, or defaults to failed-only)
+  resolvedConfig = applyFilterOverride(resolvedConfig, verbose);
 
   // Determine which tests to run based on testType parameter
   const shouldRunPhpUnit = !testType || testType === "phpunit";
@@ -156,22 +195,25 @@ export const executeTests = async (
     return { success: false, hasTests: false };
   }
 
+  // Write JSON report if configured
+  const jsonReporter = resolvedConfig.reporters?.json;
+  if (jsonReporter) {
+    await writeFile(
+      jsonReporter.outputFile,
+      JSON.stringify(mergedReport, null, 2),
+    );
+  }
+
   // Display unified summary
   const { summary } = mergedReport.results;
   const success = summary.failed === 0;
 
-  // Print final combined summary with default reporter options
-  const defaultReporterOptions = resolvedConfig.reporters?.default;
+  printSummary(summary);
 
-  // Convert reporter options to summary options (handle boolean shorthand)
-  // When false or true (boolean shorthand), pass undefined to use printSummary defaults
-  // When an object, pass it directly since SummaryOptions now matches BaseReporterOptions
-  const summaryOptions =
-    typeof defaultReporterOptions === "object"
-      ? defaultReporterOptions
-      : undefined;
-
-  printSummary(summary, summaryOptions);
+  // Show hint about verbose mode if not already enabled
+  if (!verbose) {
+    console.log(formatHint("Hint: Use --verbose to see the output of all tests"));
+  }
 
   return { success, hasTests: true };
 };
@@ -187,6 +229,11 @@ export const runTests = async (
   while (!(await checkConfigExists(finalConfigPath))) {
     const resolvedPath = getConfigPath(finalConfigPath);
     clack.log.error(`Config file not found: ${resolvedPath}`);
+
+    // In non-interactive environments (like CI), exit immediately with error
+    if (!process.stdin.isTTY || !process.stdout.isTTY) {
+      process.exit(1);
+    }
 
     const newPath = await clack.text({
       message: "Enter the correct path to your config file:",

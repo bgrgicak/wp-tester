@@ -1,8 +1,9 @@
 import type { WPTesterConfig } from "./wp-tester-config";
-import type { ResolvedWPTesterConfig, ResolvedEnvironment, ResolvedTests, ResolvedBlueprint, ResolvedReporters, ResolvedPath } from "./resolved-types";
+import type { ResolvedWPTesterConfig, ResolvedEnvironment, ResolvedTests, ResolvedBlueprint, ResolvedReporters, ResolvedPath, ResolvedJsonReporterOptions } from "./resolved-types";
 import type { BlueprintV1Declaration } from "@wp-playground/blueprints";
 import { readFile } from "fs/promises";
 import { existsSync } from "fs";
+import { dirname, join } from "path";
 import { getProjectRootMount } from "./auto-mount";
 import { detectProjectType } from "./options/project-type-detect";
 import { getProjectDir, resolveAbsolute, normalizeConfigPath } from "./path-utils";
@@ -53,37 +54,49 @@ export async function resolveConfig(
     projectType = 'other';
   }
 
-  // Ensure reporters is set with defaults
-  // If no reporters configured, default to showing all test statuses
-  const defaultReporterOptions = {
-    passed: true,
-    failed: true,
-    skipped: true,
-    pending: true,
-    other: true,
-  };
-
+  // Ensure reporters is set
+  // If no reporters configured, enable default reporter without filter options
+  // (filter options will be applied by CLI based on --verbose flag)
   const reporters: ResolvedReporters = {
-    ...(resolvedConfig.reporters ?? {}),
     default: undefined, // Will be set below
+    json: undefined, // Will be set below if configured
   };
 
   // Normalize default reporter:
-  // - `true` or empty object `{}` -> apply default options (show all)
+  // - `true` or empty object `{}` -> enable default reporter (no filter options, CLI controls)
   // - `false` -> disable default reporter (remove it)
-  // - object with options -> use as-is
+  // - object with options -> use as-is (user's explicit config)
   const inputDefault = resolvedConfig.reporters?.default;
   if (inputDefault === true || inputDefault === undefined || (typeof inputDefault === 'object' && Object.keys(inputDefault).length === 0)) {
-    // true, undefined, or empty object -> use defaults (show all)
-    if (inputDefault !== undefined || !resolvedConfig.reporters?.json) {
-      reporters.default = defaultReporterOptions;
-    }
+    // true, undefined, or empty object -> enable reporter without filter options
+    // CLI will apply appropriate filter (verbose or failed-only default)
+    reporters.default = {};
   } else if (inputDefault === false) {
     // false -> disable default reporter
     reporters.default = undefined;
   } else {
-    // Object with specific options -> use as-is
+    // Object with specific filter options -> use as-is (user's explicit config)
     reporters.default = inputDefault;
+  }
+
+  // Resolve JSON reporter if configured
+  // Note: JSON reporter only has outputFile option - filter options are not supported
+  // (filter only affects console display, not JSON output)
+  const inputJson = resolvedConfig.reporters?.json;
+  if (inputJson === true || (typeof inputJson === 'object' && inputJson !== null)) {
+    // Get config directory for default output path
+    const configDir = configPath ? dirname(configPath) : projectDir;
+    const defaultOutputFile = join(configDir, "wp-tester-results.json");
+
+    // Handle boolean shorthand: true or {} both use default outputFile
+    const outputFile = inputJson === true || !inputJson.outputFile
+      ? defaultOutputFile
+      : resolveAbsolute(inputJson.outputFile, configDir);
+
+    const resolvedJson: ResolvedJsonReporterOptions = {
+      outputFile,
+    };
+    reporters.json = resolvedJson;
   }
 
   // Expand environments with version arrays into multiple environments

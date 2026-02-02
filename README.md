@@ -32,6 +32,7 @@ See the [Installation Guide](docs/README.md#installation) for details on when to
 - **Multiple Test Types** - Smoke tests, PHPUnit tests, and custom tests
 - **WordPress Playground** - Isolated environments with no local setup
 - **Flexible Configuration** - JSON-based with IDE autocomplete support
+- **GitHub Actions Integration** - Auto-generate CI workflows with `wp-tester config ci`
 
 ## Documentation
 

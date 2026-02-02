@@ -79,7 +79,7 @@ async function runPhpunitTestsForEnvironment(
       return EMPTY_REPORT;
     }
 
-    if (!config.projectPath.vfsPath) {
+    if (!config.projectPath?.vfsPath) {
       console.error(
         `Project type '${config.projectType}' does not support PHPUnit tests`,
       );
@@ -87,8 +87,8 @@ async function runPhpunitTestsForEnvironment(
     }
 
     // Get VFS paths from resolved config
-    const vfsPhpunitConfigPath = config.tests.phpunit!.configPath.vfsPath;
-    const vfsPhpunitPath = config.tests.phpunit!.phpunitPath.vfsPath;
+    const vfsPhpunitConfigPath: string = config.tests.phpunit!.configPath.vfsPath;
+    const vfsPhpunitPath: string = config.tests.phpunit!.phpunitPath.vfsPath;
 
     // Only create WordPress bootstrap in integration mode
     let bootstrapFilePath: string | null = null;
@@ -97,7 +97,7 @@ async function runPhpunitTestsForEnvironment(
       const bootstrapPath = config.tests.phpunit!.bootstrapPath;
 
       // Get VFS path directly from resolved path (or use default if not found)
-      const userBootstrap = bootstrapPath?.vfsPath
+      const userBootstrap: string = bootstrapPath?.vfsPath
         ?? `${config.projectPath.vfsPath}/tests/bootstrap.php`;
 
       // Create a custom bootstrap file that loads WordPress, then user's bootstrap if it exists
@@ -121,7 +121,7 @@ async function runPhpunitTestsForEnvironment(
 
     // Build PHP CLI arguments with environment variables
     // Use TeamCity format for streaming output
-    const cliArgs = [
+    const cliArgs: string[] = [
       "php",
       // Set variables_order to EGPCS to ensure environment variables are accessible.
       // This is required for WordPress test library to access WP_TESTS_DIR via getenv().
@@ -373,9 +373,9 @@ export async function runPhpunitTests(
   let resolvedConfig = { ...config };
   if (phpunitArgs && phpunitArgs.length > 0) {
     // Resolve the additional args before merging
-    const resolvedAdditionalArgs = resolvePhpunitArgs(phpunitArgs, config.projectPath);
-    const configArgs = resolvedConfig.tests.phpunit?.phpunitArgs || [];
-    const mergedArgs = [...configArgs, ...resolvedAdditionalArgs];
+    const resolvedAdditionalArgs: string[] = resolvePhpunitArgs(phpunitArgs, config.projectPath);
+    const configArgs: string[] = resolvedConfig.tests.phpunit?.phpunitArgs || [];
+    const mergedArgs: string[] = [...configArgs, ...resolvedAdditionalArgs];
 
     resolvedConfig = {
       ...resolvedConfig,

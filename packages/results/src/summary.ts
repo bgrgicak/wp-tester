@@ -6,6 +6,7 @@
 
 import type { Summary } from "ctrf";
 import pc from "picocolors";
+import { formatHint, formatSummaryLine } from "./log-formatting.js";
 
 /**
  * Options for filtering summary output based on test statuses
@@ -19,47 +20,34 @@ export interface SummaryOptions {
 }
 
 /**
- * Format duration in human-readable format
- */
-function formatDuration(ms: number): string {
-  if (ms < 1000) {
-    return `${Math.round(ms)}ms`;
-  }
-  return `${(ms / 1000).toFixed(2)}s`;
-}
-
-/**
  * Print test summary to console
  *
  * @param summary - The test summary from a CTRF report
- * @param options - Options for filtering which test statuses to show
  */
-export function printSummary(summary: Summary, options?: SummaryOptions): void {
+export function printSummary(summary: Summary): void {
   const duration = summary.stop - summary.start;
 
   // Default to showing all statuses if no options provided
-  const showPassed = options?.passed ?? true;
-  const showFailed = options?.failed ?? true;
-  const showSkipped = options?.skipped ?? true;
-  const showPending = options?.pending ?? true;
-  const showOther = options?.other ?? true;
+  const showPassed = summary.passed > 0;
+  const showFailed = true;
+  const showSkipped = summary.skipped > 0;
+  const showPending = summary.pending > 0;
+  const showOther = summary.other > 0;
 
   console.log("");
 
-  if (summary.passed > 0 && showPassed) {
+  if (showPassed) {
     console.log(pc.green(`  ✓ ${summary.passed} passed`));
   }
   // Always show the number of failed tests
-  if (showFailed) {
-    console.log(pc.red(`  ✗ ${summary.failed} failed`));
-  }
-  if (summary.skipped > 0 && showSkipped) {
+  console.log(pc.red(`  ✗ ${summary.failed} failed`));
+  if (showSkipped) {
     console.log(pc.yellow(`  ○ ${summary.skipped} skipped`));
   }
-  if (summary.pending > 0 && showPending) {
+  if (showPending) {
     console.log(pc.yellow(`  ◔ ${summary.pending} pending`));
   }
-  if (summary.other > 0 && showOther) {
+  if (showOther) {
     console.log(pc.gray(`  ◆ ${summary.other} other`));
   }
 
@@ -72,9 +60,7 @@ export function printSummary(summary: Summary, options?: SummaryOptions): void {
   }
 
   console.log("");
-  console.log(
-    pc.dim(`  ${summary.tests} tests in ${formatDuration(duration)}`)
-  );
+  console.log(formatSummaryLine(summary.tests, duration));
   console.log("");
 
   // Build legend based on enabled statuses
@@ -86,7 +72,7 @@ export function printSummary(summary: Summary, options?: SummaryOptions): void {
   if (showOther) legendParts.push("◆ other");
 
   if (legendParts.length > 0) {
-    console.log(pc.dim(`  Legend: ${legendParts.join("  ")}`));
+    console.log(formatHint(`Legend: ${legendParts.join("  ")}`));
     console.log("");
   }
 }

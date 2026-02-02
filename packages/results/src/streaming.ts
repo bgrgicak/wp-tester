@@ -12,6 +12,7 @@ import type { Test, TestStatus, Report } from "ctrf";
 import pc from "picocolors";
 import { applyDiffHighlighting } from "./diff-utils.js";
 import { SPINNER_FRAMES } from "./spinner.js";
+import { formatDuration } from "./log-formatting.js";
 import logUpdate from "log-update";
 
 /**
@@ -78,28 +79,21 @@ export const stdoutWriter: StreamWriter = {
 };
 
 /**
- * Format duration in human-readable format
- */
-function formatDuration(ms: number): string {
-  if (ms < 1000) {
-    return `${Math.round(ms)}ms`;
-  }
-  return `${(ms / 1000).toFixed(2)}s`;
-}
-
-/**
- * Filter options for controlling which test statuses are displayed
+ * Filter options for controlling which test statuses are shown in console output.
+ *
+ * Filters only affect console display - the report output from getReport()
+ * always includes all tests regardless of filter settings.
  */
 export interface ReporterFilterOptions {
-  /** Show passed tests (default: false) */
+  /** Show/include passed tests (default: false) */
   passed?: boolean;
-  /** Show failed tests (default: false) */
+  /** Show/include failed tests (default: false) */
   failed?: boolean;
-  /** Show skipped tests (default: false) */
+  /** Show/include skipped tests (default: false) */
   skipped?: boolean;
-  /** Show pending tests (default: false) */
+  /** Show/include pending tests (default: false) */
   pending?: boolean;
-  /** Show other test statuses (default: false) */
+  /** Show/include other test statuses (default: false) */
   other?: boolean;
 }
 
@@ -111,7 +105,7 @@ export interface StreamingReporterOptions {
   showRunBoundaries?: boolean;
   showSummary?: boolean;
   enabled?: boolean;
-  /** Filter options for which test statuses to display */
+  /** Filter options for which test statuses to display and include in reports */
   filter?: ReporterFilterOptions;
 }
 
@@ -1170,20 +1164,26 @@ export class StreamingReporter {
 
   /**
    * Get the current report in CTRF format
+   *
+   * Returns all tests regardless of filter settings. The filter options
+   * only affect console display, not the report output. This ensures
+   * the JSON report always contains complete test results.
    */
   getReport(): Report {
     const tests: Test[] = [];
 
-    // Collect all tests from all files
+    // Collect all tests from all files (no filtering for report output)
     for (const file of this.state.files.values()) {
       for (const suite of file.suites) {
         for (const test of suite.tests) {
+          const status: TestStatus =
+            test.status === "running" ? "other" : (test.status as TestStatus);
+
           const ctrf: Test = {
             name: test.suiteName
               ? `${test.suiteName}::${test.name}`
               : test.name,
-            status:
-              test.status === "running" ? "other" : (test.status as TestStatus),
+            status,
             duration: test.duration || 0,
           };
 
@@ -1199,6 +1199,17 @@ export class StreamingReporter {
       }
     }
 
+    const summary = {
+      tests: this.state.totalTests,
+      passed: this.state.passedTests,
+      failed: this.state.failedTests,
+      skipped: this.state.skippedTests,
+      pending: this.state.pendingTests,
+      other: 0,
+      start: this.state.startTime,
+      stop: Date.now(),
+    };
+
     return {
       reportFormat: "CTRF",
       specVersion: "1.0.0",
@@ -1206,20 +1217,12 @@ export class StreamingReporter {
         tool: {
           name: this.state.toolName,
         },
-        summary: {
-          tests: this.state.totalTests,
-          passed: this.state.passedTests,
-          failed: this.state.failedTests,
-          skipped: this.state.skippedTests,
-          pending: this.state.pendingTests,
-          other: 0,
-          start: this.state.startTime,
-          stop: Date.now(),
-        },
+        summary,
         tests,
       },
     };
   }
+
 
   /**
    * Get current counts for external tracking

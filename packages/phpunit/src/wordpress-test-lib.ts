@@ -33,6 +33,14 @@ function calculateFileChecksum(filePath: string): string {
 }
 
 /**
+ * Strip pre-release suffixes from version strings
+ * Converts "6.9.1-RC1" to "6.9.1", "6.9.0-beta1" to "6.9.0", etc.
+ */
+function stripPreReleaseSuffix(version: string): string {
+  return version.replace(/-(RC|beta|alpha|dev)\d*$/i, '');
+}
+
+/**
  * Find the closest matching WordPress test library version tag
  * WordPress might use 6.9, but wordpress-develop uses 6.9.0
  *
@@ -59,14 +67,17 @@ async function findMatchingTag(requestedVersion: string): Promise<string> {
 
     const tags = await response.json() as GitHubTag[];
 
-    // Try exact match first
-    const exactMatch = tags.find(tag => tag.name === requestedVersion);
+    // Strip pre-release suffixes (e.g., -RC1, -beta1) before matching
+    const normalizedVersion = stripPreReleaseSuffix(requestedVersion);
+
+    // Try exact match first (with both original and normalized version)
+    const exactMatch = tags.find(tag => tag.name === requestedVersion || tag.name === normalizedVersion);
     if (exactMatch) {
       return exactMatch.name;
     }
 
     // Parse version to try X.Y.0 pattern
-    const versionMatch = requestedVersion.match(/^(\d+\.\d+)(?:\.(\d+))?$/);
+    const versionMatch = normalizedVersion.match(/^(\d+\.\d+)(?:\.(\d+))?$/);
     if (versionMatch) {
       const [, baseVersion, patch] = versionMatch;
 
@@ -110,9 +121,13 @@ async function findMatchingTag(requestedVersion: string): Promise<string> {
 /**
  * Infer the tag name from a version string when GitHub API is unavailable
  * Converts "6.9" to "6.9.0", keeps "6.4.1" as is
+ * Strips pre-release suffixes (e.g., "6.9.1-RC1" becomes "6.9.1")
  */
 function inferTagName(version: string): string | null {
-  const versionMatch = version.match(/^(\d+\.\d+)(?:\.(\d+))?$/);
+  // Strip pre-release suffixes first
+  const normalizedVersion = stripPreReleaseSuffix(version);
+
+  const versionMatch = normalizedVersion.match(/^(\d+\.\d+)(?:\.(\d+))?$/);
   if (!versionMatch) {
     return null; // Invalid version format
   }
@@ -125,7 +140,7 @@ function inferTagName(version: string): string | null {
   }
 
   // Already has patch version, use as-is
-  return version;
+  return normalizedVersion;
 }
 
 /**

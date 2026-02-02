@@ -187,8 +187,8 @@ wp-tester test --config /path/to/project
 # Watch mode - re-run tests on file changes
 wp-tester test --watch
 
-# Only show failed tests in output
-wp-tester test --failed-only
+# Show all test results (default shows only failed tests)
+wp-tester test --verbose
 
 # Allow tests to pass when no tests are found
 wp-tester test --passWithNoTests
@@ -204,7 +204,7 @@ wp-tester test --test phpunit -- --filter MyTestClass --verbose
 | `--config` | `-c` | Path to wp-tester.json config file |
 | `--test` | `-t` | Type of test to run (wp, plugin, theme, phpunit) |
 | `--watch` | `-w` | Watch for file changes and re-run tests |
-| `--failed-only` | | Only display failed tests in output |
+| `--verbose` | `-v` | Display all test results (default shows only failed tests) |
 | `--passWithNoTests` | | Allow test suite to pass when no tests are executed (see [passWithNoTests](configuration.md#testspasswithnotests)) |
 | `--` | | Pass extra arguments to test runner (requires `--test`) |
 
@@ -265,7 +265,32 @@ wp-tester config project-type
 wp-tester config project-root
 wp-tester config phpunit
 wp-tester config smoke-tests
+wp-tester config ci
 ```
+
+#### CI Configuration
+
+Set up GitHub Actions workflow for automated testing:
+
+```bash
+wp-tester config ci
+```
+
+This interactive setup will:
+- Detect your git repository settings and default branch
+- Auto-detect Composer dependencies if present
+- Create a GitHub Actions workflow file
+- Configure trigger branches, Node.js version, and caching options
+
+The workflow runs `wp-tester` on push/pull requests and can be manually triggered with custom arguments.
+
+**What gets configured:**
+- Workflow name and file path (default: `.github/workflows/wp-tester.yml`)
+- Target branches for CI triggers
+- Node.js version (18, 20, or 22)
+- NPM caching for faster builds
+- Composer dependency installation (if detected)
+- WP Tester CLI arguments
 
 ## Packages
 

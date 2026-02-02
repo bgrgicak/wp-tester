@@ -1,6 +1,6 @@
 {
   "name": "@wp-tester/config",
-  "version": "0.1.2",
+  "version": "0.1.5",
   "description": "Configuration management for wp-tester",
   "type": "module",
   "private": false,

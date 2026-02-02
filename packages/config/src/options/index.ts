@@ -3,6 +3,7 @@ import { projectRootOption } from './project-root';
 import { projectTypeOption } from './project-type';
 import { smokeTestsOption } from './smoke-tests';
 import { phpunitOption } from './phpunit';
+import { ciOption } from './ci';
 
 export interface ConfigOptionContext {
   configPath?: string;
@@ -29,6 +30,10 @@ const optionMapInternal = {
   'phpunit': {
     handler: phpunitOption,
     getContext: (configPath: string) => ({ promptIfNotDetected: true, configPath }),
+  },
+  'ci': {
+    handler: ciOption,
+    getContext: (configPath: string) => ({ configPath, skipPrompt: true }),
   }
 } satisfies Record<string, ConfigOptionDefinition>;
 
