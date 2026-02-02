@@ -178,14 +178,24 @@ export const executeTests = async (
     filter,
   });
 
-  // Run smoke tests (wp, plugin, theme)
-  if (smokeTestFilter !== false) {
-    await runSmokeTests(resolvedConfig, smokeTestFilter, extraArgs, unifiedReporter);
-  }
+  // Start the unified test run
+  unifiedReporter.startUnifiedRun();
 
-  // Run PHPUnit tests
-  if (shouldRunPhpUnit) {
-    await runPhpunitTests(resolvedConfig, extraArgs, unifiedReporter);
+  try {
+    // Run smoke tests (wp, plugin, theme)
+    if (smokeTestFilter !== false) {
+      unifiedReporter.setStatus("Running smoke tests");
+      await runSmokeTests(resolvedConfig, smokeTestFilter, extraArgs, unifiedReporter);
+    }
+
+    // Run PHPUnit tests
+    if (shouldRunPhpUnit) {
+      unifiedReporter.setStatus("Running PHPUnit tests");
+      await runPhpunitTests(resolvedConfig, extraArgs, unifiedReporter);
+    }
+  } finally {
+    // End the unified test run (stops spinner, shows final output)
+    unifiedReporter.endUnifiedRun();
   }
 
   // Get the final report from the unified reporter
