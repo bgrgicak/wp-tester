@@ -6,7 +6,7 @@
 
 import type { Summary } from "ctrf";
 import pc from "picocolors";
-import { formatDuration, formatHint, formatSummaryLine } from "./log-formatting.js";
+import { formatHint, formatSummaryLine } from "./log-formatting.js";
 
 /**
  * Options for filtering summary output based on test statuses
