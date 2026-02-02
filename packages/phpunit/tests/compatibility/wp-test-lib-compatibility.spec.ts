@@ -139,7 +139,7 @@ const COMPATIBILITY_TESTS: CompatibilityTestCase[] = [
       ],
       reporters: {},
     },
-    expectedMinTests: 100,
+    expectedMinTests: 2800,
     allowedFailures: 11,
   },
 
@@ -224,7 +224,7 @@ const COMPATIBILITY_TESTS: CompatibilityTestCase[] = [
       ],
       reporters: {},
     },
-    expectedMinTests: 140,
+    expectedMinTests: 1700,
     allowedFailures: 10,
   },
 
@@ -320,11 +320,12 @@ describe("WordPress compatibility tests", () => {
   });
 
   // Create a test for each compatibility test case
+  // Use describe.concurrent to run all 6 tests in parallel
   COMPATIBILITY_TESTS.forEach((testCase) => {
-    describe(testCase.name, () => {
+    describe.concurrent(testCase.name, () => {
       const projectDir = path.join(
         testDir,
-        testCase.dirName || testCase.repo.replace("/", "-")
+        testCase.dirName || testCase.repo.replace("/", "-"),
       );
       let setupSucceeded = false;
 
@@ -341,7 +342,7 @@ describe("WordPress compatibility tests", () => {
           const branch = testCase.branch || "main";
           execSync(
             `git clone --depth 1 --branch ${branch} https://github.com/${testCase.repo}.git ${projectDir}`,
-            { stdio: "inherit" }
+            { stdio: "inherit" },
           );
 
           // Run setup commands
@@ -385,7 +386,7 @@ describe("WordPress compatibility tests", () => {
 
         if (testCase.expectedMinTests) {
           expect(report.results.summary.tests).toBeGreaterThanOrEqual(
-            testCase.expectedMinTests
+            testCase.expectedMinTests,
           );
         }
 
