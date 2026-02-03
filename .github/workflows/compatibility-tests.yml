@@ -1,0 +1,26 @@
+name: Compatibility Tests
+
+on:
+  push:
+    branches: [trunk]
+  pull_request:
+    branches: [trunk]
+
+jobs:
+  compatibility-tests:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 23
+        uses: actions/setup-node@v4
+        with:
+          node-version: 23
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run compatibility tests
+        run: npm run test:compatibility --workspace=@wp-tester/phpunit
