@@ -116,8 +116,7 @@ const COMPATIBILITY_TESTS: CompatibilityTestCase[] = [
     repo: "WordPress/sqlite-database-integration",
     branch: "develop",
     setupCommands: [
-      "echo '=== DEBUG: Environment ===' && php --version && composer --version && echo \"COMPOSER_NO_SECURITY_BLOCKING=$COMPOSER_NO_SECURITY_BLOCKING\"",
-      "echo '=== DEBUG: Running composer install ===' && composer install --no-interaction --prefer-dist --ignore-platform-reqs -v || (echo '=== DEBUG: Install failed, checking audit config ===' && composer config --list | grep -i audit && exit 1)",
+      "composer install --no-interaction --prefer-dist --ignore-platform-reqs --quiet",
     ],
     config: {
       projectType: "plugin",
