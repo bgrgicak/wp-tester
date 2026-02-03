@@ -116,9 +116,8 @@ const COMPATIBILITY_TESTS: CompatibilityTestCase[] = [
     repo: "WordPress/sqlite-database-integration",
     branch: "develop",
     setupCommands: [
-      "echo '=== DEBUG: PHP and Composer versions ===' && php --version && composer --version",
-      "echo '=== DEBUG: composer.json contents ===' && cat composer.json",
-      "echo '=== DEBUG: Running composer install with verbose output ===' && composer install --no-interaction --prefer-dist --ignore-platform-reqs -vvv || (echo '=== DEBUG: Install failed, running composer diagnose ===' && composer diagnose && exit 1)",
+      "echo '=== DEBUG: Environment ===' && php --version && composer --version && echo \"COMPOSER_NO_SECURITY_BLOCKING=$COMPOSER_NO_SECURITY_BLOCKING\"",
+      "echo '=== DEBUG: Running composer install ===' && composer install --no-interaction --prefer-dist --ignore-platform-reqs -v || (echo '=== DEBUG: Install failed, checking audit config ===' && composer config --list | grep -i audit && exit 1)",
     ],
     config: {
       projectType: "plugin",
@@ -352,11 +351,12 @@ describe("WordPress compatibility tests", () => {
             for (const cmd of testCase.setupCommands) {
               console.log(`Running: ${cmd}`);
               // Allow installing packages with security advisories in dev dependencies
-              // since we're testing external projects we don't control
+              // since we're testing external projects we don't control.
+              // COMPOSER_NO_SECURITY_BLOCKING disables Composer 2.9+ automatic security blocking.
               execSync(cmd, {
                 cwd: projectDir,
                 stdio: "inherit",
-                env: { ...process.env, COMPOSER_AUDIT_BLOCK_INSECURE: "0" },
+                env: { ...process.env, COMPOSER_NO_SECURITY_BLOCKING: "1" },
               });
             }
           }
