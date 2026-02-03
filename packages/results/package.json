@@ -1,6 +1,6 @@
 {
   "name": "@wp-tester/results",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Test result types and formatting for wp-tester",
   "type": "module",
   "private": false,
