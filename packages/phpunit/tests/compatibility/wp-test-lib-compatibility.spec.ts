@@ -349,7 +349,13 @@ describe("WordPress compatibility tests", () => {
           if (testCase.setupCommands) {
             for (const cmd of testCase.setupCommands) {
               console.log(`Running: ${cmd}`);
-              execSync(cmd, { cwd: projectDir, stdio: "inherit" });
+              // Allow installing packages with security advisories in dev dependencies
+              // since we're testing external projects we don't control
+              execSync(cmd, {
+                cwd: projectDir,
+                stdio: "inherit",
+                env: { ...process.env, COMPOSER_AUDIT_BLOCK_INSECURE: "0" },
+              });
             }
           }
 
