@@ -15,10 +15,11 @@ import { SPINNER_FRAMES } from "./spinner.js";
 import pc from "picocolors";
 
 // ANSI escape codes for cursor control
-const CLEAR_LINE = "\x1b[2K";
-const MOVE_UP = "\x1b[1A";
 const HIDE_CURSOR = "\x1b[?25l";
 const SHOW_CURSOR = "\x1b[?25h";
+const SAVE_CURSOR = "\x1b7";
+const RESTORE_CURSOR = "\x1b8";
+const CLEAR_TO_END = "\x1b[J";
 
 /**
  * Unified streaming reporter that combines multiple test suite outputs
@@ -70,8 +71,10 @@ export class UnifiedStreamingReporter extends StreamingReporter {
     this.startSpinner();
 
     if (this.useLogUpdate) {
-      // TTY mode: hide cursor and start rendering
-      process.stdout.write(HIDE_CURSOR);
+      // TTY mode: save cursor position, hide cursor, and start rendering
+      // Saving cursor allows us to restore and clear even if external output
+      // (like deprecation warnings) shifts content down
+      process.stdout.write(SAVE_CURSOR + HIDE_CURSOR);
       this.renderImmediate();
     } else {
       // Non-TTY mode: print status once
@@ -103,20 +106,24 @@ export class UnifiedStreamingReporter extends StreamingReporter {
       }
     }
 
+    // Prevent clearThrottle() in super.onRunEnd() from calling renderImmediate()
+    // again, which would cause duplicate output (renderImmediate + renderFinal)
+    this.pendingRender = false;
+
     super.onRunEnd();
   }
 
   /**
-   * Clear the current output by moving up and clearing each line
+   * Clear the current output by restoring cursor and clearing to end.
+   * This handles external output (like deprecation warnings) that may have
+   * shifted content down, by always clearing from the saved start position.
    */
   private clearOutput(): void {
-    if (this.lastLineCount > 0) {
-      // Move up and clear each line we wrote
-      for (let i = 0; i < this.lastLineCount; i++) {
-        process.stdout.write(MOVE_UP + CLEAR_LINE);
-      }
-      this.lastLineCount = 0;
-    }
+    // Restore cursor to saved position and clear everything below
+    // This is more robust than relative line clearing because it handles
+    // any external output that may have been written to stdout
+    process.stdout.write(RESTORE_CURSOR + CLEAR_TO_END);
+    this.lastLineCount = 0;
   }
 
   /**
