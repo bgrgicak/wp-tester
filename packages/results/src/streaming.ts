@@ -170,23 +170,23 @@ interface ReporterState {
  * - Makes the code much easier to understand and maintain
  */
 export class StreamingReporter {
-  private writer: StreamWriter;
+  protected writer: StreamWriter;
   private enabled = true;
   private showRunBoundaries = true;
   private showSummary = true;
   private filter: ReporterFilterOptions;
-  private useLogUpdate: boolean;
+  protected useLogUpdate: boolean;
 
   // Unified state
-  private state: ReporterState;
+  protected state: ReporterState;
 
   // Rendering state
-  private spinnerFrame = 0;
+  protected spinnerFrame = 0;
   private spinnerInterval: NodeJS.Timeout | null = null;
 
   // Throttling state
   private renderThrottleTimeout: NodeJS.Timeout | null = null;
-  private pendingRender = false;
+  protected pendingRender = false;
   private readonly renderInterval = 50; // Render at most every 50ms (~20fps)
 
   constructor(options: StreamingReporterOptions = {}) {
@@ -195,11 +195,11 @@ export class StreamingReporter {
     this.showSummary = options.showSummary ?? true;
     this.enabled = options.enabled ?? true;
 
-    // Use log-update only if:
+    // Use log-update when:
     // - Reporter is enabled
     // - We're using the default stdout writer (not a custom writer)
-    // - stdout is a TTY (log-update handles this check internally)
-    this.useLogUpdate = this.enabled && this.writer === stdoutWriter && (process.stdout.isTTY ?? false);
+    // log-update handles TTY detection internally (clears in TTY, appends in non-TTY)
+    this.useLogUpdate = this.enabled && this.writer === stdoutWriter;
 
     // Default filter: show all statuses (for backwards compatibility)
     this.filter = options.filter ?? {
@@ -306,7 +306,7 @@ export class StreamingReporter {
   /**
    * Start the spinner animation
    */
-  private startSpinner(): void {
+  protected startSpinner(): void {
     if (this.spinnerInterval || !this.enabled) return;
 
     this.spinnerInterval = setInterval(() => {
@@ -318,7 +318,7 @@ export class StreamingReporter {
   /**
    * Stop the spinner animation
    */
-  private stopSpinner(): void {
+  protected stopSpinner(): void {
     if (this.spinnerInterval) {
       clearInterval(this.spinnerInterval);
       this.spinnerInterval = null;
@@ -370,7 +370,7 @@ export class StreamingReporter {
   /**
    * Execute render immediately without throttling
    */
-  private renderImmediate(): void {
+  protected renderImmediate(): void {
     this.pendingRender = false;
 
     // Build output lines
@@ -474,7 +474,7 @@ export class StreamingReporter {
   /**
    * Render a file's tests to output lines
    */
-  private renderFile(file: FileState, lines: string[]): void {
+  protected renderFile(file: FileState, lines: string[]): void {
     for (let i = 0; i < file.suites.length; i++) {
       this.renderSuite(file, i, lines);
     }

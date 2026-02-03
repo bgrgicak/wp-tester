@@ -76,7 +76,7 @@ describe("runPhpunitTests integration", () => {
 
 			// Validate test statuses and durations
 			for (const test of report.results.tests) {
-				expect(["passed", "failed"]).toContain(test.status);
+				expect(["passed", "failed", "pending"]).toContain(test.status);
 				expect(test.duration).toBeGreaterThanOrEqual(0);
 			}
 		}

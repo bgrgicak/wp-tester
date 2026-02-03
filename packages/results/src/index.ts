@@ -35,13 +35,7 @@ export {
   type StreamingReporterOptions,
   type ReporterFilterOptions,
 } from './streaming.js';
-export {
-  VitestStreamingBase,
-} from './vitest-streaming.js';
 export { applyDiffHighlighting, highlightStringDiff } from './diff-utils.js';
-export {
-  PHPUnitStreamingReporter,
-} from './phpunit-streaming-reporter.js';
 export {
   VitestStreamingReporter,
   createVitestStreamingReporter,
@@ -52,6 +46,7 @@ export {
   parseTeamCityOutput,
 } from './teamcity-parser.js';
 export { printSummary, type SummaryOptions } from './summary.js';
+export { UnifiedStreamingReporter } from './unified-streaming-reporter.js';
 export {
   formatDuration,
   formatHint,

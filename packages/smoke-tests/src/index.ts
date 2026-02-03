@@ -11,7 +11,8 @@ import type { WPTesterConfig, Tests, TestType, ResolvedWPTesterConfig, ResolvedT
 import {
   EMPTY_REPORT,
   VitestStreamingReporter,
-  VitestStreamingBase,
+  UnifiedStreamingReporter,
+  type StreamingReporter,
 } from "@wp-tester/results";
 import type { Report } from "@wp-tester/results";
 
@@ -69,17 +70,20 @@ export function selectTestFiles(
  * @param config - Resolved test configuration
  * @param test - Optional filter to run only specific test type (wp, plugin, or theme)
  * @param vitestArgs - Additional arguments to pass to Vitest CLI
+ * @param sharedReporter - Optional shared streaming reporter for unified output
  * @returns CTRF report with test results
  */
 export async function runSmokeTests(
   config: ResolvedWPTesterConfig,
   test?: TestType | false,
-  vitestArgs?: string[]
+  vitestArgs?: string[],
+  sharedReporter?: StreamingReporter
 ): Promise<Report> {
   // Check if any tests are configured
   if (!shouldRunSmokeTests(config)) {
     return Promise.resolve(EMPTY_REPORT);
   }
+
   // Get package root directory
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = dirname(__filename);
@@ -100,18 +104,18 @@ export async function runSmokeTests(
     ? config.reporters.default
     : undefined;
 
-  // Create Vitest streaming reporter with streaming configured
-  // Disable summary since the CLI will print a combined summary
-  const streamingBase = new VitestStreamingBase({
+  // Use shared reporter if provided, otherwise create a new one
+  const reporter: StreamingReporter = sharedReporter ?? new UnifiedStreamingReporter({
     enabled: useStreaming,
     showSummary: false,
     filter
   });
+
+  // Create Vitest streaming reporter wrapper
   const vitestReporter = new VitestStreamingReporter(
     "wp-tester-smoke-tests",
-    streamingBase
+    reporter
   );
-  const reporter = vitestReporter.getStreamingReporter();
 
   // Build reporters array - use our streaming reporter
   const reporters: Reporter[] = [vitestReporter];
@@ -145,7 +149,5 @@ export async function runSmokeTests(
   await vitest.close();
 
   // Get report from streaming reporter
-  const result = reporter.getReport();
-
-  return result;
+  return reporter.getReport();
 }

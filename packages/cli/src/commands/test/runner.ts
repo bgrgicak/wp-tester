@@ -3,12 +3,7 @@ import path from 'path';
 import * as clack from '../../cli/theme';
 import { runSmokeTests } from "@wp-tester/smoke-tests";
 import { runPhpunitTests } from "@wp-tester/phpunit";
-import {
-  mergeReports,
-  printSummary,
-  formatHint,
-  type Report,
-} from "@wp-tester/results";
+import { printSummary, UnifiedStreamingReporter, formatHint } from "@wp-tester/results";
 import type { TestType, ResolvedWPTesterConfig } from "@wp-tester/config";
 import { resolveConfig } from "@wp-tester/config";
 import { validateConfig } from "../config/validate";
@@ -165,49 +160,50 @@ export const executeTests = async (
   // Apply filter override (respects user config, uses verbose flag, or defaults to failed-only)
   resolvedConfig = applyFilterOverride(resolvedConfig, verbose);
 
-  // Run all test suites and collect results
-  const reports: Report[] = [];
-
   // Determine which tests to run based on testType parameter
   const shouldRunPhpUnit = !testType || testType === "phpunit";
-
-  // Run smoke tests (wp, plugin, theme) - smoke tests package handles whether to run
   const smokeTestFilter = getSmokeTestFilter(testType);
-  if (smokeTestFilter !== false) {
-    const smokeTestReport = await runSmokeTests(
-      resolvedConfig,
-      smokeTestFilter,
-      extraArgs,
-    );
-    // Check if tests actually ran by verifying time elapsed (stop > start)
-    // EMPTY_REPORT has start === stop, real test runs have stop > start
-    const testsRan =
-      smokeTestReport.results.summary.stop >
-      smokeTestReport.results.summary.start;
-    if (testsRan) {
-      reports.push(smokeTestReport);
+
+  // Get streaming configuration
+  // Default to true if not explicitly disabled (was causing regression where no output showed)
+  const useStreaming = resolvedConfig.reporters?.default !== false;
+  const filter = typeof resolvedConfig.reporters?.default === 'object'
+    ? resolvedConfig.reporters.default
+    : undefined;
+
+  // Create unified streaming reporter for all test suites
+  const unifiedReporter = new UnifiedStreamingReporter({
+    enabled: useStreaming,
+    showSummary: false,
+    filter,
+  });
+
+  // Start the unified test run
+  unifiedReporter.startUnifiedRun();
+
+  try {
+    // Run smoke tests (wp, plugin, theme)
+    if (smokeTestFilter !== false) {
+      unifiedReporter.setStatus("Running smoke tests");
+      await runSmokeTests(resolvedConfig, smokeTestFilter, extraArgs, unifiedReporter);
     }
+
+    // Run PHPUnit tests
+    if (shouldRunPhpUnit) {
+      unifiedReporter.setStatus("Running PHPUnit tests");
+      await runPhpunitTests(resolvedConfig, extraArgs, unifiedReporter);
+    }
+  } finally {
+    // End the unified test run (stops spinner, shows final output)
+    unifiedReporter.endUnifiedRun();
   }
 
-  // Run PHPUnit tests
-  if (shouldRunPhpUnit) {
-    const phpunitReport = await runPhpunitTests(resolvedConfig, extraArgs);
-    // Check if tests actually ran by verifying time elapsed
-    const testsRan =
-      phpunitReport.results.summary.stop > phpunitReport.results.summary.start;
-    if (testsRan) {
-      reports.push(phpunitReport);
-    }
-  }
-
-  // No tests were run
-  if (reports.length === 0) {
+  // Get the final report from the unified reporter
+  const mergedReport = unifiedReporter.getReport();
+  if (mergedReport.results.summary.tests === 0) {
     clack.log.error("No tests were run. Check your configuration.");
     return { success: false, hasTests: false };
   }
-
-  // Merge results from all test suites
-  const mergedReport = mergeReports(reports);
 
   // Write JSON report if configured
   const jsonReporter = resolvedConfig.reporters?.json;

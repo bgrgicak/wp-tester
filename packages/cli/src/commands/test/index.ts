@@ -38,7 +38,6 @@ export const testHandler = async (argv: TestArgs): Promise<void> => {
       },
     });
   } else {
-    clack.log.info(" Test Run\n");
     await runTests(config, {
       testType: test,
       extraArgs,

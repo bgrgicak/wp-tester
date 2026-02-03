@@ -96,7 +96,6 @@ export async function runWatchMode(options: WatchOptions): Promise<void> {
     // \x1b[2J clears the entire screen, \x1b[3J clears scrollback, \x1b[H moves cursor to home
     // This is more reliable than console.clear() in watch mode
     process.stdout.write('\x1b[2J\x1b[3J\x1b[H');
-    clack.log.info(" Test run\n");
 
     try {
       await onRunTests();
