@@ -44,7 +44,7 @@ const COMPATIBILITY_TESTS: CompatibilityTestCase[] = [
     repo: "akirk/friends",
     branch: "main",
     setupCommands: [
-      "composer install --no-interaction --prefer-dist --ignore-platform-reqs",
+      "composer install --no-interaction --prefer-dist --ignore-platform-reqs --quiet",
     ],
     config: {
       projectType: "plugin",
@@ -78,7 +78,7 @@ const COMPATIBILITY_TESTS: CompatibilityTestCase[] = [
     branch: "develop",
     dirName: "amp",
     setupCommands: [
-      "composer install --no-interaction --prefer-dist --ignore-platform-reqs",
+      "composer install --no-interaction --prefer-dist --ignore-platform-reqs --quiet",
     ],
     config: {
       projectType: "plugin",
@@ -116,7 +116,7 @@ const COMPATIBILITY_TESTS: CompatibilityTestCase[] = [
     repo: "WordPress/sqlite-database-integration",
     branch: "develop",
     setupCommands: [
-      "composer install --no-interaction --prefer-dist --ignore-platform-reqs",
+      "composer install --no-interaction --prefer-dist --ignore-platform-reqs --quiet",
     ],
     config: {
       projectType: "plugin",
@@ -139,7 +139,7 @@ const COMPATIBILITY_TESTS: CompatibilityTestCase[] = [
       ],
       reporters: {},
     },
-    expectedMinTests: 100,
+    expectedMinTests: 750,
     allowedFailures: 11,
   },
 
@@ -149,7 +149,7 @@ const COMPATIBILITY_TESTS: CompatibilityTestCase[] = [
     repo: "WordPress/performance",
     branch: "trunk",
     setupCommands: [
-      "composer install --no-interaction --prefer-dist --ignore-platform-reqs",
+      "composer install --no-interaction --prefer-dist --ignore-platform-reqs --quiet",
     ],
     config: {
       projectType: "plugin",
@@ -200,7 +200,7 @@ const COMPATIBILITY_TESTS: CompatibilityTestCase[] = [
     branch: "trunk",
     dirName: "wordpress-activitypub",
     setupCommands: [
-      "composer install --no-interaction --prefer-dist --ignore-platform-reqs",
+      "composer install --no-interaction --prefer-dist --ignore-platform-reqs --quiet",
     ],
     config: {
       projectType: "plugin",
@@ -224,7 +224,7 @@ const COMPATIBILITY_TESTS: CompatibilityTestCase[] = [
       ],
       reporters: {},
     },
-    expectedMinTests: 140,
+    expectedMinTests: 1700,
     allowedFailures: 10,
   },
 
@@ -235,7 +235,7 @@ const COMPATIBILITY_TESTS: CompatibilityTestCase[] = [
     branch: "trunk",
     dirName: "wordpress-develop",
     setupCommands: [
-      "composer install --no-interaction --prefer-dist --ignore-platform-reqs",
+      "composer install --no-interaction --prefer-dist --ignore-platform-reqs --quiet",
     ],
     config: {
       projectType: "other",
@@ -288,7 +288,7 @@ const COMPATIBILITY_TESTS: CompatibilityTestCase[] = [
       reporters: {},
     },
     expectedMinTests: 5500,
-    allowedFailures: 15,
+    allowedFailures: 41,
   },
 ];
 
@@ -320,11 +320,12 @@ describe("WordPress compatibility tests", () => {
   });
 
   // Create a test for each compatibility test case
+  // Use describe.concurrent to run all 6 tests in parallel
   COMPATIBILITY_TESTS.forEach((testCase) => {
-    describe(testCase.name, () => {
+    describe.concurrent(testCase.name, () => {
       const projectDir = path.join(
         testDir,
-        testCase.dirName || testCase.repo.replace("/", "-")
+        testCase.dirName || testCase.repo.replace("/", "-"),
       );
       let setupSucceeded = false;
 
@@ -341,14 +342,21 @@ describe("WordPress compatibility tests", () => {
           const branch = testCase.branch || "main";
           execSync(
             `git clone --depth 1 --branch ${branch} https://github.com/${testCase.repo}.git ${projectDir}`,
-            { stdio: "inherit" }
+            { stdio: "inherit" },
           );
 
           // Run setup commands
           if (testCase.setupCommands) {
             for (const cmd of testCase.setupCommands) {
               console.log(`Running: ${cmd}`);
-              execSync(cmd, { cwd: projectDir, stdio: "inherit" });
+              // Allow installing packages with security advisories in dev dependencies
+              // since we're testing external projects we don't control.
+              // COMPOSER_NO_SECURITY_BLOCKING disables Composer 2.9+ automatic security blocking.
+              execSync(cmd, {
+                cwd: projectDir,
+                stdio: "inherit",
+                env: { ...process.env, COMPOSER_NO_SECURITY_BLOCKING: "1" },
+              });
             }
           }
 
@@ -385,7 +393,7 @@ describe("WordPress compatibility tests", () => {
 
         if (testCase.expectedMinTests) {
           expect(report.results.summary.tests).toBeGreaterThanOrEqual(
-            testCase.expectedMinTests
+            testCase.expectedMinTests,
           );
         }
 

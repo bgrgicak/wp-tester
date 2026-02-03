@@ -1,0 +1,13 @@
+show_types:
+  - task_complete   # Task finished
+  - needs_input     # Claude needs your input
+  - error           # Errors
+  - warning         # Warnings
+  - info          # General info (filtered by default)
+  - task_start    # Task started (filtered by default)
+
+# Timeout in seconds (0 = permanent until dismissed)
+default_timeout: 0
+
+# Enable sound (macOS only)
+enable_sound: false

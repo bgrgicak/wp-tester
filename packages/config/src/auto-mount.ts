@@ -40,6 +40,7 @@ export function getProjectRootMount(
       return {
         hostPath: projectDir,
         vfsPath: "/wordpress",
+        beforeInstall: true,
       };
     default:
       return null;
