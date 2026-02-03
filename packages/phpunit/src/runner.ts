@@ -368,7 +368,6 @@ export async function runPhpunitTests(
   phpunitArgs?: string[],
   sharedReporter?: StreamingReporter
 ): Promise<Report> {
-
   // Merge additional PHPUnit args if provided (resolve them first)
   let resolvedConfig = { ...config };
   if (phpunitArgs && phpunitArgs.length > 0) {

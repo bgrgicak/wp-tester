@@ -94,10 +94,13 @@ export class UnifiedStreamingReporter extends StreamingReporter {
     this.stopSpinner();
 
     if (this.useLogUpdate) {
-      // Clear the spinner area
-      this.clearOutput();
-      // Show cursor again
-      process.stdout.write(SHOW_CURSOR);
+      // Clear the spinner area and restore cursor
+      // Use try/finally to ensure cursor is always restored even on errors
+      try {
+        this.clearOutput();
+      } finally {
+        process.stdout.write(SHOW_CURSOR);
+      }
     }
 
     super.onRunEnd();
