@@ -1,7 +1,7 @@
 import { readFile } from 'fs/promises';
 import Ajv, { type ErrorObject } from "ajv";
 import pc from "picocolors";
-import { getSchemaPath, normalizeConfigPath, type WPTesterConfig, type Tests } from "@wp-tester/config";
+import { getSchemaPath, normalizeConfigPath, readConfigFile, type WPTesterConfig, type Tests } from "@wp-tester/config";
 import * as clack from "../../cli/theme";
 
 /**
@@ -204,7 +204,8 @@ export async function validateConfig(configPath: string): Promise<WPTesterConfig
     // Resolve config path relative to cwd and normalize (handles directory paths)
     const resolvedConfigPath = normalizeConfigPath(configPath);
 
-    const config = JSON.parse(await readFile(resolvedConfigPath, "utf-8")) as unknown;
+    // Read config file (supports JSON, JS, and TS formats)
+    const config = await readConfigFile(resolvedConfigPath) as unknown;
     // Get schema path from config package
     const schemaPath = getSchemaPath();
     const schema = JSON.parse(await readFile(schemaPath, "utf-8")) as object;

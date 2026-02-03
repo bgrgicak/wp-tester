@@ -1,9 +1,21 @@
 import type { WPTesterConfig } from "./wp-tester-config";
 import type { ResolvedPath } from "./resolved-types";
 import { existsSync, statSync } from "fs";
-import { join, dirname, resolve, isAbsolute } from "path";
+import { join, dirname, resolve, isAbsolute, extname } from "path";
 import { fileURLToPath } from "url";
 import { hostToVfs } from './path-mappers';
+
+/**
+ * Supported config file extensions in priority order.
+ * TypeScript files take priority, followed by JavaScript, then JSON.
+ */
+export const CONFIG_EXTENSIONS = ['.ts', '.js', '.json'] as const;
+export type ConfigExtension = typeof CONFIG_EXTENSIONS[number];
+
+/**
+ * Default config file base name (without extension).
+ */
+export const CONFIG_BASE_NAME = 'wp-tester';
 
 /**
  * Get the actual working directory, accounting for tools like tsx that may change process.cwd()
@@ -26,8 +38,42 @@ export function resolveAbsolute(path: string, baseDir: string): string {
   return isAbsolute(path) ? path : resolve(baseDir, path);
 }
 
+/**
+ * Get the default config file path.
+ * Searches for wp-tester.ts, wp-tester.js, or wp-tester.json in the working directory.
+ * Returns the first found, or defaults to wp-tester.json if none exist.
+ */
 export function configPath(): string {
-  return join(getWorkingDirectory(), "wp-tester.json");
+  const workDir = getWorkingDirectory();
+  return findConfigFile(workDir) || join(workDir, "wp-tester.json");
+}
+
+/**
+ * Find a config file in the given directory.
+ * Searches for config files in priority order: .ts, .js, .json
+ *
+ * @param dir - Directory to search in
+ * @returns Path to the first found config file, or null if none found
+ */
+export function findConfigFile(dir: string): string | null {
+  for (const ext of CONFIG_EXTENSIONS) {
+    const filePath = join(dir, `${CONFIG_BASE_NAME}${ext}`);
+    if (existsSync(filePath)) {
+      return filePath;
+    }
+  }
+  return null;
+}
+
+/**
+ * Check if a path is a JavaScript or TypeScript config file.
+ *
+ * @param filePath - Path to check
+ * @returns True if the path has a .js or .ts extension
+ */
+export function isJsOrTsConfig(filePath: string): boolean {
+  const ext = extname(filePath).toLowerCase();
+  return ext === '.js' || ext === '.ts';
 }
 
 export function getSchemaPath(importMetaUrl?: string): string {
@@ -89,7 +135,8 @@ export function getConfigPath(config: string): string {
 
 /**
  * Normalize a config path to ensure it points to a file, not a directory.
- * If the path is a directory, appends 'wp-tester.json' to it.
+ * If the path is a directory, searches for wp-tester.ts, wp-tester.js, or wp-tester.json
+ * (in that order) and returns the first one found.
  * Used by readConfigFile, resolveConfig, and the test watcher to handle
  * directory paths passed via --config flag.
  *
@@ -103,7 +150,9 @@ export function normalizeConfigPath(configPath: string): string {
   try {
     const stats = statSync(absolutePath);
     if (stats.isDirectory()) {
-      return join(absolutePath, 'wp-tester.json');
+      // Search for config file in priority order
+      const foundConfig = findConfigFile(absolutePath);
+      return foundConfig || join(absolutePath, 'wp-tester.json');
     }
   } catch {
     // If stat fails, assume it's a file path

@@ -37,6 +37,7 @@ export {
   writeConfigFile,
   getDefaultConfig,
   isConfigWritable,
+  defineConfig,
 } from "./config-file";
 
 export {
@@ -49,6 +50,11 @@ export {
   resolveAbsolute,
   getWorkingDirectory,
   toResolvedPath,
+  findConfigFile,
+  isJsOrTsConfig,
+  CONFIG_EXTENSIONS,
+  CONFIG_BASE_NAME,
+  type ConfigExtension,
 } from "./path-utils";
 
 export {
