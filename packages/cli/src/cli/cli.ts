@@ -30,7 +30,7 @@ void yargs(hideBin(process.argv))
         .positional("action", {
           describe: "Action to perform",
           type: "string",
-          choices: ["validate", ...optionNames] as const,
+          choices: ["validate", "migrate", ...optionNames] as const,
           demandOption: true,
         })
         .option("config", {
