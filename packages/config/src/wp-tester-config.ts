@@ -97,27 +97,73 @@ export interface PHPUnitConfig {
 }
 
 /**
+ * Smoke tests configuration.
+ * Controls which smoke tests to run.
+ *
+ * Plugin/theme tests are automatically enabled based on projectType.
+ * Use include/exclude to filter specific tests.
+ *
+ * @example
+ * // Run all applicable smoke tests (WP + plugin/theme based on projectType)
+ * smokeTests: true
+ *
+ * @example
+ * // Disable all smoke tests
+ * smokeTests: false
+ *
+ * @example
+ * // Run only specific tests
+ * smokeTests: { include: ["wpBoot", "pluginActivates"] }
+ *
+ * @example
+ * // Run all tests except specific ones
+ * smokeTests: { exclude: ["wpRestApiAvailable"] }
+ */
+export type SmokeTests =
+  | boolean
+  | {
+      /**
+       * Only run these smoke tests (mutually exclusive with exclude).
+       * Unknown test names are warned but don't fail - allows forward compatibility.
+       * @example ["wpBoot", "pluginActivates"]
+       */
+      include?: string[];
+      /**
+       * Run all smoke tests except these (mutually exclusive with include).
+       * Unknown test names are warned but don't fail - allows forward compatibility.
+       * @example ["wpRestApiAvailable"]
+       */
+      exclude?: string[];
+    };
+
+/**
  * Test configuration specifying which test suites to run.
  */
 export interface Tests {
   /**
+   * Smoke tests configuration.
+   * When true, runs all applicable smoke tests.
+   * When an object, use include/exclude to filter specific tests.
+   * Takes precedence over the deprecated wp, plugin, and theme properties.
+   * @default false
+   */
+  smokeTests?: SmokeTests;
+
+  /**
    * Plugin slug to test.
-   * When provided, runs plugin-specific tests including activation, deactivation, and load tests.
-   * @example "my-awesome-plugin"
+   * @deprecated Use smokeTests: { plugin: "my-plugin" } instead.
    */
   plugin?: string;
 
   /**
    * Theme slug to test.
-   * When provided, runs theme-specific tests including activation and homepage load tests.
-   * @example "my-custom-theme"
+   * @deprecated Use smokeTests: { theme: "my-theme" } instead.
    */
   theme?: string;
 
   /**
    * Whether to run WordPress core tests.
-   * Tests WordPress boot, admin dashboard, and REST API.
-   * @default false
+   * @deprecated Use smokeTests: true instead.
    */
   wp?: boolean;
 

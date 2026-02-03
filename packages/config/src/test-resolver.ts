@@ -3,6 +3,7 @@ import type { ResolvedTests, ResolvedPHPUnitConfig, ResolvedPath } from "./resol
 import { resolveAbsolute, toResolvedPath } from "./path-utils";
 import { resolveBootstrapPath } from './options/phpunit-detect';
 import { hostToVfs } from './path-mappers';
+import { validateSmokeTests } from './smoke-tests-validation';
 
 /**
  * PHPUnit flags that are boolean (do not take a value).
@@ -84,9 +85,16 @@ export function resolvePhpunitArgs(args: string[], projectPath: ResolvedPath): s
  * @returns Resolved tests configuration
  */
 export async function resolveTests(tests: Tests, projectPath: ResolvedPath): Promise<ResolvedTests> {
+  // Validate smokeTests if present
+  if (tests.smokeTests !== undefined) {
+    // This will throw if include and exclude are both specified
+    validateSmokeTests(tests.smokeTests);
+  }
+
   // If no PHPUnit config, return tests as-is (but explicitly typed)
   if (!tests.phpunit) {
     return {
+      smokeTests: tests.smokeTests,
       plugin: tests.plugin,
       theme: tests.theme,
       wp: tests.wp,
@@ -118,6 +126,7 @@ export async function resolveTests(tests: Tests, projectPath: ResolvedPath): Pro
   }
 
   return {
+    smokeTests: tests.smokeTests,
     plugin: tests.plugin,
     theme: tests.theme,
     wp: tests.wp,

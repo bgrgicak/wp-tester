@@ -4,6 +4,7 @@ export type {
   EnvironmentVariables,
   Environment,
   Tests,
+  SmokeTests,
   PHPUnitConfig,
   TestType,
   Reporters,
@@ -55,6 +56,12 @@ export {
   resolvePhpunitArgs,
   resolveTests,
 } from "./test-resolver";
+
+export {
+  validateSmokeTests,
+  KNOWN_SMOKE_TESTS,
+  type SmokeTestsValidationResult,
+} from "./smoke-tests-validation";
 
 export {
   expandEnvironments,

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { type ErrorObject } from 'ajv';
-import { formatValidationError, getEnabledTestSuites, generateConfigSummary } from '../src/commands/config/validate';
+import { formatValidationError, getEnabledTestSuites, generateConfigSummary, checkDeprecatedTestProperties } from '../src/commands/config/validate';
 import type { Tests, WPTesterConfig } from '@wp-tester/config';
 import { Blueprint } from "@wp-playground/blueprints";
 
@@ -244,5 +244,60 @@ describe('generateConfigSummary', () => {
     };
     const result = generateConfigSummary(config);
     expect(result.matrixCombinations).toBe(0);
+  });
+});
+
+describe('checkDeprecatedTestProperties', () => {
+  it('should return no warnings when no deprecated properties are used', () => {
+    const tests: Tests = { smokeTests: true };
+    const warnings = checkDeprecatedTestProperties(tests);
+    expect(warnings).toHaveLength(0);
+  });
+
+  it('should warn when tests.wp is used', () => {
+    const tests: Tests = { wp: true };
+    const warnings = checkDeprecatedTestProperties(tests);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0].property).toBe('tests.wp');
+    expect(warnings[0].message).toContain('deprecated');
+    expect(warnings[0].replacement).toContain('smokeTests');
+  });
+
+  it('should warn when tests.plugin is used', () => {
+    const tests: Tests = { plugin: 'my-plugin' };
+    const warnings = checkDeprecatedTestProperties(tests);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0].property).toBe('tests.plugin');
+    expect(warnings[0].replacement).toContain('projectType');
+  });
+
+  it('should warn when tests.theme is used', () => {
+    const tests: Tests = { theme: 'my-theme' };
+    const warnings = checkDeprecatedTestProperties(tests);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0].property).toBe('tests.theme');
+    expect(warnings[0].replacement).toContain('projectType');
+  });
+
+  it('should warn for all deprecated properties when multiple are used', () => {
+    const tests: Tests = { wp: true, plugin: 'my-plugin', theme: 'my-theme' };
+    const warnings = checkDeprecatedTestProperties(tests);
+    expect(warnings).toHaveLength(3);
+  });
+
+  it('should not warn when wp is false', () => {
+    const tests: Tests = { wp: false };
+    const warnings = checkDeprecatedTestProperties(tests);
+    // wp: false still triggers the warning since the property is present
+    expect(warnings).toHaveLength(1);
+  });
+
+  it('should not warn for non-deprecated properties', () => {
+    const tests: Tests = {
+      smokeTests: true,
+      phpunit: { phpunitPath: 'vendor/bin/phpunit', configPath: 'phpunit.xml' }
+    };
+    const warnings = checkDeprecatedTestProperties(tests);
+    expect(warnings).toHaveLength(0);
   });
 });

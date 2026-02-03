@@ -5,6 +5,7 @@ export type {
   EnvironmentVariables,
   Environment,
   Tests,
+  SmokeTests,
   PHPUnitConfig,
   Reporters,
   BaseReporterOptions,

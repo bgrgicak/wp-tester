@@ -5,6 +5,48 @@ import { getSchemaPath, normalizeConfigPath, type WPTesterConfig, type Tests } f
 import * as clack from "../../cli/theme";
 
 /**
+ * Deprecation warning for a configuration property
+ */
+interface DeprecationWarning {
+  property: string;
+  message: string;
+  replacement: string;
+}
+
+/**
+ * Check for deprecated properties in the tests configuration
+ */
+export function checkDeprecatedTestProperties(tests: Tests): DeprecationWarning[] {
+  const warnings: DeprecationWarning[] = [];
+
+  if (tests.wp !== undefined) {
+    warnings.push({
+      property: 'tests.wp',
+      message: 'tests.wp is deprecated',
+      replacement: 'Use "smokeTests": true instead',
+    });
+  }
+
+  if (tests.plugin !== undefined) {
+    warnings.push({
+      property: 'tests.plugin',
+      message: 'tests.plugin is deprecated',
+      replacement: 'Set "projectType": "plugin" and use "smokeTests": true instead',
+    });
+  }
+
+  if (tests.theme !== undefined) {
+    warnings.push({
+      property: 'tests.theme',
+      message: 'tests.theme is deprecated',
+      replacement: 'Set "projectType": "theme" and use "smokeTests": true instead',
+    });
+  }
+
+  return warnings;
+}
+
+/**
  * Summary of enabled test suites
  */
 export interface TestSuiteSummary {
@@ -255,6 +297,18 @@ export async function validateConfig(configPath: string): Promise<WPTesterConfig
           const envName = env.name || 'Unnamed environment';
           clack.log.warn(pc.yellow(` ${envName} (Skipped)`));
         }
+      }
+    }
+
+    // Check for deprecated properties and warn
+    if (typedConfig.tests) {
+      const deprecationWarnings = checkDeprecatedTestProperties(typedConfig.tests);
+      for (const warning of deprecationWarnings) {
+        clack.log.warn(pc.yellow(`Deprecated: ${warning.message}`));
+        clack.log.info(pc.dim(`  ${warning.replacement}`));
+      }
+      if (deprecationWarnings.length > 0) {
+        clack.log.info('');
       }
     }
 
