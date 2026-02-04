@@ -110,11 +110,11 @@ function isCategoryApplicable(
     case "wp":
       return true; // WP tests are always applicable
     case "plugin":
-      // Plugin tests run when projectType is "plugin" OR legacy tests.plugin is set
-      return config.projectType === "plugin" || config.tests.plugin !== undefined;
+      // Plugin tests run when projectType is "plugin"
+      return config.projectType === "plugin";
     case "theme":
-      // Theme tests run when projectType is "theme" OR legacy tests.theme is set
-      return config.projectType === "theme" || config.tests.theme !== undefined;
+      // Theme tests run when projectType is "theme"
+      return config.projectType === "theme";
     default:
       return false;
   }
@@ -184,22 +184,18 @@ function getSpecFilesFromSmokeTests(
 export function shouldRunSmokeTests(config: WPTesterConfig | ResolvedWPTesterConfig): boolean {
   const { tests } = config;
 
-  // If smokeTests is explicitly set, use it
-  if (tests.smokeTests !== undefined) {
-    if (typeof tests.smokeTests === "boolean") {
-      return tests.smokeTests;
-    }
-    // Object form - check if any tests would run
-    const specFiles = getSpecFilesFromSmokeTests(tests.smokeTests, config);
-    return specFiles.size > 0;
+  // smokeTests must be explicitly set
+  if (tests.smokeTests === undefined) {
+    return false;
   }
 
-  // Legacy behavior: check wp/plugin/theme
-  return (
-    tests.wp === true ||
-    tests.plugin !== undefined ||
-    tests.theme !== undefined
-  );
+  if (typeof tests.smokeTests === "boolean") {
+    return tests.smokeTests;
+  }
+
+  // Object form - check if any tests would run
+  const specFiles = getSpecFilesFromSmokeTests(tests.smokeTests, config);
+  return specFiles.size > 0;
 }
 
 /**
@@ -232,22 +228,11 @@ export function selectTestFiles(
 
   let specFiles: Set<string>;
 
-  // If smokeTests is explicitly set, use the new logic
+  // smokeTests must be explicitly set
   if (tests.smokeTests !== undefined) {
     specFiles = getSpecFilesFromSmokeTests(tests.smokeTests, config);
   } else {
-    // Legacy behavior: check wp/plugin/theme properties
     specFiles = new Set<string>();
-
-    if (tests.wp) {
-      specFiles.add(categoryToSpec.wp);
-    }
-    if (tests.plugin) {
-      specFiles.add(categoryToSpec.plugin);
-    }
-    if (tests.theme) {
-      specFiles.add(categoryToSpec.theme);
-    }
   }
 
   // Apply test type filter if specified

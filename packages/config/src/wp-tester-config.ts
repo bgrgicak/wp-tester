@@ -399,6 +399,15 @@ export interface WPTesterConfig {
   projectType?: ProjectType;
 
   /**
+   * Project slug (e.g., plugin or theme slug).
+   * If not specified, automatically derived from the project's VFS path.
+   * Used for smoke tests that activate/test specific plugins or themes.
+   * @example "my-plugin"
+   * @example "my-theme"
+   */
+  projectSlug?: string;
+
+  /**
    * Test environments to run.
    * Each environment can have different PHP/WordPress versions and setup.
    * Tests will run against all defined environments (matrix testing).

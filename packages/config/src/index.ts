@@ -55,6 +55,9 @@ export {
 export {
   resolvePhpunitArgs,
   resolveTests,
+  extractPluginSlug,
+  extractThemeSlug,
+  deriveProjectSlug,
 } from "./test-resolver";
 
 export {

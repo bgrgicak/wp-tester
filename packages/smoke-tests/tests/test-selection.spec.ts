@@ -12,40 +12,10 @@ function createConfig(overrides: Partial<WPTesterConfig> = {}): WPTesterConfig {
 }
 
 describe('selectTestFiles', () => {
-  describe('legacy tests.wp/plugin/theme (deprecated)', () => {
-    it('should select wp.spec.ts when tests.wp is true', () => {
-      const config = createConfig({ tests: { wp: true } });
-      const files = selectTestFiles(config);
-      expect(files).toEqual(['src/smoke-tests/wp.spec.ts']);
-    });
-
+  describe('no smokeTests configured', () => {
     it('should throw error when no tests are configured', () => {
       const config = createConfig({ tests: {} });
       expect(() => selectTestFiles(config)).toThrow('No test files selected');
-    });
-
-    it('should throw error when wp is false', () => {
-      const config = createConfig({ tests: { wp: false } });
-      expect(() => selectTestFiles(config)).toThrow('No test files selected');
-    });
-
-    it('should select plugin.spec.ts when tests.plugin is set (legacy)', () => {
-      const config = createConfig({ tests: { plugin: 'my-plugin' } });
-      const files = selectTestFiles(config);
-      expect(files).toEqual(['src/smoke-tests/plugin.spec.ts']);
-    });
-
-    it('should select theme.spec.ts when tests.theme is set (legacy)', () => {
-      const config = createConfig({ tests: { theme: 'my-theme' } });
-      const files = selectTestFiles(config);
-      expect(files).toEqual(['src/smoke-tests/theme.spec.ts']);
-    });
-
-    it('should select multiple test files when multiple are configured', () => {
-      const config = createConfig({ tests: { wp: true, plugin: 'my-plugin' } });
-      const files = selectTestFiles(config);
-      expect(files).toContain('src/smoke-tests/wp.spec.ts');
-      expect(files).toContain('src/smoke-tests/plugin.spec.ts');
     });
   });
 
@@ -169,30 +139,15 @@ describe('selectTestFiles', () => {
     });
   });
 
-  describe('smokeTests overrides legacy properties', () => {
-    it('should use smokeTests when both smokeTests and legacy wp are set', () => {
+  describe('smokeTests: false explicitly set', () => {
+    it('should throw error when smokeTests is false', () => {
       const config = createConfig({
+        projectType: 'plugin',
         tests: {
           smokeTests: false,
-          wp: true, // This should be ignored when smokeTests is explicitly set
         },
       });
       expect(() => selectTestFiles(config)).toThrow('No test files selected');
-    });
-
-    it('should use projectType over legacy tests.plugin', () => {
-      const config = createConfig({
-        projectType: 'theme', // This takes precedence
-        tests: {
-          smokeTests: true,
-          plugin: 'my-plugin', // Legacy, should be ignored for applicability
-        },
-      });
-      const files = selectTestFiles(config);
-      expect(files).toContain('src/smoke-tests/wp.spec.ts');
-      expect(files).toContain('src/smoke-tests/theme.spec.ts');
-      // Plugin tests should also run because tests.plugin is set (legacy fallback)
-      expect(files).toContain('src/smoke-tests/plugin.spec.ts');
     });
   });
 });

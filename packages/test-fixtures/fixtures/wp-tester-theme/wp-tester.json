@@ -18,7 +18,7 @@
     }
   ],
   "tests": {
-    "theme": "wp-tester-theme",
+    "smokeTests": true,
     "phpunit": {
       "phpunitPath": "vendor/bin/phpunit",
       "configPath": "phpunit.xml.dist",
