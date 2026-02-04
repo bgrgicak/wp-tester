@@ -5,6 +5,7 @@ export type {
   EnvironmentVariables,
   Environment,
   Tests,
+  SmokeTests,
   PHPUnitConfig,
   Reporters,
   BaseReporterOptions,
@@ -22,6 +23,7 @@ export type {
 
 /**
  * Individual test type that can be run.
- * Combines smoke test types (wp, plugin, theme) with PHPUnit tests.
+ * - "smoke": WordPress Playground smoke tests (wp, plugin, theme based on projectType)
+ * - "phpunit": PHPUnit tests
  */
-export type TestType = "wp" | "plugin" | "theme" | "phpunit";
+export type TestType = "smoke" | "phpunit";

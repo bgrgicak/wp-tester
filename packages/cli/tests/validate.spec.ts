@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { type ErrorObject } from 'ajv';
-import { formatValidationError, getEnabledTestSuites, generateConfigSummary } from '../src/commands/config/validate';
+import { formatValidationError, getEnabledTestSuites, generateConfigSummary, checkDeprecatedTestProperties } from '../src/commands/config/validate';
 import type { Tests, WPTesterConfig } from '@wp-tester/config';
 import { Blueprint } from "@wp-playground/blueprints";
 
@@ -134,45 +134,83 @@ describe('getEnabledTestSuites', () => {
     expect(result).toEqual([]);
   });
 
-  it('should include WordPress tests when wp is true', () => {
-    const tests: Tests = { wp: true };
-    const result = getEnabledTestSuites(tests);
-    expect(result.map((s) => s.name)).toContain("wp");
+  describe('legacy properties (deprecated)', () => {
+    it('should include WordPress tests when wp is true', () => {
+      const tests: Tests = { wp: true };
+      const result = getEnabledTestSuites(tests);
+      expect(result.map((s) => s.name)).toContain("wp");
+    });
+
+    it('should include plugin tests with plugin name', () => {
+      const tests: Tests = { plugin: 'my-plugin' };
+      const result = getEnabledTestSuites(tests);
+      expect(result.map((s) => s.name)).toContain("plugin");
+    });
+
+    it('should include theme tests with theme name', () => {
+      const tests: Tests = { theme: 'my-theme' };
+      const result = getEnabledTestSuites(tests);
+      expect(result.map((s) => s.name)).toContain("theme");
+    });
+
+    it('should include all enabled legacy test suites', () => {
+      const tests: Tests = {
+        wp: true,
+        plugin: 'my-plugin',
+        phpunit: { phpunitPath: 'vendor/bin/phpunit', configPath: 'phpunit.xml', testMode: 'integration' }
+      };
+      const result = getEnabledTestSuites(tests);
+      expect(result).toHaveLength(3);
+      expect(result.map(s => s.name)).toEqual(['wp', 'plugin', 'phpunit']);
+    });
   });
 
-  it('should include plugin tests with plugin name', () => {
-    const tests: Tests = { plugin: 'my-plugin' };
-    const result = getEnabledTestSuites(tests);
-    expect(result.map((s) => s.name)).toContain("plugin");
+  describe('smokeTests property (new format)', () => {
+    it('should include wp tests when smokeTests is true', () => {
+      const tests: Tests = { smokeTests: true };
+      const result = getEnabledTestSuites(tests);
+      expect(result.map((s) => s.name)).toContain("wp");
+    });
+
+    it('should include wp and plugin tests when smokeTests is true and projectType is plugin', () => {
+      const tests: Tests = { smokeTests: true };
+      const result = getEnabledTestSuites(tests, 'plugin');
+      expect(result.map((s) => s.name)).toContain("wp");
+      expect(result.map((s) => s.name)).toContain("plugin");
+    });
+
+    it('should include wp and theme tests when smokeTests is true and projectType is theme', () => {
+      const tests: Tests = { smokeTests: true };
+      const result = getEnabledTestSuites(tests, 'theme');
+      expect(result.map((s) => s.name)).toContain("wp");
+      expect(result.map((s) => s.name)).toContain("theme");
+    });
+
+    it('should not include plugin/theme tests when smokeTests is true and projectType is wordpress', () => {
+      const tests: Tests = { smokeTests: true };
+      const result = getEnabledTestSuites(tests, 'wordpress');
+      expect(result.map((s) => s.name)).toEqual(['wp']);
+    });
+
+    it('should return empty array when smokeTests is false', () => {
+      const tests: Tests = { smokeTests: false };
+      const result = getEnabledTestSuites(tests);
+      expect(result).toEqual([]);
+    });
   });
 
-  it('should include theme tests with theme name', () => {
-    const tests: Tests = { theme: 'my-theme' };
-    const result = getEnabledTestSuites(tests);
-    expect(result.map((s) => s.name)).toContain("theme");
-  });
+  describe('PHPUnit tests', () => {
+    it('should include PHPUnit tests with unit mode by default', () => {
+      const tests: Tests = { phpunit: { phpunitPath: 'vendor/bin/phpunit', configPath: 'phpunit.xml' } };
+      const result = getEnabledTestSuites(tests);
+      expect(result.map((s) => s.name)).toContain("phpunit");
+    });
 
-  it('should include PHPUnit tests with unit mode by default', () => {
-    const tests: Tests = { phpunit: { phpunitPath: 'vendor/bin/phpunit', configPath: 'phpunit.xml' } };
-    const result = getEnabledTestSuites(tests);
-    expect(result.map((s) => s.name)).toContain("phpunit");
-  });
-
-  it('should include PHPUnit tests with integration mode', () => {
-    const tests: Tests = { phpunit: { phpunitPath: 'vendor/bin/phpunit', configPath: 'phpunit.xml', testMode: 'integration' } };
-    const result = getEnabledTestSuites(tests);
-    expect(result.map((s) => s.name)).toContain("phpunit");
-  });
-
-  it('should include all enabled test suites', () => {
-    const tests: Tests = {
-      wp: true,
-      plugin: 'my-plugin',
-      phpunit: { phpunitPath: 'vendor/bin/phpunit', configPath: 'phpunit.xml', testMode: 'integration' }
-    };
-    const result = getEnabledTestSuites(tests);
-    expect(result).toHaveLength(3);
-    expect(result.map(s => s.name)).toEqual(['wp', 'plugin', 'phpunit']);
+    it('should include PHPUnit tests with integration mode', () => {
+      const tests: Tests = { phpunit: { phpunitPath: 'vendor/bin/phpunit', configPath: 'phpunit.xml', testMode: 'integration' } };
+      const result = getEnabledTestSuites(tests);
+      expect(result.map((s) => s.name)).toContain("phpunit");
+    });
   });
 });
 
@@ -244,5 +282,60 @@ describe('generateConfigSummary', () => {
     };
     const result = generateConfigSummary(config);
     expect(result.matrixCombinations).toBe(0);
+  });
+});
+
+describe('checkDeprecatedTestProperties', () => {
+  it('should return no warnings when no deprecated properties are used', () => {
+    const tests: Tests = { smokeTests: true };
+    const warnings = checkDeprecatedTestProperties(tests);
+    expect(warnings).toHaveLength(0);
+  });
+
+  it('should warn when tests.wp is used', () => {
+    const tests: Tests = { wp: true };
+    const warnings = checkDeprecatedTestProperties(tests);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0].property).toBe('tests.wp');
+    expect(warnings[0].message).toContain('deprecated');
+    expect(warnings[0].replacement).toContain('smokeTests');
+  });
+
+  it('should warn when tests.plugin is used', () => {
+    const tests: Tests = { plugin: 'my-plugin' };
+    const warnings = checkDeprecatedTestProperties(tests);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0].property).toBe('tests.plugin');
+    expect(warnings[0].replacement).toContain('projectType');
+  });
+
+  it('should warn when tests.theme is used', () => {
+    const tests: Tests = { theme: 'my-theme' };
+    const warnings = checkDeprecatedTestProperties(tests);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0].property).toBe('tests.theme');
+    expect(warnings[0].replacement).toContain('projectType');
+  });
+
+  it('should warn for all deprecated properties when multiple are used', () => {
+    const tests: Tests = { wp: true, plugin: 'my-plugin', theme: 'my-theme' };
+    const warnings = checkDeprecatedTestProperties(tests);
+    expect(warnings).toHaveLength(3);
+  });
+
+  it('should not warn when wp is false', () => {
+    const tests: Tests = { wp: false };
+    const warnings = checkDeprecatedTestProperties(tests);
+    // wp: false still triggers the warning since the property is present
+    expect(warnings).toHaveLength(1);
+  });
+
+  it('should not warn for non-deprecated properties', () => {
+    const tests: Tests = {
+      smokeTests: true,
+      phpunit: { phpunitPath: 'vendor/bin/phpunit', configPath: 'phpunit.xml' }
+    };
+    const warnings = checkDeprecatedTestProperties(tests);
+    expect(warnings).toHaveLength(0);
   });
 });

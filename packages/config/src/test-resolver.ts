@@ -1,8 +1,44 @@
-import type { Tests } from "./wp-tester-config";
+import type { Tests, ProjectType } from "./wp-tester-config";
 import type { ResolvedTests, ResolvedPHPUnitConfig, ResolvedPath } from "./resolved-types";
 import { resolveAbsolute, toResolvedPath } from "./path-utils";
 import { resolveBootstrapPath } from './options/phpunit-detect';
 import { hostToVfs } from './path-mappers';
+import { validateSmokeTests } from './smoke-tests-validation';
+
+/**
+ * Extract the plugin slug from a VFS path.
+ * Expected format: /wordpress/wp-content/plugins/<slug> or /wordpress/wp-content/plugins/<slug>/
+ */
+export function extractPluginSlug(vfsPath: string): string | undefined {
+  const match = vfsPath.match(/\/wp-content\/plugins\/([^/]+)/);
+  return match ? match[1] : undefined;
+}
+
+/**
+ * Extract the theme slug from a VFS path.
+ * Expected format: /wordpress/wp-content/themes/<slug> or /wordpress/wp-content/themes/<slug>/
+ */
+export function extractThemeSlug(vfsPath: string): string | undefined {
+  const match = vfsPath.match(/\/wp-content\/themes\/([^/]+)/);
+  return match ? match[1] : undefined;
+}
+
+/**
+ * Derive the project slug from VFS path based on project type.
+ * @param vfsPath - The VFS path where the project is mounted
+ * @param projectType - The project type (plugin, theme, etc.)
+ * @returns The derived slug or undefined if not derivable
+ */
+export function deriveProjectSlug(vfsPath: string, projectType: ProjectType): string | undefined {
+  switch (projectType) {
+    case 'plugin':
+      return extractPluginSlug(vfsPath);
+    case 'theme':
+      return extractThemeSlug(vfsPath);
+    default:
+      return undefined;
+  }
+}
 
 /**
  * PHPUnit flags that are boolean (do not take a value).
@@ -83,13 +119,20 @@ export function resolvePhpunitArgs(args: string[], projectPath: ResolvedPath): s
  * @param projectPath - Project path with host and VFS paths
  * @returns Resolved tests configuration
  */
-export async function resolveTests(tests: Tests, projectPath: ResolvedPath): Promise<ResolvedTests> {
-  // If no PHPUnit config, return tests as-is (but explicitly typed)
+export async function resolveTests(
+  tests: Tests,
+  projectPath: ResolvedPath
+): Promise<ResolvedTests> {
+  // Validate smokeTests if present
+  if (tests.smokeTests !== undefined) {
+    // This will throw if include and exclude are both specified
+    validateSmokeTests(tests.smokeTests);
+  }
+
+  // If no PHPUnit config, return tests as-is
   if (!tests.phpunit) {
     return {
-      plugin: tests.plugin,
-      theme: tests.theme,
-      wp: tests.wp,
+      smokeTests: tests.smokeTests,
       passWithNoTests: tests.passWithNoTests,
     };
   }
@@ -118,9 +161,7 @@ export async function resolveTests(tests: Tests, projectPath: ResolvedPath): Pro
   }
 
   return {
-    plugin: tests.plugin,
-    theme: tests.theme,
-    wp: tests.wp,
+    smokeTests: tests.smokeTests,
     phpunit: resolvedPhpunit,
     passWithNoTests: tests.passWithNoTests,
   };

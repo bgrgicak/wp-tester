@@ -17,7 +17,7 @@ describe("runSmokeTests integration", () => {
         },
       ],
       tests: {
-        wp: true,
+        smokeTests: true,
       },
     };
 

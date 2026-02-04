@@ -5,6 +5,48 @@ import { getSchemaPath, normalizeConfigPath, type WPTesterConfig, type Tests } f
 import * as clack from "../../cli/theme";
 
 /**
+ * Deprecation warning for a configuration property
+ */
+interface DeprecationWarning {
+  property: string;
+  message: string;
+  replacement: string;
+}
+
+/**
+ * Check for deprecated properties in the tests configuration
+ */
+export function checkDeprecatedTestProperties(tests: Tests): DeprecationWarning[] {
+  const warnings: DeprecationWarning[] = [];
+
+  if (tests.wp !== undefined) {
+    warnings.push({
+      property: 'tests.wp',
+      message: 'tests.wp is deprecated',
+      replacement: 'Use "smokeTests": true instead',
+    });
+  }
+
+  if (tests.plugin !== undefined) {
+    warnings.push({
+      property: 'tests.plugin',
+      message: 'tests.plugin is deprecated',
+      replacement: 'Set "projectType": "plugin" and use "smokeTests": true instead',
+    });
+  }
+
+  if (tests.theme !== undefined) {
+    warnings.push({
+      property: 'tests.theme',
+      message: 'tests.theme is deprecated',
+      replacement: 'Set "projectType": "theme" and use "smokeTests": true instead',
+    });
+  }
+
+  return warnings;
+}
+
+/**
  * Summary of enabled test suites
  */
 export interface TestSuiteSummary {
@@ -23,20 +65,34 @@ export interface ConfigSummary {
 }
 
 /**
- * Get a list of enabled test suites from the tests configuration
+ * Get a list of enabled test suites from the configuration
  */
-export function getEnabledTestSuites(tests: Tests): TestSuiteSummary[] {
+export function getEnabledTestSuites(tests: Tests, projectType?: string): TestSuiteSummary[] {
   const suites: TestSuiteSummary[] = [];
 
-  if (tests.wp) {
+  // Handle smokeTests (new format)
+  if (tests.smokeTests !== undefined && tests.smokeTests !== false) {
+    // WordPress tests always run with smokeTests
+    suites.push({ name: 'wp', label: 'Smoke Tests (WordPress)' });
+
+    // Plugin/theme tests based on projectType
+    if (projectType === 'plugin') {
+      suites.push({ name: 'plugin', label: 'Smoke Tests (Plugin)' });
+    } else if (projectType === 'theme') {
+      suites.push({ name: 'theme', label: 'Smoke Tests (Theme)' });
+    }
+  }
+
+  // Handle legacy properties (deprecated but still supported)
+  if (tests.wp && tests.smokeTests === undefined) {
     suites.push({ name: 'wp', label: 'WordPress' });
   }
 
-  if (tests.plugin) {
+  if (tests.plugin && tests.smokeTests === undefined) {
     suites.push({ name: 'plugin', label: `Plugin (${tests.plugin})` });
   }
 
-  if (tests.theme) {
+  if (tests.theme && tests.smokeTests === undefined) {
     suites.push({ name: 'theme', label: `Theme (${tests.theme})` });
   }
 
@@ -54,7 +110,7 @@ export function getEnabledTestSuites(tests: Tests): TestSuiteSummary[] {
 export function generateConfigSummary(config: WPTesterConfig): ConfigSummary {
   const activeEnvironments = config.environments.filter(env => !env.skip).length;
   const skippedEnvironments = config.environments.filter(env => env.skip).length;
-  const testSuites = getEnabledTestSuites(config.tests);
+  const testSuites = getEnabledTestSuites(config.tests, config.projectType);
   const matrixCombinations = activeEnvironments * testSuites.length;
 
   return {
@@ -196,10 +252,20 @@ export function formatValidationError(error: ErrorObject): ValidationErrorDispla
 }
 
 /**
+ * Result of config validation
+ */
+export interface ValidationResult {
+  /** The validated config if valid, null otherwise */
+  config: WPTesterConfig | null;
+  /** Whether there are deprecation warnings */
+  hasDeprecationWarnings: boolean;
+}
+
+/**
  * Validates config and prints errors if invalid.
  * Returns the validated config if valid, null otherwise.
  */
-export async function validateConfig(configPath: string): Promise<WPTesterConfig | null> {
+export async function validateConfig(configPath: string): Promise<ValidationResult> {
   try {
     // Resolve config path relative to cwd and normalize (handles directory paths)
     const resolvedConfigPath = normalizeConfigPath(configPath);
@@ -243,7 +309,7 @@ export async function validateConfig(configPath: string): Promise<WPTesterConfig
         }
       }
 
-      return null;
+      return { config: null, hasDeprecationWarnings: false };
     }
 
     // Check for skipped environments and display info
@@ -258,11 +324,25 @@ export async function validateConfig(configPath: string): Promise<WPTesterConfig
       }
     }
 
-    return typedConfig;
+    // Check for deprecated properties and warn
+    let hasDeprecationWarnings = false;
+    if (typedConfig.tests) {
+      const deprecationWarnings = checkDeprecatedTestProperties(typedConfig.tests);
+      for (const warning of deprecationWarnings) {
+        clack.log.warn(pc.yellow(`Deprecated: ${warning.message}`));
+        clack.log.info(pc.dim(`  ${warning.replacement}`));
+      }
+      if (deprecationWarnings.length > 0) {
+        hasDeprecationWarnings = true;
+        clack.log.info('');
+      }
+    }
+
+    return { config: typedConfig, hasDeprecationWarnings };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     clack.log.error("Validation error:");
     clack.log.error(message);
-    return null;
+    return { config: null, hasDeprecationWarnings: false };
   }
 }

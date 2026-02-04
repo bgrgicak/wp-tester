@@ -43,7 +43,7 @@
     },
     "ArrayBuffer": {
       "properties": {
-        "__@toStringTag@570": {
+        "__@toStringTag@577": {
           "type": "string"
         },
         "byteLength": {
@@ -51,7 +51,7 @@
         }
       },
       "required": [
-        "__@toStringTag@570",
+        "__@toStringTag@577",
         "byteLength"
       ],
       "type": "object"
@@ -397,7 +397,7 @@
                                   "BYTES_PER_ELEMENT": {
                                     "type": "number"
                                   },
-                                  "__@toStringTag@570": {
+                                  "__@toStringTag@577": {
                                     "const": "Uint8Array",
                                     "type": "string"
                                   },
@@ -416,7 +416,7 @@
                                 },
                                 "required": [
                                   "BYTES_PER_ELEMENT",
-                                  "__@toStringTag@570",
+                                  "__@toStringTag@577",
                                   "buffer",
                                   "byteLength",
                                   "byteOffset",
@@ -1393,7 +1393,7 @@
                     "BYTES_PER_ELEMENT": {
                       "type": "number"
                     },
-                    "__@toStringTag@570": {
+                    "__@toStringTag@577": {
                       "const": "Uint8Array",
                       "type": "string"
                     },
@@ -1412,7 +1412,7 @@
                   },
                   "required": [
                     "BYTES_PER_ELEMENT",
-                    "__@toStringTag@570",
+                    "__@toStringTag@577",
                     "buffer",
                     "byteLength",
                     "byteOffset",
@@ -1654,7 +1654,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@570": {
+                        "__@toStringTag@577": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -1673,7 +1673,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@570",
+                        "__@toStringTag@577",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -1862,7 +1862,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@570": {
+                        "__@toStringTag@577": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -1881,7 +1881,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@570",
+                        "__@toStringTag@577",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -2075,7 +2075,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@570": {
+                        "__@toStringTag@577": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -2094,7 +2094,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@570",
+                        "__@toStringTag@577",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -2283,7 +2283,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@570": {
+                        "__@toStringTag@577": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -2302,7 +2302,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@570",
+                        "__@toStringTag@577",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -2511,7 +2511,7 @@
                 "BYTES_PER_ELEMENT": {
                   "type": "number"
                 },
-                "__@toStringTag@570": {
+                "__@toStringTag@577": {
                   "const": "Uint8Array",
                   "type": "string"
                 },
@@ -2530,7 +2530,7 @@
               },
               "required": [
                 "BYTES_PER_ELEMENT",
-                "__@toStringTag@570",
+                "__@toStringTag@577",
                 "buffer",
                 "byteLength",
                 "byteOffset",
@@ -2596,7 +2596,7 @@
                 "BYTES_PER_ELEMENT": {
                   "type": "number"
                 },
-                "__@toStringTag@570": {
+                "__@toStringTag@577": {
                   "const": "Uint8Array",
                   "type": "string"
                 },
@@ -2615,7 +2615,7 @@
               },
               "required": [
                 "BYTES_PER_ELEMENT",
-                "__@toStringTag@570",
+                "__@toStringTag@577",
                 "buffer",
                 "byteLength",
                 "byteOffset",
@@ -2923,10 +2923,10 @@
     },
     "SharedArrayBuffer": {
       "properties": {
-        "__@species@614": {
+        "__@species@621": {
           "$ref": "#/definitions/SharedArrayBuffer"
         },
-        "__@toStringTag@570": {
+        "__@toStringTag@577": {
           "const": "SharedArrayBuffer",
           "type": "string"
         },
@@ -2935,8 +2935,8 @@
         }
       },
       "required": [
-        "__@species@614",
-        "__@toStringTag@570",
+        "__@species@621",
+        "__@toStringTag@577",
         "byteLength"
       ],
       "type": "object"
@@ -2956,6 +2956,34 @@
         "plugin": {
           "description": "Plugin slug to test.\nWhen provided, runs plugin-specific tests including activation, deactivation, and load tests.",
           "type": "string"
+        },
+        "smokeTests": {
+          "anyOf": [
+            {
+              "properties": {
+                "exclude": {
+                  "description": "Run all smoke tests except these (mutually exclusive with include).\nUnknown test names are warned but don't fail - allows forward compatibility.",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "include": {
+                  "description": "Only run these smoke tests (mutually exclusive with exclude).\nUnknown test names are warned but don't fail - allows forward compatibility.",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              },
+              "type": "object"
+            },
+            {
+              "type": "boolean"
+            }
+          ],
+          "default": false,
+          "description": "Smoke tests configuration.\nWhen true, runs all applicable smoke tests.\nWhen an object, use include/exclude to filter specific tests.\nTakes precedence over the deprecated wp, plugin, and theme properties."
         },
         "theme": {
           "description": "Theme slug to test.\nWhen provided, runs theme-specific tests including activation and homepage load tests.",
@@ -3019,7 +3047,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@570": {
+                        "__@toStringTag@577": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -3038,7 +3066,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@570",
+                        "__@toStringTag@577",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -3262,7 +3290,7 @@
                 "BYTES_PER_ELEMENT": {
                   "type": "number"
                 },
-                "__@toStringTag@570": {
+                "__@toStringTag@577": {
                   "const": "Uint8Array",
                   "type": "string"
                 },
@@ -3281,7 +3309,7 @@
               },
               "required": [
                 "BYTES_PER_ELEMENT",
-                "__@toStringTag@570",
+                "__@toStringTag@577",
                 "buffer",
                 "byteLength",
                 "byteOffset",
@@ -3322,7 +3350,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@570": {
+                        "__@toStringTag@577": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -3341,7 +3369,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@570",
+                        "__@toStringTag@577",
                         "buffer",
                         "byteLength",
                         "byteOffset",

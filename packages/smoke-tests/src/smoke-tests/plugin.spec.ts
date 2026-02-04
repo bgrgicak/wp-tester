@@ -6,7 +6,8 @@ import { startPlayground, stopPlayground, wpCli, type RunCLIServer } from '@wp-t
 const config = inject('config') as ResolvedWPTesterConfig;
 // Filter out skipped environments
 const environments = config.environments.filter(env => !env.skip);
-const pluginSlug = config.tests.plugin;
+// Get the project slug from resolved config (used as plugin slug)
+const pluginSlug = config.projectSlug;
 
 // Test each environment
 if (pluginSlug) {

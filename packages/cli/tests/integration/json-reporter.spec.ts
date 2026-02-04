@@ -25,7 +25,7 @@ describe('JSON Reporter Integration', { timeout: 120000 }, () => {
   it('should write JSON report file with default outputFile path using empty object', async () => {
     const config: WPTesterConfig = {
       environments: [{ blueprint: { landingPage: '/' } }],
-      tests: { wp: true },
+      tests: { smokeTests: true },
       reporters: { json: {} },
     };
     await writeFile(configFile, JSON.stringify(config, null, 2));
@@ -51,7 +51,7 @@ describe('JSON Reporter Integration', { timeout: 120000 }, () => {
   it('should write JSON report file with default outputFile path using true shorthand', async () => {
     const config: WPTesterConfig = {
       environments: [{ blueprint: { landingPage: '/' } }],
-      tests: { wp: true },
+      tests: { smokeTests: true },
       reporters: { json: true },
     };
     await writeFile(configFile, JSON.stringify(config, null, 2));
@@ -78,7 +78,7 @@ describe('JSON Reporter Integration', { timeout: 120000 }, () => {
     const customOutputFile = join(testDir, 'custom-output.json');
     const config: WPTesterConfig = {
       environments: [{ blueprint: { landingPage: '/' } }],
-      tests: { wp: true },
+      tests: { smokeTests: true },
       reporters: { json: { outputFile: 'custom-output.json' } },
     };
     await writeFile(configFile, JSON.stringify(config, null, 2));
@@ -99,7 +99,7 @@ describe('JSON Reporter Integration', { timeout: 120000 }, () => {
   it('should not write JSON report file when json reporter is not configured', async () => {
     const config: WPTesterConfig = {
       environments: [{ blueprint: { landingPage: '/' } }],
-      tests: { wp: true },
+      tests: { smokeTests: true },
     };
     await writeFile(configFile, JSON.stringify(config, null, 2));
 
@@ -112,7 +112,7 @@ describe('JSON Reporter Integration', { timeout: 120000 }, () => {
   it('should always include all tests in JSON output regardless of filter settings', async () => {
     const config: WPTesterConfig = {
       environments: [{ blueprint: { landingPage: '/' } }],
-      tests: { wp: true },
+      tests: { smokeTests: true },
       reporters: { json: {} },
     };
     await writeFile(configFile, JSON.stringify(config, null, 2));

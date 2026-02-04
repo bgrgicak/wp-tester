@@ -8,7 +8,7 @@ import { getProjectRootMount } from "./auto-mount";
 import { detectProjectType } from "./options/project-type-detect";
 import { getProjectDir, resolveAbsolute, normalizeConfigPath } from "./path-utils";
 import { expandEnvironments } from "./environment-resolver";
-import { resolveTests } from "./test-resolver";
+import { resolveTests, deriveProjectSlug } from "./test-resolver";
 
 export type { WPTesterConfig } from "./wp-tester-config";
 
@@ -233,11 +233,15 @@ export async function resolveConfig(
     projectPath
   );
 
+  // Derive project slug: use explicit config value if set, otherwise derive from VFS path
+  const projectSlug = resolvedConfig.projectSlug ?? deriveProjectSlug(projectVFSPath, projectType);
+
   // Return fully resolved config with all required fields
   return {
     ...resolvedConfig,
     projectPath,
     projectType,
+    projectSlug,
     reporters,
     environments: resolvedEnvironments,
     tests: resolvedTests,

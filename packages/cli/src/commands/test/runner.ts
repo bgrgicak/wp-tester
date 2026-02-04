@@ -13,7 +13,7 @@ import { getConfigPath } from "@wp-tester/config";
  * Options for the test runner
  */
 export interface RunTestsOptions {
-  /** Type of test to run (phpunit, wp, plugin, theme) */
+  /** Type of test to run (smoke or phpunit) */
   testType?: TestType;
   /** Additional arguments to pass to test runners */
   extraArgs?: string[];
@@ -120,17 +120,11 @@ async function checkConfigExists(configPath: string): Promise<boolean> {
 }
 
 /**
- * Determines if the given test type is a smoke test type.
- * Returns the test type if it's a smoke test, undefined if no filter needed, or false if it should be skipped.
+ * Determines if smoke tests should run based on test type.
+ * Returns true if smoke tests should run, false otherwise.
  */
-function getSmokeTestFilter(testType?: TestType): TestType | undefined | false {
-  const smokeTestTypes: TestType[] = ["wp", "plugin", "theme"];
-
-  if (!testType) {
-    return undefined; // Run all smoke tests
-  }
-
-  return smokeTestTypes.includes(testType) ? testType : false;
+function shouldRunSmokeTests(testType?: TestType): boolean {
+  return !testType || testType === "smoke";
 }
 
 export interface TestResult {
@@ -161,8 +155,8 @@ export const executeTests = async (
   resolvedConfig = applyFilterOverride(resolvedConfig, verbose);
 
   // Determine which tests to run based on testType parameter
-  const shouldRunPhpUnit = !testType || testType === "phpunit";
-  const smokeTestFilter = getSmokeTestFilter(testType);
+  const runPhpUnit = !testType || testType === "phpunit";
+  const runSmoke = shouldRunSmokeTests(testType);
 
   // Get streaming configuration
   // Default to true if not explicitly disabled (was causing regression where no output showed)
@@ -182,14 +176,14 @@ export const executeTests = async (
   unifiedReporter.startUnifiedRun();
 
   try {
-    // Run smoke tests (wp, plugin, theme)
-    if (smokeTestFilter !== false) {
+    // Run smoke tests
+    if (runSmoke) {
       unifiedReporter.setStatus("Running smoke tests");
-      await runSmokeTests(resolvedConfig, smokeTestFilter, extraArgs, unifiedReporter);
+      await runSmokeTests(resolvedConfig, extraArgs, unifiedReporter);
     }
 
     // Run PHPUnit tests
-    if (shouldRunPhpUnit) {
+    if (runPhpUnit) {
       unifiedReporter.setStatus("Running PHPUnit tests");
       await runPhpunitTests(resolvedConfig, extraArgs, unifiedReporter);
     }

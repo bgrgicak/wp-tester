@@ -16,13 +16,12 @@
     }
   ],
   "tests": {
-    "wp": true,
-    "plugin": "wp-tester-plugin",
     "phpunit": {
       "phpunitPath": "vendor/bin/phpunit",
       "configPath": "phpunit.xml.dist",
       "bootstrapPath": "tests/bootstrap.php",
       "testMode": "integration"
-    }
+    },
+    "smokeTests": true
   }
 }

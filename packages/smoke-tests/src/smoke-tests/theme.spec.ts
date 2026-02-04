@@ -6,7 +6,8 @@ import { startPlayground, stopPlayground, wpCli, type RunCLIServer } from '@wp-t
 const config = inject('config') as ResolvedWPTesterConfig;
 // Filter out skipped environments
 const environments = config.environments.filter(env => !env.skip);
-const themeSlug = config.tests.theme;
+// Get the project slug from resolved config (used as theme slug)
+const themeSlug = config.projectSlug;
 
 // Skip all tests if no theme is configured
 if (themeSlug) {

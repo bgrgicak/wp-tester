@@ -42,7 +42,7 @@ export interface ResolvedPHPUnitConfig {
 /**
  * Resolved test configuration with resolved PHPUnit config.
  */
-export interface ResolvedTests extends Omit<Tests, 'phpunit'> {
+export interface ResolvedTests extends Omit<Tests, 'phpunit' | 'watch' | 'plugin' | 'theme' | 'wp'> {
   phpunit?: ResolvedPHPUnitConfig;
   /** Allow the test suite to pass when no tests are executed */
   passWithNoTests?: boolean;
