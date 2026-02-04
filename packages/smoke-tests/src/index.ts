@@ -7,7 +7,7 @@
 import { startVitest, parseCLI, type Reporter } from "vitest/node";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { WPTesterConfig, Tests, TestType, ResolvedWPTesterConfig, ResolvedTests, SmokeTests } from "@wp-tester/config";
+import type { WPTesterConfig, ResolvedWPTesterConfig, SmokeTests } from "@wp-tester/config";
 import {
   EMPTY_REPORT,
   VitestStreamingReporter,
@@ -201,30 +201,17 @@ export function shouldRunSmokeTests(config: WPTesterConfig | ResolvedWPTesterCon
 /**
  * Select test files based on test configuration
  * @param config - Full configuration (needed for projectType)
- * @param test - Optional filter to run only specific test type (wp, plugin, or theme)
  * @returns Array of test file paths relative to package root
  * @throws Error if no test files match configuration
  */
 export function selectTestFiles(
-  config: WPTesterConfig | ResolvedWPTesterConfig,
-  test?: TestType | false
+  config: WPTesterConfig | ResolvedWPTesterConfig
 ): string[] {
-  if (test === false) {
-    return [];
-  }
-
   const { tests } = config;
 
   // Map spec file names to full paths
   const specToPath = (specName: string): string =>
     `${TEST_DIR}/smoke-tests/${specName}.${TEST_EXT}`;
-
-  // Map category to spec file
-  const categoryToSpec: Record<SmokeTestCategory, string> = {
-    wp: "wp.spec",
-    plugin: "plugin.spec",
-    theme: "theme.spec",
-  };
 
   let specFiles: Set<string>;
 
@@ -233,16 +220,6 @@ export function selectTestFiles(
     specFiles = getSpecFilesFromSmokeTests(tests.smokeTests, config);
   } else {
     specFiles = new Set<string>();
-  }
-
-  // Apply test type filter if specified
-  if (test) {
-    const filteredSpec = categoryToSpec[test as SmokeTestCategory];
-    if (filteredSpec && specFiles.has(filteredSpec)) {
-      specFiles = new Set([filteredSpec]);
-    } else {
-      specFiles = new Set();
-    }
   }
 
   const files = Array.from(specFiles).map(specToPath);
@@ -258,14 +235,12 @@ export function selectTestFiles(
  * Run WordPress smoke tests
  *
  * @param config - Resolved test configuration
- * @param test - Optional filter to run only specific test type (wp, plugin, or theme)
  * @param vitestArgs - Additional arguments to pass to Vitest CLI
  * @param sharedReporter - Optional shared streaming reporter for unified output
  * @returns CTRF report with test results
  */
 export async function runSmokeTests(
   config: ResolvedWPTesterConfig,
-  test?: TestType | false,
   vitestArgs?: string[],
   sharedReporter?: StreamingReporter
 ): Promise<Report> {
@@ -279,8 +254,8 @@ export async function runSmokeTests(
   const __dirname = dirname(__filename);
   const packageRoot = join(__dirname, "..");
 
-  // Select test files based on config and filter
-  const testFiles = selectTestFiles(config, test);
+  // Select test files based on config
+  const testFiles = selectTestFiles(config);
 
   if (testFiles.length === 0) {
     return Promise.resolve(EMPTY_REPORT);

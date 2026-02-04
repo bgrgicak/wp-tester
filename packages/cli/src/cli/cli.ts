@@ -56,9 +56,9 @@ void yargs(hideBin(process.argv))
         })
         .option("test", {
           alias: "t",
-          describe: "Type of test to run (wp, plugin, theme, or phpunit)",
+          describe: "Type of test to run (smoke or phpunit)",
           type: "string",
-          choices: ["wp", "plugin", "theme", "phpunit"] as const,
+          choices: ["smoke", "phpunit"] as const,
         })
         .option("watch", {
           alias: "w",
