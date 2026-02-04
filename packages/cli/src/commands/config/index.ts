@@ -1,5 +1,5 @@
 import { readFile, writeFile } from 'fs/promises';
-import { optionNames, type OptionName, normalizeConfigPath } from '@wp-tester/config';
+import { optionNames, type OptionName, normalizeConfigPath, type WPTesterConfig } from '@wp-tester/config';
 import { updateConfigOption } from './option';
 import * as clack from '../../cli/theme';
 import { validateConfig, generateConfigSummary, printConfigSummary } from './validate';
@@ -46,7 +46,7 @@ async function runMigrate(configPath: string): Promise<void> {
   try {
     const resolvedConfigPath = normalizeConfigPath(configPath);
     const configContent = await readFile(resolvedConfigPath, 'utf-8');
-    const config = JSON.parse(configContent);
+    const config = JSON.parse(configContent) as WPTesterConfig;
 
     const result = migrateConfig(config);
 

@@ -24,7 +24,7 @@ export function migrateConfig(config: WPTesterConfig): MigrationResult {
   const changes: string[] = [];
 
   // Deep clone the config to avoid mutating the original
-  const newConfig: WPTesterConfig = JSON.parse(JSON.stringify(config));
+  const newConfig = JSON.parse(JSON.stringify(config)) as WPTesterConfig;
   const tests = newConfig.tests as Tests & { wp?: boolean; plugin?: string; theme?: string };
 
   // Migrate tests.wp

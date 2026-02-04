@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { migrateConfig, type MigrationResult } from '../src/commands/config/migrate';
+import { migrateConfig } from '../src/commands/config/migrate';
 import type { WPTesterConfig } from '@wp-tester/config';
 
 describe('migrateConfig', () => {
