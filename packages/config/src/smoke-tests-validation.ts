@@ -9,6 +9,8 @@ export const KNOWN_SMOKE_TESTS: readonly string[] = [
   "wpBoot",
   "wpAdminLoads",
   "wpRestApiAvailable",
+  "healthChecksCritical",
+  "healthChecksRecommendations",
   // Plugin tests
   "pluginActivates",
   "pluginDeactivates",

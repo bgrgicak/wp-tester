@@ -20,24 +20,26 @@ describe('selectTestFiles', () => {
   });
 
   describe('smokeTests with projectType', () => {
-    it('should run wp + plugin tests when projectType is plugin and smokeTests is true', () => {
+    it('should run wp + health checks + plugin tests when projectType is plugin and smokeTests is true', () => {
       const config = createConfig({
         projectType: 'plugin',
         tests: { smokeTests: true },
       });
       const files = selectTestFiles(config);
       expect(files).toContain('src/smoke-tests/wp.spec.ts');
+      expect(files).toContain('src/smoke-tests/health-checks.spec.ts');
       expect(files).toContain('src/smoke-tests/plugin.spec.ts');
       expect(files).not.toContain('src/smoke-tests/theme.spec.ts');
     });
 
-    it('should run wp + theme tests when projectType is theme and smokeTests is true', () => {
+    it('should run wp + health checks + theme tests when projectType is theme and smokeTests is true', () => {
       const config = createConfig({
         projectType: 'theme',
         tests: { smokeTests: true },
       });
       const files = selectTestFiles(config);
       expect(files).toContain('src/smoke-tests/wp.spec.ts');
+      expect(files).toContain('src/smoke-tests/health-checks.spec.ts');
       expect(files).toContain('src/smoke-tests/theme.spec.ts');
       expect(files).not.toContain('src/smoke-tests/plugin.spec.ts');
     });
@@ -48,7 +50,10 @@ describe('selectTestFiles', () => {
         tests: { smokeTests: true },
       });
       const files = selectTestFiles(config);
-      expect(files).toEqual(['src/smoke-tests/wp.spec.ts']);
+      expect(files).toContain('src/smoke-tests/wp.spec.ts');
+      expect(files).toContain('src/smoke-tests/health-checks.spec.ts');
+      expect(files).not.toContain('src/smoke-tests/plugin.spec.ts');
+      expect(files).not.toContain('src/smoke-tests/theme.spec.ts');
     });
 
     it('should run only wp tests when projectType is other and smokeTests is true', () => {
@@ -57,7 +62,10 @@ describe('selectTestFiles', () => {
         tests: { smokeTests: true },
       });
       const files = selectTestFiles(config);
-      expect(files).toEqual(['src/smoke-tests/wp.spec.ts']);
+      expect(files).toContain('src/smoke-tests/wp.spec.ts');
+      expect(files).toContain('src/smoke-tests/health-checks.spec.ts');
+      expect(files).not.toContain('src/smoke-tests/plugin.spec.ts');
+      expect(files).not.toContain('src/smoke-tests/theme.spec.ts');
     });
   });
 
@@ -70,7 +78,10 @@ describe('selectTestFiles', () => {
     it('should run only wp tests when smokeTests is true with no projectType', () => {
       const config = createConfig({ tests: { smokeTests: true } });
       const files = selectTestFiles(config);
-      expect(files).toEqual(['src/smoke-tests/wp.spec.ts']);
+      expect(files).toContain('src/smoke-tests/wp.spec.ts');
+      expect(files).toContain('src/smoke-tests/health-checks.spec.ts');
+      expect(files).not.toContain('src/smoke-tests/plugin.spec.ts');
+      expect(files).not.toContain('src/smoke-tests/theme.spec.ts');
     });
   });
 
@@ -94,6 +105,22 @@ describe('selectTestFiles', () => {
       expect(files).toContain('src/smoke-tests/plugin.spec.ts');
     });
 
+    it('should run health check tests when included', () => {
+      const config = createConfig({
+        tests: { smokeTests: { include: ['healthChecksCritical'] } },
+      });
+      const files = selectTestFiles(config);
+      expect(files).toEqual(['src/smoke-tests/health-checks.spec.ts']);
+    });
+
+    it('should run both health check tests when both are included', () => {
+      const config = createConfig({
+        tests: { smokeTests: { include: ['healthChecksCritical', 'healthChecksRecommendations'] } },
+      });
+      const files = selectTestFiles(config);
+      expect(files).toEqual(['src/smoke-tests/health-checks.spec.ts']);
+    });
+
     it('should silently skip inapplicable tests in include', () => {
       const config = createConfig({
         projectType: 'wordpress', // Not a plugin project
@@ -113,7 +140,17 @@ describe('selectTestFiles', () => {
       });
       const files = selectTestFiles(config);
       expect(files).toContain('src/smoke-tests/wp.spec.ts');
+      expect(files).toContain('src/smoke-tests/health-checks.spec.ts');
       expect(files).not.toContain('src/smoke-tests/plugin.spec.ts');
+    });
+
+    it('should exclude health check tests when excluded', () => {
+      const config = createConfig({
+        tests: { smokeTests: { exclude: ['healthChecksCritical', 'healthChecksRecommendations'] } },
+      });
+      const files = selectTestFiles(config);
+      expect(files).toContain('src/smoke-tests/wp.spec.ts');
+      expect(files).not.toContain('src/smoke-tests/health-checks.spec.ts');
     });
 
     it('should run all tests when exclude is empty', () => {
@@ -123,6 +160,7 @@ describe('selectTestFiles', () => {
       });
       const files = selectTestFiles(config);
       expect(files).toContain('src/smoke-tests/wp.spec.ts');
+      expect(files).toContain('src/smoke-tests/health-checks.spec.ts');
       expect(files).toContain('src/smoke-tests/plugin.spec.ts');
     });
   });
@@ -135,6 +173,7 @@ describe('selectTestFiles', () => {
       });
       const files = selectTestFiles(config);
       expect(files).toContain('src/smoke-tests/wp.spec.ts');
+      expect(files).toContain('src/smoke-tests/health-checks.spec.ts');
       expect(files).toContain('src/smoke-tests/plugin.spec.ts');
     });
   });
@@ -163,6 +202,15 @@ describe('SMOKE_TEST_REGISTRY', () => {
     expect(SMOKE_TEST_REGISTRY.wpBoot.category).toBe('wp');
     expect(SMOKE_TEST_REGISTRY.wpAdminLoads).toBeDefined();
     expect(SMOKE_TEST_REGISTRY.wpRestApiAvailable).toBeDefined();
+  });
+
+  it('should contain expected health check tests', () => {
+    expect(SMOKE_TEST_REGISTRY.healthChecksCritical).toBeDefined();
+    expect(SMOKE_TEST_REGISTRY.healthChecksCritical.category).toBe('wp');
+    expect(SMOKE_TEST_REGISTRY.healthChecksCritical.specFile).toBe('health-checks.spec');
+    expect(SMOKE_TEST_REGISTRY.healthChecksRecommendations).toBeDefined();
+    expect(SMOKE_TEST_REGISTRY.healthChecksRecommendations.category).toBe('wp');
+    expect(SMOKE_TEST_REGISTRY.healthChecksRecommendations.specFile).toBe('health-checks.spec');
   });
 
   it('should contain expected plugin tests', () => {
