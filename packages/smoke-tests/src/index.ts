@@ -61,6 +61,16 @@ export const SMOKE_TEST_REGISTRY: Record<string, SmokeTestDefinition> = {
     description: "REST API responds",
     specFile: "wp.spec",
   },
+  healthChecksCritical: {
+    category: "wp",
+    description: "No critical site health issues",
+    specFile: "health-checks.spec",
+  },
+  healthChecksRecommendations: {
+    category: "wp",
+    description: "Site health recommendations check",
+    specFile: "health-checks.spec",
+  },
 
   // Plugin tests (require tests.plugin to be set)
   pluginActivates: {

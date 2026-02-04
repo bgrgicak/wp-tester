@@ -43,7 +43,7 @@
     },
     "ArrayBuffer": {
       "properties": {
-        "__@toStringTag@577": {
+        "__@toStringTag@578": {
           "type": "string"
         },
         "byteLength": {
@@ -51,7 +51,7 @@
         }
       },
       "required": [
-        "__@toStringTag@577",
+        "__@toStringTag@578",
         "byteLength"
       ],
       "type": "object"
@@ -397,7 +397,7 @@
                                   "BYTES_PER_ELEMENT": {
                                     "type": "number"
                                   },
-                                  "__@toStringTag@577": {
+                                  "__@toStringTag@578": {
                                     "const": "Uint8Array",
                                     "type": "string"
                                   },
@@ -416,7 +416,7 @@
                                 },
                                 "required": [
                                   "BYTES_PER_ELEMENT",
-                                  "__@toStringTag@577",
+                                  "__@toStringTag@578",
                                   "buffer",
                                   "byteLength",
                                   "byteOffset",
@@ -1393,7 +1393,7 @@
                     "BYTES_PER_ELEMENT": {
                       "type": "number"
                     },
-                    "__@toStringTag@577": {
+                    "__@toStringTag@578": {
                       "const": "Uint8Array",
                       "type": "string"
                     },
@@ -1412,7 +1412,7 @@
                   },
                   "required": [
                     "BYTES_PER_ELEMENT",
-                    "__@toStringTag@577",
+                    "__@toStringTag@578",
                     "buffer",
                     "byteLength",
                     "byteOffset",
@@ -1654,7 +1654,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@577": {
+                        "__@toStringTag@578": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -1673,7 +1673,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@577",
+                        "__@toStringTag@578",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -1862,7 +1862,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@577": {
+                        "__@toStringTag@578": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -1881,7 +1881,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@577",
+                        "__@toStringTag@578",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -2075,7 +2075,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@577": {
+                        "__@toStringTag@578": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -2094,7 +2094,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@577",
+                        "__@toStringTag@578",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -2283,7 +2283,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@577": {
+                        "__@toStringTag@578": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -2302,7 +2302,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@577",
+                        "__@toStringTag@578",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -2511,7 +2511,7 @@
                 "BYTES_PER_ELEMENT": {
                   "type": "number"
                 },
-                "__@toStringTag@577": {
+                "__@toStringTag@578": {
                   "const": "Uint8Array",
                   "type": "string"
                 },
@@ -2530,7 +2530,7 @@
               },
               "required": [
                 "BYTES_PER_ELEMENT",
-                "__@toStringTag@577",
+                "__@toStringTag@578",
                 "buffer",
                 "byteLength",
                 "byteOffset",
@@ -2596,7 +2596,7 @@
                 "BYTES_PER_ELEMENT": {
                   "type": "number"
                 },
-                "__@toStringTag@577": {
+                "__@toStringTag@578": {
                   "const": "Uint8Array",
                   "type": "string"
                 },
@@ -2615,7 +2615,7 @@
               },
               "required": [
                 "BYTES_PER_ELEMENT",
-                "__@toStringTag@577",
+                "__@toStringTag@578",
                 "buffer",
                 "byteLength",
                 "byteOffset",
@@ -2923,10 +2923,10 @@
     },
     "SharedArrayBuffer": {
       "properties": {
-        "__@species@621": {
+        "__@species@622": {
           "$ref": "#/definitions/SharedArrayBuffer"
         },
-        "__@toStringTag@577": {
+        "__@toStringTag@578": {
           "const": "SharedArrayBuffer",
           "type": "string"
         },
@@ -2935,8 +2935,8 @@
         }
       },
       "required": [
-        "__@species@621",
-        "__@toStringTag@577",
+        "__@species@622",
+        "__@toStringTag@578",
         "byteLength"
       ],
       "type": "object"
@@ -2954,7 +2954,7 @@
           "description": "PHPUnit test configuration.\nWhen provided, runs PHPUnit tests with the specified paths.\nWhen undefined, PHPUnit tests are not run."
         },
         "plugin": {
-          "description": "Plugin slug to test.\nWhen provided, runs plugin-specific tests including activation, deactivation, and load tests.",
+          "description": "Plugin slug to test.",
           "type": "string"
         },
         "smokeTests": {
@@ -2986,7 +2986,7 @@
           "description": "Smoke tests configuration.\nWhen true, runs all applicable smoke tests.\nWhen an object, use include/exclude to filter specific tests.\nTakes precedence over the deprecated wp, plugin, and theme properties."
         },
         "theme": {
-          "description": "Theme slug to test.\nWhen provided, runs theme-specific tests including activation and homepage load tests.",
+          "description": "Theme slug to test.",
           "type": "string"
         },
         "watch": {
@@ -2994,8 +2994,7 @@
           "description": "Watch mode configuration.\nControls which files are watched when using --watch flag."
         },
         "wp": {
-          "default": false,
-          "description": "Whether to run WordPress core tests.\nTests WordPress boot, admin dashboard, and REST API.",
+          "description": "Whether to run WordPress core tests.",
           "type": "boolean"
         }
       },
@@ -3047,7 +3046,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@577": {
+                        "__@toStringTag@578": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -3066,7 +3065,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@577",
+                        "__@toStringTag@578",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -3290,7 +3289,7 @@
                 "BYTES_PER_ELEMENT": {
                   "type": "number"
                 },
-                "__@toStringTag@577": {
+                "__@toStringTag@578": {
                   "const": "Uint8Array",
                   "type": "string"
                 },
@@ -3309,7 +3308,7 @@
               },
               "required": [
                 "BYTES_PER_ELEMENT",
-                "__@toStringTag@577",
+                "__@toStringTag@578",
                 "buffer",
                 "byteLength",
                 "byteOffset",
@@ -3350,7 +3349,7 @@
                         "BYTES_PER_ELEMENT": {
                           "type": "number"
                         },
-                        "__@toStringTag@577": {
+                        "__@toStringTag@578": {
                           "const": "Uint8Array",
                           "type": "string"
                         },
@@ -3369,7 +3368,7 @@
                       },
                       "required": [
                         "BYTES_PER_ELEMENT",
-                        "__@toStringTag@577",
+                        "__@toStringTag@578",
                         "buffer",
                         "byteLength",
                         "byteOffset",
@@ -3539,6 +3538,10 @@
     "projectHostPath": {
       "default": "process.cwd()",
       "description": "Project root directory (host filesystem path).\nAll relative paths in the config are resolved from this directory.\nIf a relative path is provided, it is relative to the config file location.",
+      "type": "string"
+    },
+    "projectSlug": {
+      "description": "Project slug (e.g., plugin or theme slug).\nIf not specified, automatically derived from the project's VFS path.\nUsed for smoke tests that activate/test specific plugins or themes.",
       "type": "string"
     },
     "projectType": {

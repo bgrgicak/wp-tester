@@ -6,7 +6,7 @@ import { join } from 'path';
 import * as os from 'os';
 import type { WPTesterConfig } from '@wp-tester/config';
 
-describe('JSON Reporter Integration', { timeout: 120000 }, () => {
+describe('JSON Reporter Integration', { timeout: 180000 }, () => {
   let testDir: string;
   let configFile: string;
   let jsonOutputFile: string;
